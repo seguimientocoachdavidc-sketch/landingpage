@@ -72,7 +72,7 @@ export default function CoachDavidPage() {
             <a href="#proceso" className="hover:text-foreground transition-colors">Proceso</a>
           </nav>
           <a href="#contacto" className="inline-flex items-center justify-center h-9 px-4 rounded-sm bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-sm transition-colors">
-            Aplicar ahora
+            Quiero Aplicar ahora
           </a>
         </div>
       </header>
@@ -103,7 +103,7 @@ export default function CoachDavidPage() {
               mereces.
             </h1>
             <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-              Programas de hipertrofia 100% personalizados, diseñados con evidencia científica. Deja de improvisar en el gimnasio y empieza a ver resultados reales.
+              Programas de Entrenamiento 100% personalizados, diseñados con evidencia científica. Deja de improvisar en el gimnasio y empieza a ver resultados reales.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
               <a href="#contacto" className="inline-flex items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-base h-14 px-8 rounded-sm animate-pulse-glow transition-colors">
@@ -120,12 +120,12 @@ export default function CoachDavidPage() {
                 <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Estudios de entrenamiento</div>
               </div>
               <div>
-                <div className="font-display text-3xl md:text-4xl text-primary">8 años</div>
+                <div className="font-display text-3xl md:text-4xl text-primary">+8 años</div>
                 <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">De experiencia</div>
               </div>
               <div>
                 <div className="font-display text-3xl md:text-4xl text-primary">100%</div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Basado en ciencia</div>
+                <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Basado en Ciencia y Evidencia</div>
               </div>
             </div>
           </div>
@@ -183,7 +183,7 @@ export default function CoachDavidPage() {
               Un método<br />probado.<br /><span className="text-gradient">Sin atajos.</span>
             </h2>
             <p className="mt-6 text-lg text-muted-foreground">
-              Soy David, Coach especializado en hipertrofia y entrenamiento basado en ciencia. Durante años, He guiado a personas a entrenar y construir un físico estetico de forma correcta.
+              Soy David, Coach especializado en hipertrofia y entrenamiento basado en ciencia (ciencia de verdad). Durante años, He guiado a personas a entrenar y construir un físico estetico de forma correcta.
             </p>
             <div className="mt-10 space-y-5">
               {pilares.map((pilar, idx) => (
@@ -199,7 +199,7 @@ export default function CoachDavidPage() {
               ))}
             </div>
             <a href="#contacto" className="inline-flex items-center justify-center mt-10 bg-primary text-primary-foreground hover:bg-primary/90 font-bold h-14 px-8 rounded-sm transition-colors">
-              Quiero mi plan
+              Quiero mi programa
             </a>
           </div>
         </div>
@@ -277,7 +277,7 @@ export default function CoachDavidPage() {
               Empieza hoy y<br />construye el físico<br />que <span className="text-gradient">quieres.</span>
             </h2>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Plazas limitadas cada mes para garantizar un seguimiento real. Aplica ahora y empieza la próxima semana.
+              Plazas limitadas cada mes para garantizar un seguimiento personalizado. Aplica ahora y empieza la próxima semana.
             </p>
           </div>
           
@@ -354,7 +354,7 @@ export default function CoachDavidPage() {
                   <p className="text-muted-foreground mt-3">Escríbeme directamente y te respondo personalmente. Sin bots, sin filtros.</p>
                 </div>
                 <a 
-                  href="https://wa.me/573243747367?text=Hola%20David%2C%20quiero%20mi%20plan%20personalizado" 
+                  href="https://wa.me/573243747367?text=Hola%20Coach%20David%2C%20quiero%20empezar%20un%20plan%20personalizado.%20Mi%20objetivo%20es%20_____" 
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="inline-flex items-center justify-center mt-8 border border-primary/40 hover:bg-primary hover:text-primary-foreground font-semibold h-14 rounded-sm transition-colors"
