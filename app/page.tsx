@@ -385,8 +385,21 @@ export default function CoachDavidPage() {
           <div className="font-display text-lg tracking-wide text-foreground">COACH<span className="text-primary">.</span>DAVID</div>
           <p>© {new Date().getFullYear()} Coach David. Entrenamiento basado en ciencia.</p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-foreground transition-colors">Instagram</a>
-            <a href="#" className="hover:text-foreground transition-colors">YouTube</a>
+            <a 
+              href="https://www.instagram.com/coachfitdavid/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Instagram
+            </a>
+            
+            <a 
+              href="#" 
+              className="hover:text-foreground transition-colors"
+            >
+              YouTube
+            </a>
           </div>
         </div>
       </footer>
