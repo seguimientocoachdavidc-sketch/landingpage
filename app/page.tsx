@@ -183,7 +183,7 @@ export default function CoachDavidPage() {
               Un método<br />probado.<br /><span className="text-gradient">Sin atajos.</span>
             </h2>
             <p className="mt-6 text-lg text-muted-foreground">
-              Soy David, entrenador especializado en hipertrofia y entrenamiento basado en ciencia. He guiado a más de 500 personas a construir el físico que pensaban imposible.
+              Soy David, Coach especializado en hipertrofia y entrenamiento basado en ciencia. Durante años, He guiado a personas a entrenar y construir un físico estetico de forma correcta.
             </p>
             <div className="mt-10 space-y-5">
               {pilares.map((pilar, idx) => (
@@ -236,7 +236,7 @@ export default function CoachDavidPage() {
               Empezar es<br />simple.
             </h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-8 mt-16 relative">
+          <div className="grid md:grid-cols-4 gap-8 mt-16 relative">
             <div className="hidden md:block absolute top-10 left-[16%] right-[16%] h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
             
             <div className="relative text-center md:text-left">
@@ -247,14 +247,21 @@ export default function CoachDavidPage() {
             
             <div className="relative text-center md:text-left">
               <div className="inline-flex w-20 h-20 rounded-full bg-background border-2 border-primary items-center justify-center font-display text-2xl text-primary mb-6 relative z-10">02</div>
-              <h3 className="font-display text-3xl uppercase">Recibes tu plan</h3>
-              <p className="text-muted-foreground mt-3 leading-relaxed">En menos de 72 horas tienes tu programa de entrenamiento personalizado, con vídeos y guía de ejecución.</p>
+              <h3 className="font-display text-3xl uppercase">Recibes tu Programa</h3>
+              <p className="text-muted-foreground mt-3 leading-relaxed">Entre 24-72 horas tienes tu programa de entrenamiento personalizado (y guía de alimentación si aplica), con vídeos y guía de ejecución.</p>
             </div>
             
             <div className="relative text-center md:text-left">
               <div className="inline-flex w-20 h-20 rounded-full bg-background border-2 border-primary items-center justify-center font-display text-2xl text-primary mb-6 relative z-10">03</div>
               <h3 className="font-display text-3xl uppercase">Seguimiento semanal</h3>
               <p className="text-muted-foreground mt-3 leading-relaxed">Cada semana revisamos tu progreso, ajustamos cargas y resolvemos dudas. Avance constante, sin estancamientos.</p>
+            </div>
+            <div className="relative text-center md:text-left">
+              <div className="inline-flex w-20 h-20 rounded-full bg-background border-2 border-primary items-center justify-center font-display text-2xl text-primary mb-6 relative z-10">04</div>
+              <h3 className="font-display text-3xl uppercase">Programa de Clase Mundial</h3>
+              <p className="text-muted-foreground mt-3 leading-relaxed">
+                Hacemos un seguimiento constante mediante una plantilla editable de clase mundial que nos permite ver tendencias, aplicar sobrecarga progresiva y detectar estancamientos a tiempo.
+              </p>
             </div>
           </div>
         </div>
