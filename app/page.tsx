@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import { ArrowRight, X, Target, MessageCircle, TrendingUp } from "lucide-react"
 
@@ -23,11 +23,28 @@ const beneficios = [
   { t: "Entrena seguro y sin lesiones", d: "Técnica priorizada, cargas inteligentes y prevención de lesiones desde el día uno." },
 ]
 
+
+
 export default function CoachDavidPage() {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", goal: "" })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showToast, setShowToast] = useState(false)
 
+  const [showWhatsApp, setShowWhatsApp] = useState(false)
+
+useEffect(() => {
+  const handleScroll = () => {
+    if (window.scrollY > 300) {
+      setShowWhatsApp(true)
+    } else {
+      setShowWhatsApp(false)
+    }
+  }
+
+  window.addEventListener("scroll", handleScroll)
+  return () => window.removeEventListener("scroll", handleScroll)
+}, [])
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -457,13 +474,41 @@ export default function CoachDavidPage() {
 
       {/* TOAST */}
       <div 
-        className={`fixed bottom-6 right-6 bg-card border border-border p-4 rounded max-w-[360px] transition-transform duration-400 z-50 ${showToast ? 'translate-y-0' : 'translate-y-[120%]'}`}
+        className={`fixed bottom-24 right-6 bg-card border border-border p-4 rounded max-w-[360px] transition-transform duration-400 z-50 ${showToast ? 'translate-y-0' : 'translate-y-[120%]'}`}
         role="status" 
         aria-live="polite"
       >
         <div className="font-display text-lg uppercase">¡Solicitud enviada!</div>
         <div className="text-muted-foreground text-sm mt-1">Te contactaré en menos de 24 horas para empezar tu transformación.</div>
       </div>
+
+      <a
+          href="https://wa.me/573243747367?text=Hola%20Coach%20David,%20quiero%20estructurar%20mi%20entrenamiento%20correctamente."
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`fixed bottom-6 right-6 z-50 transition-all duration-500 ${
+            showWhatsApp
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-10 pointer-events-none"
+          }`}
+        >
+          <div className="flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-full shadow-lg">
+        
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-6 h-6"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M20.52 3.48A11.9 11.9 0 0012.01 0C5.38 0 .01 5.37.01 12c0 2.12.56 4.19 1.62 6.02L0 24l6.15-1.61A11.93 11.93 0 0012.01 24c6.63 0 12-5.37 12-12 0-3.19-1.24-6.19-3.49-8.52z"/>
+            </svg>
+        
+            <span className="hidden md:inline text-sm font-semibold">
+              Hablar por WhatsApp
+            </span>
+        
+          </div>
+        </a>
     </>
   )
 }
