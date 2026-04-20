@@ -474,7 +474,7 @@ useEffect(() => {
 
       {/* TOAST */}
       <div 
-        className={`fixed bottom-24 right-6 bg-card border border-border p-4 rounded max-w-[360px] transition-transform duration-400 z-50 ${showToast ? 'translate-y-0' : 'translate-y-[120%]'}`}
+        className={`fixed bottom-24 right-6 bg-card border border-border p-4 rounded max-w-[360px] transition-transform duration-400 z-50 ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-40 opacity-0 pointer-events-none'}`}
         role="status" 
         aria-live="polite"
       >
