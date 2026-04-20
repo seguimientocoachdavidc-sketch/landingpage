@@ -132,18 +132,56 @@ export default function CoachDavidPage() {
         </div>
       </section>
 
-      <section className="py-16 border-t border-border">
-      <div className="container mx-auto px-8 text-center max-w-3xl">
-        <p className="text-lg text-muted-foreground">
-          Esto no es para personas que buscan rutinas genéricas.
-        </p>
-        <div className="mt-6 grid sm:grid-cols-3 gap-4 text-sm text-muted-foreground">
-          <div>No improvisación</div>
-          <div>No entrenamiento sin progresión</div>
-          <div>No programas sin estructura</div>
+        {/* MENSAJE */}
+      <section className="relative py-24 border-t border-border overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-radial opacity-60" />
+      
+        <div className="container mx-auto px-8 relative">
+          <div className="max-w-4xl mx-auto text-center">
+            
+            <span className="text-primary text-sm uppercase tracking-[0.2em] font-semibold">
+              No es para todos
+            </span>
+      
+            <h2 className="font-display text-4xl md:text-6xl uppercase mt-4 leading-tight">
+              Esto no es para personas<br />
+              que buscan <span className="text-destructive">rutinas genéricas</span>.
+            </h2>
+      
+            <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
+              Si quieres resultados reales, necesitas estructura. No más improvisación, no más entrenar sin dirección.
+            </p>
+          </div>
+      
+          <div className="grid md:grid-cols-3 gap-6 mt-16 max-w-5xl mx-auto">
+            
+            <div className="p-8 rounded-sm bg-card border border-border hover:border-destructive/40 transition-smooth text-center">
+              <div className="font-display text-4xl text-destructive mb-4">01</div>
+              <h3 className="font-display text-xl uppercase">No improvisación</h3>
+              <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+                Cada sesión tiene un objetivo claro dentro de un sistema estructurado.
+              </p>
+            </div>
+      
+            <div className="p-8 rounded-sm bg-card border border-border hover:border-destructive/40 transition-smooth text-center">
+              <div className="font-display text-4xl text-destructive mb-4">02</div>
+              <h3 className="font-display text-xl uppercase">No entrenar sin progresión</h3>
+              <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+                Si no hay sobrecarga progresiva, no hay crecimiento muscular. Así de simple.
+              </p>
+            </div>
+      
+            <div className="p-8 rounded-sm bg-card border border-border hover:border-destructive/40 transition-smooth text-center">
+              <div className="font-display text-4xl text-destructive mb-4">03</div>
+              <h3 className="font-display text-xl uppercase">No programas sin estructura</h3>
+              <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+                Volumen, intensidad y frecuencia diseñados con intención, no al azar.
+              </p>
+            </div>
+      
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
       {/* PROBLEMA */}
       <section id="problema" className="relative py-24 md:py-32 border-t border-border">
