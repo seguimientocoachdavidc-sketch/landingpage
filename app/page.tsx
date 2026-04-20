@@ -132,6 +132,19 @@ export default function CoachDavidPage() {
         </div>
       </section>
 
+      <section className="py-16 border-t border-border">
+      <div className="container mx-auto px-8 text-center max-w-3xl">
+        <p className="text-lg text-muted-foreground">
+          Esto no es para personas que buscan rutinas genéricas.
+        </p>
+        <div className="mt-6 grid sm:grid-cols-3 gap-4 text-sm text-muted-foreground">
+          <div>No improvisación</div>
+          <div>No entrenamiento sin progresión</div>
+          <div>No programas sin estructura</div>
+        </div>
+      </div>
+    </section>
+
       {/* PROBLEMA */}
       <section id="problema" className="relative py-24 md:py-32 border-t border-border">
         <div className="container mx-auto px-8">
