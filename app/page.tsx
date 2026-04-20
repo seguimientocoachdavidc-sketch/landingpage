@@ -492,7 +492,7 @@ useEffect(() => {
               : "opacity-0 translate-y-10 pointer-events-none"
           }`}
         >
-          <div className="flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-full shadow-lg">
+          <div className="flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-full shadow-lg animate-pulse">
         
             <svg
               xmlns="http://www.w3.org/2000/svg"
