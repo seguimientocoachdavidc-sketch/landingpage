@@ -98,12 +98,12 @@ export default function CoachDavidPage() {
               Entrenamiento basado en ciencia
             </div>
             <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl uppercase">
-              Construye el<br />
-              <span className="text-gradient">músculo</span> que<br />
-              mereces.
+              Entrena con<br />
+              <span className="text-gradient">estructura</span>, no<br />
+              con intuición.
             </h1>
             <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-              Programas de Entrenamiento 100% personalizados, diseñados con evidencia científica. Deja de improvisar en el gimnasio y empieza a ver resultados reales.
+              Programas de Entrenamiento 100% personalizados, diseñados con evidencia y estructura científica. Deja de improvisar y adivinar en el gimnasio y empieza a ver resultados con métodos probados y medibles.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
               <a href="#contacto" className="inline-flex items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-base h-14 px-8 rounded-sm animate-pulse-glow transition-colors">
@@ -111,7 +111,7 @@ export default function CoachDavidPage() {
                 <ArrowRight className="ml-2 w-5 h-5" />
               </a>
               <a href="#contacto" className="inline-flex items-center justify-center border border-border bg-card/40 backdrop-blur hover:bg-card font-semibold text-base h-14 px-8 rounded-sm transition-colors">
-                Obtén tu plan personalizado
+                Obtén tu programa personalizado
               </a>
             </div>
             <div className="mt-14 grid grid-cols-3 gap-6 max-w-lg">
@@ -138,7 +138,7 @@ export default function CoachDavidPage() {
           <div className="max-w-3xl">
             <span className="text-primary text-sm uppercase tracking-[0.2em] font-semibold">El problema</span>
             <h2 className="font-display text-4xl md:text-6xl uppercase mt-4">
-              Llevas años en el gym<br />y sigues <span className="text-destructive">igual</span>.
+              Llevas años en el gym<br />y sigues <span className="text-destructive">improvisando igual</span>.
             </h2>
             <p className="mt-6 text-lg text-muted-foreground">
               No es falta de esfuerzo. Es falta de método. Si no ves resultados, hay tres razones — y probablemente las cometes todas.
