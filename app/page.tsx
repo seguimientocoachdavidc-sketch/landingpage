@@ -86,7 +86,7 @@ export default function Home() {
 
     <div>
       <img
-        src="/coach-profile.jpg"
+        src="/Entrenando_2.jpeg"
         className="w-full border border-border"
         alt="Coach David"
       />
