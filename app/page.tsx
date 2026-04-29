@@ -65,59 +65,200 @@ export default function Home() {
 </section>
 
       {/* FILTRO */}
-      <section className="py-24 border-t border-border text-center px-6">
-        <h2 className="font-display text-4xl md:text-6xl uppercase">
-          Esto no es para todos.
-        </h2>
+      <section className="relative py-32 border-t border-border overflow-hidden">
 
-        <p className="mt-6 text-muted-foreground max-w-2xl mx-auto">
-          Si buscas rutinas genéricas o entrenar sin estructura, este no es tu lugar.
-        </p>
+  {/* BACKGROUND */}
+  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
 
-        <div className="grid md:grid-cols-3 gap-6 mt-12 max-w-5xl mx-auto">
-          <div className="p-6 border border-border">
+  <div className="container mx-auto px-6 relative">
+
+    {/* HEADER */}
+    <div className="text-center max-w-4xl mx-auto">
+      <span className="text-primary text-sm uppercase tracking-[0.3em]">
+        No es para todos
+      </span>
+
+      <h2 className="font-display text-5xl md:text-7xl uppercase mt-6 leading-tight">
+        Si buscas <span className="text-destructive">atajos</span>,<br />
+        este no es tu lugar.
+      </h2>
+
+      <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
+        El progreso real viene de estructura, consistencia y ejecución. No de improvisar cada semana.
+      </p>
+    </div>
+
+    {/* CARDS */}
+    <div className="grid md:grid-cols-3 gap-8 mt-20">
+
+      {/* CARD 1 */}
+      <div className="group relative p-8 border border-border bg-card/50 backdrop-blur hover:-translate-y-2 transition-all duration-300">
+
+        <div className="absolute inset-0 bg-gradient-to-br from-destructive/0 to-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+        <div className="relative">
+          <div className="text-5xl font-display text-destructive mb-4">01</div>
+
+          <h3 className="font-display text-2xl uppercase">
             No improvisación
-          </div>
-          <div className="p-6 border border-border">
-            No entrenamiento sin progresión
-          </div>
-          <div className="p-6 border border-border">
-            No programas sin estructura
-          </div>
+          </h3>
+
+          <p className="mt-4 text-muted-foreground leading-relaxed">
+            Cada entrenamiento responde a una planificación previa. Nada está al azar.
+          </p>
         </div>
-      </section>
+      </div>
+
+      {/* CARD 2 */}
+      <div className="group relative p-8 border border-border bg-card/50 backdrop-blur hover:-translate-y-2 transition-all duration-300">
+
+        <div className="absolute inset-0 bg-gradient-to-br from-destructive/0 to-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+        <div className="relative">
+          <div className="text-5xl font-display text-destructive mb-4">02</div>
+
+          <h3 className="font-display text-2xl uppercase">
+            Sin progresión = sin resultados
+          </h3>
+
+          <p className="mt-4 text-muted-foreground leading-relaxed">
+            Si no aumentas cargas, repeticiones o volumen, tu cuerpo no tiene razón para adaptarse.
+          </p>
+        </div>
+      </div>
+
+      {/* CARD 3 */}
+      <div className="group relative p-8 border border-border bg-card/50 backdrop-blur hover:-translate-y-2 transition-all duration-300">
+
+        <div className="absolute inset-0 bg-gradient-to-br from-destructive/0 to-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+        <div className="relative">
+          <div className="text-5xl font-display text-destructive mb-4">03</div>
+
+          <h3 className="font-display text-2xl uppercase">
+            Sin estructura no hay control
+          </h3>
+
+          <p className="mt-4 text-muted-foreground leading-relaxed">
+            Volumen, intensidad y frecuencia deben estar definidos. No es intuición, es sistema.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
 
       {/* MÉTODO */}
-      <section className="py-24 border-t border-border text-center px-6">
-        <h2 className="font-display text-4xl md:text-6xl uppercase">
-          Un sistema, no una rutina.
-        </h2>
+      <section className="relative py-32 border-t border-border overflow-hidden">
 
-        <p className="mt-6 text-muted-foreground max-w-2xl mx-auto">
-          El entrenamiento efectivo se basa en controlar variables. No en adivinar.
+  {/* BACKGROUND */}
+  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
+
+  <div className="container mx-auto px-6 relative">
+
+    {/* HEADER */}
+    <div className="max-w-4xl">
+      <span className="text-primary text-sm uppercase tracking-[0.3em]">
+        El método
+      </span>
+
+      <h2 className="font-display text-5xl md:text-7xl uppercase mt-6 leading-tight">
+        Un sistema,<br />
+        no una <span className="text-gradient">rutina</span>.
+      </h2>
+
+      <p className="mt-6 text-lg text-muted-foreground max-w-2xl">
+        La mayoría entrena sin control de variables. Aquí cada decisión tiene un propósito: 
+        estímulo, adaptación y progresión.
+      </p>
+    </div>
+
+    {/* BLOQUE VISUAL */}
+    <div className="grid lg:grid-cols-3 gap-8 mt-20">
+
+      {/* VOLUMEN */}
+      <div className="group relative p-10 border border-border bg-card/50 backdrop-blur transition-all duration-300 hover:border-primary/40">
+
+        <div className="absolute top-6 right-6 text-xs tracking-widest text-muted-foreground">
+          VARIABLE 01
+        </div>
+
+        <div className="text-6xl font-display text-primary mb-6">
+          V
+        </div>
+
+        <h3 className="font-display text-3xl uppercase">
+          Volumen
+        </h3>
+
+        <p className="mt-4 text-muted-foreground leading-relaxed">
+          Cantidad de trabajo efectivo semanal por grupo muscular. 
+          Ajustado según tu capacidad de recuperación y nivel.
         </p>
 
-        <div className="grid md:grid-cols-3 gap-10 mt-16 max-w-5xl mx-auto">
-          <div>
-            <h3 className="font-display text-xl uppercase">Volumen</h3>
-            <p className="text-muted-foreground mt-2">
-              Cantidad de trabajo efectiva planificada.
-            </p>
-          </div>
-          <div>
-            <h3 className="font-display text-xl uppercase">Intensidad</h3>
-            <p className="text-muted-foreground mt-2">
-              Proximidad al fallo controlada.
-            </p>
-          </div>
-          <div>
-            <h3 className="font-display text-xl uppercase">Progresión</h3>
-            <p className="text-muted-foreground mt-2">
-              Sobrecarga progresiva real.
-            </p>
-          </div>
+        <div className="mt-6 h-[2px] w-12 bg-primary group-hover:w-20 transition-all" />
+      </div>
+
+      {/* INTENSIDAD */}
+      <div className="group relative p-10 border border-border bg-card/50 backdrop-blur transition-all duration-300 hover:border-primary/40">
+
+        <div className="absolute top-6 right-6 text-xs tracking-widest text-muted-foreground">
+          VARIABLE 02
         </div>
-      </section>
+
+        <div className="text-6xl font-display text-primary mb-6">
+          I
+        </div>
+
+        <h3 className="font-display text-3xl uppercase">
+          Intensidad
+        </h3>
+
+        <p className="mt-4 text-muted-foreground leading-relaxed">
+          Proximidad al fallo muscular. Controlada para maximizar estímulo 
+          sin comprometer la recuperación.
+        </p>
+
+        <div className="mt-6 h-[2px] w-12 bg-primary group-hover:w-20 transition-all" />
+      </div>
+
+      {/* PROGRESIÓN */}
+      <div className="group relative p-10 border border-border bg-card/50 backdrop-blur transition-all duration-300 hover:border-primary/40">
+
+        <div className="absolute top-6 right-6 text-xs tracking-widest text-muted-foreground">
+          VARIABLE 03
+        </div>
+
+        <div className="text-6xl font-display text-primary mb-6">
+          P
+        </div>
+
+        <h3 className="font-display text-3xl uppercase">
+          Progresión
+        </h3>
+
+        <p className="mt-4 text-muted-foreground leading-relaxed">
+          Sobrecarga progresiva real. Aumentos planificados en carga, repeticiones 
+          o volumen para generar adaptación continua.
+        </p>
+
+        <div className="mt-6 h-[2px] w-12 bg-primary group-hover:w-20 transition-all" />
+      </div>
+
+    </div>
+
+    {/* FRASE FINAL */}
+    <div className="mt-24 text-center max-w-3xl mx-auto">
+      <p className="text-xl md:text-2xl font-display uppercase leading-relaxed">
+        Si no controlas estas variables,<br />
+        no estás entrenando… estás improvisando.
+      </p>
+    </div>
+
+  </div>
+</section>
 
       {/* AUTORIDAD */}
       <section className="py-24 border-t border-border text-center px-6">
