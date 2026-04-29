@@ -3,24 +3,66 @@ export default function Home() {
     <main className="min-h-screen bg-background text-foreground">
 
       {/* HERO */}
-      <section className="py-32 text-center px-6">
-        <h1 className="font-display text-5xl md:text-7xl uppercase leading-tight">
-          Entrena con<br />
-          <span className="text-gradient">estructura</span>, no<br />
-          con intuición.
-        </h1>
+     <section className="relative min-h-screen flex items-center overflow-hidden">
 
-        <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Programación basada en ciencia para desarrollar masa muscular con control real de volumen, intensidad y progresión.
-        </p>
+  {/* FONDO */}
+  <div className="absolute inset-0">
+    <img
+      src="/hero-coach.jpg" // 👈 aquí pondrás tu imagen
+      alt="Coach David entrenando"
+      className="w-full h-full object-cover opacity-40"
+    />
+    <div className="absolute inset-0 bg-black/60" />
+  </div>
 
+  {/* CONTENIDO */}
+  <div className="relative z-10 container mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+
+    {/* TEXTO */}
+    <div>
+      <span className="text-primary uppercase tracking-widest text-sm">
+        Bienvenido al cambio
+      </span>
+
+      <h1 className="font-display text-5xl md:text-7xl uppercase leading-tight mt-4">
+        Coach David
+      </h1>
+
+      <p className="mt-6 text-lg text-muted-foreground max-w-lg">
+        Entrenador especializado en hipertrofia basado en ciencia. 
+        Desarrollo programas estructurados que convierten teoría en resultados reales en el gimnasio.
+      </p>
+
+      <div className="mt-10 flex gap-4">
         <a
           href="/asesoria"
-          className="inline-block mt-10 bg-primary text-primary-foreground px-8 py-4 font-bold uppercase"
+          className="bg-primary text-primary-foreground px-8 py-4 font-bold uppercase"
         >
           Ver asesoría
         </a>
-      </section>
+
+        <a
+          href="/asesoria"
+          className="border border-border px-8 py-4 font-semibold uppercase"
+        >
+          Cómo funciona
+        </a>
+      </div>
+    </div>
+
+    {/* IMAGEN / LOGO */}
+    <div className="hidden lg:flex justify-center">
+      <div className="relative">
+        <img
+          src="/logo-coach.png" // 👈 tu logo
+          alt="Coach David logo"
+          className="w-64 opacity-80"
+        />
+      </div>
+    </div>
+
+  </div>
+</section>
 
       {/* FILTRO */}
       <section className="py-24 border-t border-border text-center px-6">
