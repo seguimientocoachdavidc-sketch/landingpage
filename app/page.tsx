@@ -150,6 +150,38 @@ export default function Home() {
   </div>
 </section>
 
+           {/* SOBRE MI */}
+
+      <section className="py-24 border-t border-border px-6">
+  <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10 items-center">
+
+    <div>
+      <h2 className="font-display text-4xl md:text-6xl uppercase">
+        No soy otro entrenador.
+      </h2>
+
+      <p className="mt-6 text-muted-foreground">
+        Soy David, economista y entrenador especializado en hipertrofia. 
+        Mi enfoque combina análisis estructurado con evidencia científica para diseñar programas que realmente generan resultados.
+      </p>
+
+      <p className="mt-4 text-muted-foreground">
+        No trabajo con intuición. Trabajo con variables.
+      </p>
+    </div>
+
+    <div>
+      <img
+        src="/coach-profile.jpg"
+        className="w-full border border-border"
+        alt="Coach David"
+      />
+    </div>
+
+  </div>
+</section>
+
+      
       {/* MÉTODO */}
       <section className="relative py-32 border-t border-border overflow-hidden">
 
@@ -289,6 +321,38 @@ export default function Home() {
         </a>
       </section>
 
+      {/* CONTENIDO */}
+<section className="py-24 border-t border-border px-6">
+  <div className="max-w-5xl mx-auto">
+
+    <h2 className="font-display text-4xl md:text-6xl uppercase text-center">
+      Lo que enseño
+    </h2>
+
+    <p className="text-center text-muted-foreground mt-6 max-w-2xl mx-auto">
+      Explico entrenamiento con base científica, aplicado a la práctica real.
+    </p>
+
+    <div className="grid md:grid-cols-3 gap-6 mt-16">
+
+      <div className="p-6 border border-border">
+        Volumen de entrenamiento
+      </div>
+
+      <div className="p-6 border border-border">
+        Proximidad al fallo
+      </div>
+
+      <div className="p-6 border border-border">
+        Frecuencia y progresión
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+      
     </main>
   )
 }
