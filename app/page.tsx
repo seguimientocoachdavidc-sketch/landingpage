@@ -64,38 +64,6 @@ export default function Home() {
   </div>
 </section>
 
-  {/* SOBRE MI */}
-
-      <section className="py-24 border-t border-border px-6">
-  <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10 items-center">
-
-    <div>
-      <h2 className="font-display text-4xl md:text-6xl uppercase">
-        No soy otro entrenador.
-      </h2>
-
-      <p className="mt-6 text-muted-foreground">
-        Soy David, Coach especializado en hipertrofia y rendimiento físico. 
-        Mi enfoque y campo de acción combina análisis estructurado con Evidencia Científica para diseñar programas que realmente generan resultados.
-      </p>
-
-      <p className="mt-4 text-muted-foreground">
-        No trabajo con intuición. Trabajo con variables.
-      </p>
-    </div>
-
-    <div>
-      <img
-        src="/Entrenando_2.jpeg"
-        className="w-full border border-border"
-        alt="Coach David"
-      />
-    </div>
-
-  </div>
-</section>
-
-      
       {/* FILTRO */}
       <section className="relative py-32 border-t border-border overflow-hidden">
 
