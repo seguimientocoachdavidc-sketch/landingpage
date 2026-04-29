@@ -24,26 +24,26 @@ export default function SobreMi() {
             </h2>
 
             <p className="mt-6 text-muted-foreground leading-relaxed">
-              Soy David, economista y entrenador especializado en hipertrofia.
-              Mi enfoque combina análisis estructurado con evidencia científica
-              para diseñar programas de entrenamiento que realmente generan resultados.
+              Soy David, Coach especializado en hipertrofia y Rendimiento Físico. 
+              Mi enfoque combina análisis estructurado con evidencia científica y años de experiencia
+              para diseñar programas de entrenamiento que realmente generan resultados y no improvisen.
             </p>
 
             <p className="mt-4 text-muted-foreground leading-relaxed">
               No trabajo con intuición ni con rutinas genéricas. Trabajo con variables:
-              volumen, intensidad y progresión.
+              Volumen, intensidad y progresión.
             </p>
 
             <p className="mt-4 text-muted-foreground leading-relaxed">
               Mi objetivo es que dejes de improvisar en el gimnasio y empieces a
-              entrenar con un sistema claro.
+              entrenar con un sistema claro y efectivo. 
             </p>
           </div>
 
           {/* IMAGEN */}
           <div>
             <img
-              src="/Entrenando_2.jpg"
+              src="/Entrenando_2.jpeg"
               alt="Coach David"
               className="w-full border border-border"
             />
