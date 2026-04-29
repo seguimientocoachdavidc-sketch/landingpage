@@ -8,7 +8,7 @@ export default function Home() {
   {/* FONDO */}
   <div className="absolute inset-0">
     <img
-      src="/hero-coach.jpg" // 👈 aquí pondrás tu imagen
+      src="/Entrenando_1.jpg" // 👈 aquí pondrás tu imagen
       alt="Coach David entrenando"
       className="w-full h-full object-cover opacity-40"
     />
@@ -54,7 +54,7 @@ export default function Home() {
     <div className="hidden lg:flex justify-center">
       <div className="relative">
         <img
-          src="/logo-coach.png" // 👈 tu logo
+          src="/Logo letra blanca al lado.jpg" // 👈 tu logo
           alt="Coach David logo"
           className="w-64 opacity-80"
         />
