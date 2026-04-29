@@ -293,6 +293,142 @@ export default function Home() {
   </div>
 </section>
 
+{/* SERVICIOS */}
+<section className="py-32 border-t border-border px-6">
+
+  <div className="max-w-6xl mx-auto">
+
+    {/* HEADER */}
+    <div className="text-center max-w-3xl mx-auto">
+      <span className="text-primary uppercase tracking-[0.3em] text-sm">
+        Servicios
+      </span>
+
+      <h2 className="font-display text-5xl md:text-7xl uppercase mt-6">
+        Elige cómo quieres<br />entrenar.
+      </h2>
+
+      <p className="mt-6 text-muted-foreground">
+        Programas diseñados según tu objetivo, con seguimiento real y estructura completa.
+      </p>
+    </div>
+
+    {/* CARDS */}
+    <div className="grid md:grid-cols-3 gap-8 mt-20">
+
+      {/* ENTRENAMIENTO */}
+      <div className="p-8 border border-border bg-card/50 backdrop-blur flex flex-col justify-between">
+
+        <div>
+          <h3 className="font-display text-3xl uppercase">
+            Entrenamiento
+          </h3>
+
+          <p className="text-muted-foreground mt-4">
+            Programa estructurado para hipertrofia, pérdida de grasa o rendimiento físico.
+          </p>
+
+          <ul className="mt-6 space-y-2 text-sm text-muted-foreground">
+            <li>• Plan personalizado</li>
+            <li>• Acceso a plantilla de seguimiento</li>
+            <li>• Ajustes semanales</li>
+            <li>• Soporte 1 a 1</li>
+          </ul>
+        </div>
+
+        <div className="mt-8">
+          <div className="text-3xl font-display text-primary">
+            $135.000 <span className="text-sm text-muted-foreground">/mes</span>
+          </div>
+
+          <a
+            href="/asesoria"
+            className="block mt-6 text-center bg-primary text-primary-foreground py-3 font-bold uppercase"
+          >
+            Aplicar
+          </a>
+        </div>
+      </div>
+
+      {/* ALIMENTACIÓN */}
+      <div className="p-8 border border-border bg-card/50 backdrop-blur flex flex-col justify-between">
+
+        <div>
+          <h3 className="font-display text-3xl uppercase">
+            Alimentación
+          </h3>
+
+          <p className="text-muted-foreground mt-4">
+            Plan nutricional enfocado en recomposición corporal y adherencia real.
+          </p>
+
+          <ul className="mt-6 space-y-2 text-sm text-muted-foreground">
+            <li>• Diseño de plan alimenticio</li>
+            <li>• Seguimiento constante</li>
+            <li>• Ajustes según progreso</li>
+            <li>• Valoración inicial</li>
+          </ul>
+        </div>
+
+        <div className="mt-8">
+          <div className="text-3xl font-display text-primary">
+            $125.000 <span className="text-sm text-muted-foreground">/mes</span>
+          </div>
+
+          <a
+            href="/asesoria"
+            className="block mt-6 text-center border border-border py-3 font-semibold uppercase"
+          >
+            Más información
+          </a>
+        </div>
+      </div>
+
+      {/* DUO */}
+      <div className="relative p-8 border-2 border-primary bg-card flex flex-col justify-between scale-105">
+
+        <div className="absolute top-4 right-4 text-xs uppercase text-primary">
+          Recomendado
+        </div>
+
+        <div>
+          <h3 className="font-display text-3xl uppercase">
+            Programa Duo
+          </h3>
+
+          <p className="text-muted-foreground mt-4">
+            Entrenamiento + alimentación integrados para maximizar resultados.
+          </p>
+
+          <ul className="mt-6 space-y-2 text-sm text-muted-foreground">
+            <li>• Todo el programa de entrenamiento</li>
+            <li>• Todo el programa de alimentación</li>
+            <li>• Seguimiento completo</li>
+            <li>• Mayor velocidad de progreso</li>
+          </ul>
+        </div>
+
+        <div className="mt-8">
+          <div className="text-4xl font-display text-primary">
+            $210.000 <span className="text-sm text-muted-foreground">/mes</span>
+          </div>
+
+          <a
+            href="https://wa.me/573243747367?text=Hola Coach David, quiero el programa DUO."
+            target="_blank"
+            className="block mt-6 text-center bg-primary text-primary-foreground py-3 font-bold uppercase"
+          >
+            Empezar
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+    
+      
       {/* AUTORIDAD */}
       <section className="py-24 border-t border-border text-center px-6">
         <h2 className="font-display text-4xl md:text-6xl uppercase">
