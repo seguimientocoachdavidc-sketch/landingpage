@@ -83,6 +83,9 @@ useEffect(() => {
             />
           </a>
           <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
+            <a href="/sobre-mi" className="hover:text-foreground transition-colors">
+              Sobre mí
+            </a>
             <a href="#problema" className="hover:text-foreground transition-colors">Problema</a>
             <a href="#metodo" className="hover:text-foreground transition-colors">Método</a>
             <a href="#resultados" className="hover:text-foreground transition-colors">Resultados</a>
