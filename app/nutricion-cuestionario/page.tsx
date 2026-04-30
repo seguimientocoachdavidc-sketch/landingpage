@@ -31,6 +31,22 @@ export default function NutricionCuestionario() {
       enfermedades: "",
       patologias: "",
       restricciones: "",
+
+      // STEP 5 - NUTRICIÓN
+      comidasDia: "",
+      primeraComida: "",
+      ultimaComida: "",
+      
+      proteinas: "",
+      vegetales: "",
+      frutas: "",
+      carbs: "",
+      comidaRapida: "",
+      legumbres: "",
+      
+      noGusta: "",
+      restriccionesExtra: "",
+      suplementos: "",
     
   })
 
@@ -64,6 +80,12 @@ export default function NutricionCuestionario() {
       }
     }
 
+    if (step === 5) {
+    if (!form.comidasDia || !form.primeraComida || !form.proteinas) {
+      alert("Completa la sección de nutrición")
+      return false
+    }
+  }
     
     return true
   }
@@ -104,7 +126,7 @@ export default function NutricionCuestionario() {
         <div className="w-full bg-white/10 h-2 rounded-full mb-6">
           <div
             className="bg-primary h-2 rounded-full transition-all"
-            style={{ width: `${(step / 4) * 100}%` }}
+            style={{ width: `${(step / 5) * 100}%` }}
           />
         </div>
 
@@ -301,14 +323,119 @@ export default function NutricionCuestionario() {
             </button>
       
             <button
-              onClick={handleSubmit}
-              className="w-full bg-green-500 py-3 rounded font-bold"
+              onClick={() => {
+                if (validateStep()) setStep(5)
+              }}
+                  className="w-full bg-green-500 py-3 rounded font-bold"
             >
               {loading ? "Enviando..." : "Enviar"}
             </button>
           </div>
         </div>
       )}
+
+      {step === 5 && (
+  <div className="space-y-6">
+    <h2 className="text-2xl font-bold">Nutrición</h2>
+
+    {/* HÁBITOS */}
+    <div className="space-y-4">
+      <input
+        placeholder="¿Cuántas comidas haces al día?"
+        value={form.comidasDia}
+        onChange={(e) => setForm({...form, comidasDia: e.target.value})}
+        className="w-full p-3 bg-black/40 border border-white/20 rounded"
+      />
+
+      <input
+        type="time"
+        value={form.primeraComida}
+        onChange={(e) => setForm({...form, primeraComida: e.target.value})}
+        className="w-full p-3 bg-black/40 border border-white/20 rounded"
+      />
+
+      <input
+        type="time"
+        value={form.ultimaComida}
+        onChange={(e) => setForm({...form, ultimaComida: e.target.value})}
+        className="w-full p-3 bg-black/40 border border-white/20 rounded"
+      />
+    </div>
+
+    {/* GUSTOS */}
+    <div className="space-y-4">
+      <textarea placeholder="5 proteínas favoritas"
+        value={form.proteinas}
+        onChange={(e) => setForm({...form, proteinas: e.target.value})}
+        className="w-full p-3 bg-black/40 border border-white/20 rounded"
+      />
+
+      <textarea placeholder="5 vegetales favoritos"
+        value={form.vegetales}
+        onChange={(e) => setForm({...form, vegetales: e.target.value})}
+        className="w-full p-3 bg-black/40 border border-white/20 rounded"
+      />
+
+      <textarea placeholder="10 frutas favoritas"
+        value={form.frutas}
+        onChange={(e) => setForm({...form, frutas: e.target.value})}
+        className="w-full p-3 bg-black/40 border border-white/20 rounded"
+      />
+
+      <textarea placeholder="Carbohidratos favoritos"
+        value={form.carbs}
+        onChange={(e) => setForm({...form, carbs: e.target.value})}
+        className="w-full p-3 bg-black/40 border border-white/20 rounded"
+      />
+
+      <textarea placeholder="Comida rápida favorita"
+        value={form.comidaRapida}
+        onChange={(e) => setForm({...form, comidaRapida: e.target.value})}
+        className="w-full p-3 bg-black/40 border border-white/20 rounded"
+      />
+
+      <textarea placeholder="Legumbres favoritas"
+        value={form.legumbres}
+        onChange={(e) => setForm({...form, legumbres: e.target.value})}
+        className="w-full p-3 bg-black/40 border border-white/20 rounded"
+      />
+    </div>
+
+    {/* RESTRICCIONES */}
+    <div className="space-y-4">
+      <textarea placeholder="10 comidas que NO te gustan"
+        value={form.noGusta}
+        onChange={(e) => setForm({...form, noGusta: e.target.value})}
+        className="w-full p-3 bg-black/40 border border-white/20 rounded"
+      />
+
+      <textarea placeholder="Restricciones (alergias)"
+        value={form.restriccionesExtra}
+        onChange={(e) => setForm({...form, restriccionesExtra: e.target.value})}
+        className="w-full p-3 bg-black/40 border border-white/20 rounded"
+      />
+
+      <textarea placeholder="Suplementos que consumes"
+        value={form.suplementos}
+        onChange={(e) => setForm({...form, suplementos: e.target.value})}
+        className="w-full p-3 bg-black/40 border border-white/20 rounded"
+      />
+    </div>
+
+    <div className="flex gap-4">
+      <button onClick={() => setStep(4)} className="w-full border py-3 rounded">
+        Atrás
+      </button>
+
+      <button
+        onClick={handleSubmit}
+        className="w-full bg-green-500 py-3 rounded font-bold"
+      >
+        {loading ? "Enviando..." : "Enviar"}
+      </button>
+    </div>
+  </div>
+)}
         
       </div>
     </div>
