@@ -131,9 +131,21 @@ export default function NutricionCuestionario() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black text-white flex items-center justify-center px-4">
+    <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden bg-black text-white">
 
-      <div className="w-full max-w-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-xl">
+  {/* BACKGROUND GRADIENT ANIMADO */}
+  <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900 to-black" />
+
+  {/* LUZ RADIAL (EFECTO PRO) */}
+  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_40%)]" />
+
+  {/* GRILLA (ESTILO TECH / FITNESS PREMIUM) */}
+  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
+
+  {/* CONTENIDO */}
+  <div className="relative z-10 w-full max-w-2xl">
+
+     <div className="w-full bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] transition-all duration-500 hover:scale-[1.01]">
 
         {/* PROGRESS BAR */}
         <div className="w-full bg-white/10 h-2 rounded-full mb-6">
@@ -142,10 +154,11 @@ export default function NutricionCuestionario() {
             style={{ width: `${(step / 6) * 100}%` }}
           />
         </div>
+        </div>
 
         {/* STEP 1 */}
         {step === 1 && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fade-up">
             <h2 className="text-2xl font-bold">Datos básicos</h2>
 
             <input placeholder="Nombre"
@@ -197,7 +210,7 @@ export default function NutricionCuestionario() {
 
         {/* STEP 2 */}
         {step === 2 && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fade-up">
             <h2 className="text-2xl font-bold">Estilo de vida</h2>
 
             <input placeholder="¿Cuántas horas duermes?"
@@ -239,7 +252,7 @@ export default function NutricionCuestionario() {
         )}
 
         {step === 3 && (
-        <div className="space-y-4">
+        <div className="space-y-4 animate-fade-up">
           <h2 className="text-2xl font-bold">Hábitos y entrenamiento</h2>
       
           <select
@@ -306,7 +319,7 @@ export default function NutricionCuestionario() {
       )}
 
         {step === 4 && (
-        <div className="space-y-4">
+        <div className="space-y-4 animate-fade-up">
           <h2 className="text-2xl font-bold">Salud</h2>
       
           <input
@@ -348,7 +361,7 @@ export default function NutricionCuestionario() {
       )}
 
       {step === 5 && (
-  <div className="space-y-6">
+  <div className="space-y-4 animate-fade-up">
     <h2 className="text-2xl font-bold">Nutrición</h2>
 
     {/* HÁBITOS */}
@@ -453,7 +466,7 @@ export default function NutricionCuestionario() {
 )}
 
         {step === 6 && (
-  <div className="space-y-6">
+  <div className="space-y-4 animate-fade-up">
     
     <h2 className="text-2xl font-bold">
       Último paso
