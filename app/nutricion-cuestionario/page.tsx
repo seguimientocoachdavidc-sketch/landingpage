@@ -2,121 +2,179 @@
 
 import { useState } from "react"
 
-export default function NutricionForm() {
+export default function NutricionCuestionario() {
+
+  const [step, setStep] = useState(1)
+  const [loading, setLoading] = useState(false)
 
   const [form, setForm] = useState({
     nombre: "",
-    email: "",
-    objetivo: "",
-    alergias: "",
-    comidas: "",
-    horario: "",
+    celular: "",
+    eps: "",
+    peso: "",
+    altura: "",
+    edad: "",
+
+    sueno: "",
+    problemasSueno: "",
+    sedentario: "",
+    actividadLigera: "",
+    actividadFisica: "",
   })
 
-  const [loading, setLoading] = useState(false)
-
-const handleSubmit = async (e: any) => {
-  e.preventDefault()
-  setLoading(true)
-
-  try {
-    const res = await fetch("/api/nutricion", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
-    })
-
-    if (res.ok) {
-      alert("Formulario enviado correctamente")
-      setForm({
-        nombre: "",
-        email: "",
-        objetivo: "",
-        alergias: "",
-        comidas: "",
-        horario: "",
-      })
-    } else {
-      alert("Error al enviar el formulario")
+  // VALIDACIÓN
+  const validateStep = () => {
+    if (step === 1) {
+      if (!form.nombre || !form.celular || !form.peso || !form.altura || !form.edad) {
+        alert("Completa todos los datos básicos")
+        return false
+      }
     }
-  } catch (error) {
-    console.error(error)
-    alert("Error de conexión")
+
+    if (step === 2) {
+      if (!form.sueno || !form.sedentario || !form.actividadFisica) {
+        alert("Completa la información de estilo de vida")
+        return false
+      }
+    }
+
+    return true
   }
 
-  setLoading(false)
-}
+  // SUBMIT FINAL
+  const handleSubmit = async () => {
+    setLoading(true)
+
+    try {
+      const res = await fetch("/api/nutricion", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      })
+
+      if (res.ok) {
+        alert("Formulario enviado correctamente")
+      } else {
+        alert("Error al enviar el formulario")
+      }
+
+    } catch (error) {
+      console.error(error)
+      alert("Error de conexión")
+    }
+
+    setLoading(false)
+  }
 
   return (
-    <main className="min-h-screen px-6 py-24">
+    <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black text-white flex items-center justify-center px-4">
 
-      <div className="max-w-3xl mx-auto">
+      <div className="w-full max-w-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-xl">
 
-        <h1 className="font-display text-4xl md:text-6xl uppercase">
-          Evaluación Nutricional
-        </h1>
-
-        <p className="mt-4 text-muted-foreground">
-          Completa este formulario para diseñar tu plan de alimentación personalizado.
-        </p>
-
-        <form onSubmit={handleSubmit} className="mt-12 space-y-6">
-
-          <input
-            placeholder="Nombre"
-            className="w-full border p-3"
-            value={form.nombre}
-            onChange={(e) => setForm({...form, nombre: e.target.value})}
+        {/* PROGRESS BAR */}
+        <div className="w-full bg-white/10 h-2 rounded-full mb-6">
+          <div
+            className="bg-primary h-2 rounded-full transition-all"
+            style={{ width: `${(step / 2) * 100}%` }}
           />
+        </div>
 
-          <input
-            placeholder="Email"
-            className="w-full border p-3"
-            value={form.email}
-            onChange={(e) => setForm({...form, email: e.target.value})}
-          />
+        {/* STEP 1 */}
+        {step === 1 && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Datos básicos</h2>
 
-          <textarea
-            placeholder="¿Cuál es tu objetivo?"
-            className="w-full border p-3"
-            value={form.objetivo}
-            onChange={(e) => setForm({...form, objetivo: e.target.value})}
-          />
+            <input placeholder="Nombre"
+              value={form.nombre}
+              onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+              className="w-full p-3 bg-black/40 border border-white/20 rounded"
+            />
 
-          <textarea
-            placeholder="¿Tienes alergias o restricciones?"
-            className="w-full border p-3"
-            value={form.alergias}
-            onChange={(e) => setForm({...form, alergias: e.target.value})}
-          />
+            <input placeholder="Celular"
+              value={form.celular}
+              onChange={(e) => setForm({ ...form, celular: e.target.value })}
+              className="w-full p-3 bg-black/40 border border-white/20 rounded"
+            />
 
-          <textarea
-            placeholder="Comidas que te gustan / no te gustan"
-            className="w-full border p-3"
-            value={form.comidas}
-            onChange={(e) => setForm({...form, comidas: e.target.value})}
-          />
+            <input placeholder="EPS"
+              value={form.eps}
+              onChange={(e) => setForm({ ...form, eps: e.target.value })}
+              className="w-full p-3 bg-black/40 border border-white/20 rounded"
+            />
 
-          <textarea
-            placeholder="Describe tu horario diario"
-            className="w-full border p-3"
-            value={form.horario}
-            onChange={(e) => setForm({...form, horario: e.target.value})}
-          />
+            <input placeholder="Peso (kg)"
+              value={form.peso}
+              onChange={(e) => setForm({ ...form, peso: e.target.value })}
+              className="w-full p-3 bg-black/40 border border-white/20 rounded"
+            />
 
-          <button
-            type="submit"
-            className="w-full bg-primary text-white py-3 font-bold"
-          >
-            {loading ? "Enviando..." : "Enviar evaluación"}
-          </button>
+            <input placeholder="Altura (cm)"
+              value={form.altura}
+              onChange={(e) => setForm({ ...form, altura: e.target.value })}
+              className="w-full p-3 bg-black/40 border border-white/20 rounded"
+            />
 
-        </form>
+            <input placeholder="Edad"
+              value={form.edad}
+              onChange={(e) => setForm({ ...form, edad: e.target.value })}
+              className="w-full p-3 bg-black/40 border border-white/20 rounded"
+            />
+
+            <button
+              onClick={() => {
+                if (validateStep()) setStep(2)
+              }}
+              className="w-full bg-primary py-3 rounded font-bold"
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2 */}
+        {step === 2 && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Estilo de vida</h2>
+
+            <input placeholder="¿Cuántas horas duermes?"
+              value={form.sueno}
+              onChange={(e) => setForm({ ...form, sueno: e.target.value })}
+              className="w-full p-3 bg-black/40 border border-white/20 rounded"
+            />
+
+            <input placeholder="Horas sedentario"
+              value={form.sedentario}
+              onChange={(e) => setForm({ ...form, sedentario: e.target.value })}
+              className="w-full p-3 bg-black/40 border border-white/20 rounded"
+            />
+
+            <input placeholder="Horas de actividad física"
+              value={form.actividadFisica}
+              onChange={(e) => setForm({ ...form, actividadFisica: e.target.value })}
+              className="w-full p-3 bg-black/40 border border-white/20 rounded"
+            />
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => setStep(1)}
+                className="w-full border border-white/20 py-3 rounded"
+              >
+                Atrás
+              </button>
+
+              <button
+                onClick={handleSubmit}
+                className="w-full bg-green-500 py-3 rounded font-bold"
+              >
+                {loading ? "Enviando..." : "Enviar"}
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
-
-    </main>
+    </div>
   )
 }
