@@ -9,15 +9,18 @@ export async function POST(request: Request) {
 
     const {
       nombre,
-      email,
-      objetivo,
-      alergias,
-      comidas,
-      horario,
+      celular,
+      eps,
+      peso,
+      altura,
+      edad,
+      sueno,
+      sedentario,
+      actividadFisica,
     } = data
 
-    // VALIDACIÓN
-    if (!nombre || !email || !objetivo) {
+    // VALIDACIÓN (adaptada a tu nuevo form)
+    if (!nombre || !celular || !peso || !altura || !edad) {
       return NextResponse.json(
         { error: 'Campos obligatorios incompletos' },
         { status: 400 }
@@ -32,19 +35,22 @@ export async function POST(request: Request) {
       html: `
         <div style="font-family: Arial; max-width: 600px; margin: auto;">
           
-          <h2 style="border-bottom: 1px solid #eee; padding-bottom: 10px;">
-            Nueva Evaluación Nutricional
-          </h2>
+          <h2>Nueva Evaluación Nutricional</h2>
 
+          <h3>Datos básicos</h3>
           <p><strong>Nombre:</strong> ${nombre}</p>
-          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Celular:</strong> ${celular}</p>
+          <p><strong>EPS:</strong> ${eps}</p>
+          <p><strong>Peso:</strong> ${peso} kg</p>
+          <p><strong>Altura:</strong> ${altura} cm</p>
+          <p><strong>Edad:</strong> ${edad}</p>
 
           <hr />
 
-          <p><strong>Objetivo:</strong><br/> ${objetivo || "No especificado"}</p>
-          <p><strong>Alergias:</strong><br/> ${alergias || "Ninguna"}</p>
-          <p><strong>Comidas:</strong><br/> ${comidas || "No especificado"}</p>
-          <p><strong>Horario:</strong><br/> ${horario || "No especificado"}</p>
+          <h3>Estilo de vida</h3>
+          <p><strong>Sueño:</strong> ${sueno}</p>
+          <p><strong>Horas sedentario:</strong> ${sedentario}</p>
+          <p><strong>Actividad física:</strong> ${actividadFisica}</p>
 
         </div>
       `,
@@ -56,7 +62,7 @@ export async function POST(request: Request) {
     console.error('Error sending email:', error)
 
     return NextResponse.json(
-      { error: 'Error al enviar el mensaje' },
+      { error: 'Error al enviar el formulario' },
       { status: 500 }
     )
   }
