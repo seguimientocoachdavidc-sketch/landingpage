@@ -100,4 +100,5 @@ export default function NutricionForm() {
       </div>
 
     </main>
-
+  )
+}
