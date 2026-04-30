@@ -15,21 +15,39 @@ export default function NutricionForm() {
 
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e: any) => {
-    e.preventDefault()
-    setLoading(true)
+const handleSubmit = async (e: any) => {
+  e.preventDefault()
+  setLoading(true)
 
-    await fetch("/api/nutricion", {
+  try {
+    const res = await fetch("/api/nutricion", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(form)
+      body: JSON.stringify(form),
     })
 
-    setLoading(false)
-    alert("Formulario enviado")
+    if (res.ok) {
+      alert("Formulario enviado correctamente")
+      setForm({
+        nombre: "",
+        email: "",
+        objetivo: "",
+        alergias: "",
+        comidas: "",
+        horario: "",
+      })
+    } else {
+      alert("Error al enviar el formulario")
+    }
+  } catch (error) {
+    console.error(error)
+    alert("Error de conexión")
   }
+
+  setLoading(false)
+}
 
   return (
     <main className="min-h-screen px-6 py-24">
