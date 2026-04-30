@@ -158,7 +158,7 @@ export default function NutricionCuestionario() {
 
         {/* STEP 1 */}
         {step === 1 && (
-          <div className="space-y-4 animate-fade-up">
+          <div key="step-1" className="space-y-4 animate-fade-up">
             <h2 className="text-2xl font-bold">Datos básicos</h2>
 
             <input placeholder="Nombre"
@@ -210,7 +210,7 @@ export default function NutricionCuestionario() {
 
         {/* STEP 2 */}
         {step === 2 && (
-          <div className="space-y-4 animate-fade-up">
+          <div key="step-2" className="space-y-4 animate-fade-up">
             <h2 className="text-2xl font-bold">Estilo de vida</h2>
 
             <input placeholder="¿Cuántas horas duermes?"
@@ -252,7 +252,7 @@ export default function NutricionCuestionario() {
         )}
 
         {step === 3 && (
-        <div className="space-y-4 animate-fade-up">
+        <div key="step-3" className="space-y-4 animate-fade-up">
           <h2 className="text-2xl font-bold">Hábitos y entrenamiento</h2>
       
           <select
@@ -319,7 +319,7 @@ export default function NutricionCuestionario() {
       )}
 
         {step === 4 && (
-        <div className="space-y-4 animate-fade-up">
+        <div key="step-4" className="space-y-4 animate-fade-up">
           <h2 className="text-2xl font-bold">Salud</h2>
       
           <input
@@ -361,7 +361,7 @@ export default function NutricionCuestionario() {
       )}
 
       {step === 5 && (
-  <div className="space-y-4 animate-fade-up">
+  <div key="step-5" className="space-y-4 animate-fade-up">
     <h2 className="text-2xl font-bold">Nutrición</h2>
 
     {/* HÁBITOS */}
@@ -466,7 +466,7 @@ export default function NutricionCuestionario() {
 )}
 
         {step === 6 && (
-  <div className="space-y-4 animate-fade-up">
+  <div key="step-6" className="space-y-4 animate-fade-up">
     
     <h2 className="text-2xl font-bold">
       Último paso
