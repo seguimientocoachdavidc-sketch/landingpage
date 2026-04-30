@@ -47,6 +47,12 @@ export default function NutricionCuestionario() {
       noGusta: "",
       restriccionesExtra: "",
       suplementos: "",
+
+    // STEP 6
+      objetivo: "",
+      motivacion: "",
+      nivelMotivacion: "",
+      comentariosFinales: "",
     
   })
 
@@ -86,6 +92,13 @@ export default function NutricionCuestionario() {
       return false
     }
   }
+
+    if (step === 6) {
+      if (!form.objetivo || !form.nivelMotivacion) {
+        alert("Completa tu objetivo y nivel de motivación")
+        return false
+      }
+    }
     
     return true
   }
@@ -126,7 +139,7 @@ export default function NutricionCuestionario() {
         <div className="w-full bg-white/10 h-2 rounded-full mb-6">
           <div
             className="bg-primary h-2 rounded-full transition-all"
-            style={{ width: `${(step / 5) * 100}%` }}
+            style={{ width: `${(step / 6) * 100}%` }}
           />
         </div>
 
@@ -428,7 +441,9 @@ export default function NutricionCuestionario() {
       </button>
 
       <button
-        onClick={handleSubmit}
+        onClick={() => {
+        if (validateStep()) setStep(6)
+      }}
         className="w-full bg-green-500 py-3 rounded font-bold"
       >
         {loading ? "Enviando..." : "Enviar"}
@@ -436,6 +451,95 @@ export default function NutricionCuestionario() {
     </div>
   </div>
 )}
+
+        {step === 6 && (
+  <div className="space-y-6">
+    
+    <h2 className="text-2xl font-bold">
+      Último paso
+    </h2>
+
+    <p className="text-sm text-white/70">
+      Este es el punto donde decides si realmente quieres cambiar.
+    </p>
+
+    {/* OBJETIVO */}
+    <div className="space-y-2">
+      <label className="text-sm text-white/70">¿Cuál es tu objetivo?</label>
+      <select
+        value={form.objetivo}
+        onChange={(e) => setForm({ ...form, objetivo: e.target.value })}
+        className="w-full p-3 bg-black/40 border border-white/20 rounded"
+      >
+        <option value="">Selecciona una opción</option>
+        <option>Ganar masa muscular</option>
+        <option>Perder grasa</option>
+        <option>Recomposición corporal</option>
+        <option>Mejorar hábitos</option>
+        <option>Otro</option>
+      </select>
+    </div>
+
+    {/* MOTIVACIÓN */}
+    <textarea
+      placeholder="¿Por qué quieres lograrlo? (sé específico)"
+      value={form.motivacion}
+      onChange={(e) => setForm({ ...form, motivacion: e.target.value })}
+      className="w-full p-3 bg-black/40 border border-white/20 rounded"
+    />
+
+    {/* NIVEL DE MOTIVACIÓN */}
+    <div className="space-y-2">
+      <label className="text-sm text-white/70">
+        ¿Qué tan comprometido estás?
+      </label>
+
+      <select
+        value={form.nivelMotivacion}
+        onChange={(e) => setForm({ ...form, nivelMotivacion: e.target.value })}
+        className="w-full p-3 bg-black/40 border border-white/20 rounded"
+      >
+        <option value="">Selecciona nivel</option>
+        <option>1-2 (poco compromiso)</option>
+        <option>3-5 (intermedio)</option>
+        <option>6-8 (alto)</option>
+        <option>9-10 (total compromiso)</option>
+      </select>
+    </div>
+
+    {/* COMENTARIOS */}
+    <textarea
+      placeholder="Algo más que deba saber (si no, escribe NA)"
+      value={form.comentariosFinales}
+      onChange={(e) => setForm({ ...form, comentariosFinales: e.target.value })}
+      className="w-full p-3 bg-black/40 border border-white/20 rounded"
+    />
+
+    {/* BOTONES */}
+    <div className="flex gap-4">
+      <button
+        onClick={() => setStep(5)}
+        className="w-full border border-white/20 py-3 rounded"
+      >
+        Atrás
+      </button>
+
+      <button
+        onClick={handleSubmit}
+        className="w-full bg-green-500 py-3 rounded font-bold text-black"
+      >
+        {loading ? "Enviando..." : "Finalizar"}
+      </button>
+    </div>
+
+    {/* CIERRE VISUAL */}
+    <div className="text-center text-xs text-white/50 pt-4">
+      No todos completan este proceso. Si lo hiciste, ya estás un paso adelante.
+    </div>
+
+  </div>
+)}
+
         
       </div>
     </div>
