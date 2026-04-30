@@ -48,6 +48,12 @@ export async function POST(request: Request) {
       restriccionesExtra,
       suplementos,
 
+
+      objetivo,
+      motivacion,
+      nivelMotivacion,
+      comentariosFinales,
+      
     } = data
 
     // VALIDACIÓN MÍNIMA (puedes endurecer luego)
@@ -117,6 +123,12 @@ export async function POST(request: Request) {
         <p><b>No le gusta:</b> ${noGusta}</p>
         <p><b>Restricciones extra:</b> ${restriccionesExtra}</p>
         <p><b>Suplementos:</b> ${suplementos}</p>
+
+        <h3>Objetivo y mentalidad</h3>
+        <p><b>Objetivo:</b> ${objetivo}</p>
+        <p><b>Motivación:</b> ${motivacion}</p>
+        <p><b>Nivel:</b> ${nivelMotivacion}</p>
+        <p><b>Comentarios:</b> ${comentariosFinales}</p>
 
       </div>
       `,
