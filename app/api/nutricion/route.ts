@@ -4,11 +4,22 @@ import { NextResponse } from 'next/server'
 export async function POST(request: Request) {
   try {
     const resend = new Resend(process.env.RESEND_API_KEY)
-    const { name, email, phone, goal } = await request.json()
 
-    if (!name || !email || !phone || !goal) {
+    const data = await request.json()
+
+    const {
+      nombre,
+      email,
+      objetivo,
+      alergias,
+      comidas,
+      horario,
+    } = data
+
+    // VALIDACIÓN
+    if (!nombre || !email || !objetivo) {
       return NextResponse.json(
-        { error: 'Todos los campos son requeridos' },
+        { error: 'Campos obligatorios incompletos' },
         { status: 400 }
       )
     }
@@ -16,26 +27,37 @@ export async function POST(request: Request) {
     await resend.emails.send({
       from: 'Coach David Website <onboarding@resend.dev>',
       to: 'seguimiento.coachdavidc@gmail.com',
-      subject: `Nuevo Diligenciamiento Cuestionario nutrición - ${name}`,
-        html: `
-          <h2>Nueva evaluación nutricional</h2>
-        
-          <p><strong>Nombre:</strong> ${data.nombre}</p>
-          <p><strong>Email:</strong> ${data.email}</p>
-          <p><strong>Objetivo:</strong> ${data.objetivo}</p>
-          <p><strong>Alergias:</strong> ${data.alergias}</p>
-          <p><strong>Comidas:</strong> ${data.comidas}</p>
-          <p><strong>Horario:</strong> ${data.horario}</p>
-        `,
+      subject: `Nueva evaluación nutricional - ${nombre}`,
+
+      html: `
+        <div style="font-family: Arial; max-width: 600px; margin: auto;">
+          
+          <h2 style="border-bottom: 1px solid #eee; padding-bottom: 10px;">
+            Nueva Evaluación Nutricional
+          </h2>
+
+          <p><strong>Nombre:</strong> ${nombre}</p>
+          <p><strong>Email:</strong> ${email}</p>
+
+          <hr />
+
+          <p><strong>Objetivo:</strong><br/> ${objetivo || "No especificado"}</p>
+          <p><strong>Alergias:</strong><br/> ${alergias || "Ninguna"}</p>
+          <p><strong>Comidas:</strong><br/> ${comidas || "No especificado"}</p>
+          <p><strong>Horario:</strong><br/> ${horario || "No especificado"}</p>
+
+        </div>
+      `,
     })
 
     return NextResponse.json({ success: true })
+
   } catch (error) {
     console.error('Error sending email:', error)
+
     return NextResponse.json(
       { error: 'Error al enviar el mensaje' },
       { status: 500 }
     )
   }
 }
-
