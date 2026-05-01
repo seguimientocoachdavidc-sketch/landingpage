@@ -4,59 +4,20 @@ import { NextResponse } from 'next/server'
 export async function POST(request: Request) {
   try {
     const resend = new Resend(process.env.RESEND_API_KEY)
-
     const data = await request.json()
 
     const {
-      // STEP 1
-      nombre,
-      celular,
-      eps,
-      peso,
-      altura,
-      edad,
-
-      // STEP 2
-      sueno,
-      problemasSueno,
-      sedentario,
-      actividadLigera,
-      actividadFisica,
-
-      // STEP 3
-      experiencia,
-      frecuencia,
-      alcohol,
-      fumar,
-
-      // STEP 4
-      enfermedades,
-      patologias,
-      restricciones,
-
-      // STEP 5
-      comidasDia,
-      primeraComida,
-      ultimaComida,
-      proteinas,
-      vegetales,
-      frutas,
-      carbs,
-      comidaRapida,
-      legumbres,
-      noGusta,
-      restriccionesExtra,
-      suplementos,
-
-
-      objetivo,
-      motivacion,
-      nivelMotivacion,
-      comentariosFinales,
-      
+      nombre, celular, eps, peso, altura, edad,
+      sueno, problemasSueno, sedentario, actividadLigera, actividadFisica,
+      experiencia, frecuencia, alcohol, fumar,
+      enfermedades, patologias, restricciones,
+      comidasDia, primeraComida, ultimaComida,
+      proteinas, vegetales, frutas, carbs,
+      comidaRapida, legumbres, noGusta,
+      restriccionesExtra, suplementos,
+      objetivo, motivacion, nivelMotivacion, comentariosFinales,
     } = data
 
-    // VALIDACIÓN MÍNIMA (puedes endurecer luego)
     if (!nombre || !celular || !peso || !altura || !edad) {
       return NextResponse.json(
         { error: 'Faltan datos básicos' },
@@ -64,73 +25,72 @@ export async function POST(request: Request) {
       )
     }
 
+    // Helper para evitar "undefined" en el email
+    const v = (val: string | undefined) => val || 'No indicó'
+
     await resend.emails.send({
+      // ✅ FIX 1: Email sin formato Markdown
       from: 'Coach David Website <onboarding@resend.dev>',
+      // ✅ FIX 2: Email destino limpio, sin Markdown
       to: 'seguimiento.coachdavidc@gmail.com',
       subject: `Nuevo cuestionario nutrición - ${nombre}`,
-
       html: `
-      <div style="font-family: Arial; max-width: 700px; margin: auto;">
+        <div style="font-family: Arial; max-width: 700px; margin: auto; color: #111;">
+          <h2 style="border-bottom: 2px solid #eee; padding-bottom: 8px;">
+            Nuevo cliente — Evaluación completa
+          </h2>
 
-        <h2>Nuevo cliente - Evaluación completa</h2>
+          <h3>Datos básicos</h3>
+          <p><b>Nombre:</b> ${v(nombre)}</p>
+          <p><b>Celular:</b> ${v(celular)}</p>
+          <p><b>EPS:</b> ${v(eps)}</p>
+          <p><b>Peso:</b> ${v(peso)} kg</p>
+          <p><b>Altura:</b> ${v(altura)} cm</p>
+          <p><b>Edad:</b> ${v(edad)}</p>
 
-        <h3>Datos básicos</h3>
-        <p><b>Nombre:</b> ${nombre}</p>
-        <p><b>Celular:</b> ${celular}</p>
-        <p><b>EPS:</b> ${eps}</p>
-        <p><b>Peso:</b> ${peso} kg</p>
-        <p><b>Altura:</b> ${altura} cm</p>
-        <p><b>Edad:</b> ${edad}</p>
+          <hr/>
+          <h3>Estilo de vida</h3>
+          <p><b>Sueño:</b> ${v(sueno)}</p>
+          <p><b>Problemas de sueño:</b> ${v(problemasSueno)}</p>
+          <p><b>Horas sedentario:</b> ${v(sedentario)}</p>
+          <p><b>Actividad ligera:</b> ${v(actividadLigera)}</p>
+          <p><b>Actividad física:</b> ${v(actividadFisica)}</p>
 
-        <hr/>
+          <hr/>
+          <h3>Entrenamiento</h3>
+          <p><b>Experiencia:</b> ${v(experiencia)}</p>
+          <p><b>Frecuencia:</b> ${v(frecuencia)}</p>
+          <p><b>Alcohol:</b> ${v(alcohol)}</p>
+          <p><b>Fumar:</b> ${v(fumar)}</p>
 
-        <h3>Estilo de vida</h3>
-        <p><b>Sueño:</b> ${sueno}</p>
-        <p><b>Problemas sueño:</b> ${problemasSueno}</p>
-        <p><b>Horas sedentario:</b> ${sedentario}</p>
-        <p><b>Actividad ligera:</b> ${actividadLigera}</p>
-        <p><b>Actividad física:</b> ${actividadFisica}</p>
+          <hr/>
+          <h3>Salud</h3>
+          <p><b>Enfermedades:</b> ${v(enfermedades)}</p>
+          <p><b>Patologías:</b> ${v(patologias)}</p>
+          <p><b>Restricciones:</b> ${v(restricciones)}</p>
 
-        <hr/>
+          <hr/>
+          <h3>Nutrición</h3>
+          <p><b>Comidas al día:</b> ${v(comidasDia)}</p>
+          <p><b>Primera comida:</b> ${v(primeraComida)}</p>
+          <p><b>Última comida:</b> ${v(ultimaComida)}</p>
+          <p><b>Proteínas favoritas:</b> ${v(proteinas)}</p>
+          <p><b>Vegetales:</b> ${v(vegetales)}</p>
+          <p><b>Frutas:</b> ${v(frutas)}</p>
+          <p><b>Carbohidratos:</b> ${v(carbs)}</p>
+          <p><b>Comida rápida:</b> ${v(comidaRapida)}</p>
+          <p><b>Legumbres:</b> ${v(legumbres)}</p>
+          <p><b>No le gusta:</b> ${v(noGusta)}</p>
+          <p><b>Restricciones extra:</b> ${v(restriccionesExtra)}</p>
+          <p><b>Suplementos:</b> ${v(suplementos)}</p>
 
-        <h3>Entrenamiento</h3>
-        <p><b>Experiencia:</b> ${experiencia}</p>
-        <p><b>Frecuencia:</b> ${frecuencia}</p>
-        <p><b>Alcohol:</b> ${alcohol}</p>
-        <p><b>Fumar:</b> ${fumar}</p>
-
-        <hr/>
-
-        <h3>Salud</h3>
-        <p><b>Enfermedades:</b> ${enfermedades}</p>
-        <p><b>Patologías:</b> ${patologias}</p>
-        <p><b>Restricciones:</b> ${restricciones}</p>
-
-        <hr/>
-
-        <h3>Nutrición</h3>
-        <p><b>Comidas al día:</b> ${comidasDia}</p>
-        <p><b>Primera comida:</b> ${primeraComida}</p>
-        <p><b>Última comida:</b> ${ultimaComida}</p>
-
-        <p><b>Proteínas:</b> ${proteinas}</p>
-        <p><b>Vegetales:</b> ${vegetales}</p>
-        <p><b>Frutas:</b> ${frutas}</p>
-        <p><b>Carbs:</b> ${carbs}</p>
-        <p><b>Comida rápida:</b> ${comidaRapida}</p>
-        <p><b>Legumbres:</b> ${legumbres}</p>
-
-        <p><b>No le gusta:</b> ${noGusta}</p>
-        <p><b>Restricciones extra:</b> ${restriccionesExtra}</p>
-        <p><b>Suplementos:</b> ${suplementos}</p>
-
-        <h3>Objetivo y mentalidad</h3>
-        <p><b>Objetivo:</b> ${objetivo}</p>
-        <p><b>Motivación:</b> ${motivacion}</p>
-        <p><b>Nivel:</b> ${nivelMotivacion}</p>
-        <p><b>Comentarios:</b> ${comentariosFinales}</p>
-
-      </div>
+          <hr/>
+          <h3>Objetivo y mentalidad</h3>
+          <p><b>Objetivo:</b> ${v(objetivo)}</p>
+          <p><b>Motivación:</b> ${v(motivacion)}</p>
+          <p><b>Nivel de compromiso:</b> ${v(nivelMotivacion)}</p>
+          <p><b>Comentarios:</b> ${v(comentariosFinales)}</p>
+        </div>
       `,
     })
 
@@ -138,7 +98,6 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Error:', error)
-
     return NextResponse.json(
       { error: 'Error al enviar formulario' },
       { status: 500 }
