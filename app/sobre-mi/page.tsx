@@ -2,10 +2,10 @@ export default function SobreMi() {
   return (
     <main className="min-h-screen bg-black text-white overflow-hidden">
 
-      {/* HERO PRO */}
-      <section className="relative h-[80vh] flex items-center justify-center text-center px-6">
+      {/* HERO CON VIDEO */}
+      <section className="relative h-[80vh] flex items-center justify-center text-center px-6 overflow-hidden">
 
-        {/* VIDEO / IMAGEN FONDO */}
+        {/* VIDEO */}
         <video
           autoPlay
           loop
@@ -13,10 +13,10 @@ export default function SobreMi() {
           playsInline
           className="absolute inset-0 w-full h-full object-cover opacity-40"
         >
-          <source src="/0501.mp4" type="video/mp4" />
+          <source src="/0502.mp4" type="video/mp4" />
         </video>
 
-        {/* OVERLAY ROJO */}
+        {/* OVERLAY */}
         <div className="absolute inset-0 bg-gradient-to-br from-black via-black/80 to-red-900/60" />
 
         {/* CONTENIDO */}
@@ -27,15 +27,28 @@ export default function SobreMi() {
           </h1>
 
           <p className="mt-6 text-lg text-white/70">
-            No es motivación. No es suerte. Es estructura, ciencia y ejecución.
+            No es motivación. Es estructura, ciencia y ejecución.
           </p>
         </div>
 
       </section>
 
-      {/* QUIÉN SOY (MEJORADO) */}
-      <section className="py-24 px-6 border-t border-white/10">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+      {/* QUIÉN SOY CON FONDO */}
+      <section className="relative py-24 px-6 border-t border-white/10 overflow-hidden">
+
+        {/* IMAGEN DE FONDO */}
+        <div className="absolute inset-0">
+          <img
+            src="/gym-2.jpg"
+            className="w-full h-full object-cover opacity-20"
+          />
+        </div>
+
+        {/* OVERLAY */}
+        <div className="absolute inset-0 bg-black/80" />
+
+        {/* CONTENIDO */}
+        <div className="relative z-10 max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
 
           {/* TEXTO */}
           <div>
@@ -62,7 +75,7 @@ export default function SobreMi() {
             </p>
           </div>
 
-          {/* IMAGEN CON EFECTO */}
+          {/* IMAGEN PRINCIPAL */}
           <div className="relative">
             <img
               src="/Entrenando_2.jpeg"
@@ -76,7 +89,7 @@ export default function SobreMi() {
         </div>
       </section>
 
-      {/* EXPERIENCIA (MÁS IMPACTO) */}
+      {/* EXPERIENCIA */}
       <section className="py-24 border-t border-white/10 px-6">
         <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-10 text-center">
 
@@ -98,21 +111,37 @@ export default function SobreMi() {
         </div>
       </section>
 
-      {/* FILOSOFÍA (MÁS AGRESIVA) */}
-      <section className="py-32 border-t border-white/10 px-6 text-center">
-        <h2 className="font-display text-4xl md:text-6xl uppercase">
-          Filosofía
-        </h2>
+      {/* FILOSOFÍA CON FONDO */}
+      <section className="relative py-32 border-t border-white/10 px-6 text-center overflow-hidden">
 
-        <p className="mt-8 text-2xl max-w-3xl mx-auto font-semibold">
-          Si no puedes medir tu progreso,<br />
-          <span className="text-red-500">no puedes mejorarlo.</span>
-        </p>
+        {/* FONDO */}
+        <div className="absolute inset-0">
+          <img
+            src="/gym-dark.jpg"
+            className="w-full h-full object-cover opacity-20"
+          />
+        </div>
 
-        <p className="mt-6 text-white/60 max-w-xl mx-auto">
-          Entrenar sin estructura no es disciplina.
-          Es simplemente perder el tiempo.
-        </p>
+        {/* OVERLAY */}
+        <div className="absolute inset-0 bg-black/85" />
+
+        {/* CONTENIDO */}
+        <div className="relative z-10">
+          <h2 className="font-display text-4xl md:text-6xl uppercase">
+            Filosofía
+          </h2>
+
+          <p className="mt-8 text-2xl max-w-3xl mx-auto font-semibold">
+            Si no puedes medir tu progreso,<br />
+            <span className="text-red-500">no puedes mejorarlo.</span>
+          </p>
+
+          <p className="mt-6 text-white/60 max-w-xl mx-auto">
+            Entrenar sin estructura no es disciplina.
+            Es simplemente perder el tiempo.
+          </p>
+        </div>
+
       </section>
 
       {/* CTA FINAL */}
