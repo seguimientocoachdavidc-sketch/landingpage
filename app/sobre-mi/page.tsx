@@ -4,7 +4,7 @@ export default function SobreMi() {
 
       {/* HERO CON VIDEO */}
       <section className="relative h-[80vh] flex items-center justify-center text-center px-6 overflow-hidden">
-
+        
         {/* VIDEO */}
         <video
           autoPlay
