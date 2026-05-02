@@ -13,7 +13,7 @@ export default function SobreMi() {
           playsInline
           className="absolute inset-0 w-full h-full object-cover opacity-40"
         >
-          <source src="/gym-loop.mp4" type="video/mp4" />
+          <source src="/0501.mp4" type="video/mp4" />
         </video>
 
         {/* OVERLAY ROJO */}
