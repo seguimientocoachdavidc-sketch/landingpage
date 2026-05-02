@@ -7,6 +7,13 @@ export default function NutricionCuestionario() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
 
+  const [toast, setToast] = useState<{type: 'success' | 'error' | 'warning', msg: string} | null>(null)
+
+  const showToast = (type: 'success' | 'error' | 'warning', msg: string) => {
+    setToast({ type, msg })
+    setTimeout(() => setToast(null), 5000)
+  }
+
   const [form, setForm] = useState({
     nombre: "", celular: "", eps: "", peso: "", altura: "", edad: "",
     sueno: "", problemasSueno: "", sedentario: "", actividadLigera: "", actividadFisica: "",
@@ -18,66 +25,67 @@ export default function NutricionCuestionario() {
     objetivo: "", motivacion: "", nivelMotivacion: "", comentariosFinales: "",
   })
 
-  const validateStep = () => {
-    if (step === 1) {
-      if (!form.nombre || !form.celular || !form.peso || !form.altura || !form.edad) {
-        alert("Completa todos los datos básicos")
-        return false
+      const validateStep = () => {
+      if (step === 1) {
+        if (!form.nombre || !form.celular || !form.peso || !form.altura || !form.edad) {
+          showToast('warning', 'Completa todos los datos básicos antes de continuar.')
+          return false
+        }
       }
-    }
-    if (step === 2) {
-      if (!form.sueno || !form.sedentario || !form.actividadFisica) {
-        alert("Completa la información de estilo de vida")
-        return false
+      if (step === 2) {
+        if (!form.sueno || !form.sedentario || !form.actividadFisica) {
+          showToast('warning', 'Completa la información de estilo de vida.')
+          return false
+        }
       }
-    }
-    if (step === 3) {
-      if (!form.experiencia || !form.frecuencia || !form.alcohol || !form.fumar) {
-        alert("Completa tus hábitos")
-        return false
+      if (step === 3) {
+        if (!form.experiencia || !form.frecuencia || !form.alcohol || !form.fumar) {
+          showToast('warning', 'Completa todos tus hábitos antes de continuar.')
+          return false
+        }
       }
-    }
-    if (step === 4) {
-      if (!form.enfermedades) {
-        alert("Completa la información de salud")
-        return false
+      if (step === 4) {
+        if (!form.enfermedades) {
+          showToast('warning', 'Completa la información de salud.')
+          return false
+        }
       }
-    }
-    if (step === 5) {
-      if (!form.comidasDia || !form.primeraComida || !form.proteinas) {
-        alert("Completa la sección de nutrición")
-        return false
+      if (step === 5) {
+        if (!form.comidasDia || !form.primeraComida || !form.proteinas) {
+          showToast('warning', 'Completa la sección de nutrición.')
+          return false
+        }
       }
-    }
-    if (step === 6) {
-      if (!form.objetivo || !form.nivelMotivacion) {
-        alert("Completa tu objetivo y nivel de motivación")
-        return false
+      if (step === 6) {
+        if (!form.objetivo || !form.nivelMotivacion) {
+          showToast('warning', 'Selecciona tu objetivo y nivel de compromiso.')
+          return false
+        }
       }
+      return true
     }
-    return true
-  }
 
-  const handleSubmit = async () => {
-    if (!validateStep()) return
-    setLoading(true)
-    try {
-      const res = await fetch("/api/nutricion", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      })
-      if (res.ok) {
-        alert("Formulario enviado correctamente ✅")
-      } else {
-        alert("Error al enviar el formulario. Intenta de nuevo.")
+    const handleSubmit = async () => {
+      if (!validateStep()) return
+      setLoading(true)
+      try {
+        const res = await fetch("/api/nutricion", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        })
+        if (res.ok) {
+          showToast('success', 'Tus respuestas llegaron correctamente. Te contactaré pronto.')
+        } else {
+          const status = res.status
+          showToast('error', `Hubo un problema al procesar tu formulario (código ${status}). Intenta en unos minutos.`)
+        }
+      } catch (error) {
+        console.error(error)
+        showToast('error', 'No se pudo enviar el formulario. Verifica tu internet e intenta de nuevo.')
       }
-    } catch (error) {
-      console.error(error)
-      alert("Error de conexión. Verifica tu internet.")
+      setLoading(false)
     }
-    setLoading(false)
-  }
 
   const inputClass = "w-full p-3 bg-black/40 border border-white/20 rounded text-white placeholder-white/40"
   const btnBack = "w-full border border-white/20 py-3 rounded text-white"
@@ -285,6 +293,21 @@ export default function NutricionCuestionario() {
           )}
 
         </div> {/* ✅ FIX 1: Aquí cierra correctamente el card principal */}
+
+        {/* TOAST DE NOTIFICACIONES */}
+        {toast && (
+          <div className={`mt-4 p-4 rounded-lg border text-sm flex gap-3 items-start
+            ${toast.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' : ''}
+            ${toast.type === 'error'   ? 'bg-red-500/10   border-red-500/30   text-red-400'   : ''}
+            ${toast.type === 'warning' ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400' : ''}
+          `}>
+            <span className="font-bold text-base leading-none mt-0.5">
+              {toast.type === 'success' ? '✓' : '!'}
+            </span>
+            <span>{toast.msg}</span>
+          </div>
+        )}
+        
       </div>
     </div>
   )
