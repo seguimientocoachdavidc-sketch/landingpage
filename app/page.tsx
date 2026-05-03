@@ -8,7 +8,7 @@ export default function Home() {
         {/* FONDO */}
         <div className="absolute inset-0">
           <img
-            src="/Entrenando_1.jpeg"
+            src="/0502.mp4"
             alt="Coach David entrenando"
             className="w-full h-full object-cover opacity-40"
           />
