@@ -14,7 +14,7 @@ export default function Home() {
           playsInline
           className="absolute inset-0 w-full h-full object-cover opacity-40"
         >
-          <source src="/hero.mp4" type="video/mp4" />
+          <source src="/0502.mp4" type="video/mp4" />
         </video>
           <div className="absolute inset-0 bg-black/70" />
         </div>
