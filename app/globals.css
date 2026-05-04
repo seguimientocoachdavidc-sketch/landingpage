@@ -120,4 +120,19 @@
   .animate-pulse-glow {
     animation: pulse-glow 2.5s ease-in-out infinite;
   }
+  .input {
+  width: 100%;
+  padding: 12px;
+  background: #111;
+  border: 1px solid #333;
+  color: white;
+}
+
+.btn {
+  width: 100%;
+  padding: 14px;
+  background: white;
+  color: black;
+  font-weight: bold;
+  }
 }
