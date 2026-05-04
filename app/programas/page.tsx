@@ -7,7 +7,7 @@ export default function Programas() {
 
         <div className="absolute inset-0">
           <img
-            src="/Logo letra blanca arriba.jpg"
+            src="/gym-2.jpg"
             className="w-full h-full object-cover opacity-30"
           />
           <div className="absolute inset-0 bg-black/70" />
@@ -20,7 +20,7 @@ export default function Programas() {
 
           <h1 className="font-display text-5xl md:text-7xl uppercase mt-6">
             No diseño "rutinas" de gimnasio.<br />
-            Construyo resultados a partir de programas de Entrenamiento basado en Ciencia
+            Construyo resultados con estructura y Ciencia.
           </h1>
 
           <p className="mt-6 text-lg text-muted-foreground">
@@ -117,7 +117,7 @@ export default function Programas() {
 
             <div className="mt-10">
               <div className="text-4xl font-display text-primary">
-                $125.000 <span className="text-sm text-muted-foreground">/mes</span>
+                $130.000 <span className="text-sm text-muted-foreground">/mes</span>
               </div>
 
               <a
@@ -178,11 +178,11 @@ export default function Programas() {
             <div className="mt-10">
 
               <div className="text-sm line-through text-muted-foreground">
-                $260.000
+                $270.000
               </div>
 
               <div className="text-5xl font-display text-primary">
-                $210.000 (20% off) <span className="text-sm text-muted-foreground">/mes</span>
+                $220.000 <span className="text-sm text-muted-foreground">/mes</span> <span className="text-5xl font-display text-primary">/(20% off)</span>
               </div>
 
               <a
