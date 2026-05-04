@@ -33,99 +33,95 @@ export default function SobreMi() {
 
       </section>
 
-      {/* QUIÉN SOY CON FONDO */}
+      {/* QUIÉN SOY */}
       <section className="relative py-24 px-6 border-t border-white/10 overflow-hidden">
 
-        {/* IMAGEN DE FONDO */}
+        {/* FONDO */}
         <div className="absolute inset-0">
           <img
             src="/gym-2.jpg"
+            alt=""
             className="w-full h-full object-cover opacity-20"
           />
         </div>
 
-        {/* OVERLAY */}
         <div className="absolute inset-0 bg-black/80" />
 
-        {/* CONTENIDO */}
-                      <div>
-                <h2 className="font-display text-4xl md:text-6xl uppercase">
-                  Conoce al Coach
-                </h2>
-              
-                <div className="w-16 h-1 bg-red-500 mt-6 mb-8" />
-              
-                <p className="text-white/70 leading-relaxed max-w-xl">
-                  Soy David, Coach especializado en hipertrofia y rendimiento físico.
-                  Mi enfoque combina formación estructurada con aplicación práctica real.
+        {/* CONTENIDO GRID (FIX CLAVE) */}
+        <div className="relative z-10 max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+
+          {/* TEXTO */}
+          <div>
+            <h2 className="font-display text-4xl md:text-6xl uppercase">
+              Conoce al Coach
+            </h2>
+
+            <div className="w-16 h-1 bg-red-500 mt-6 mb-8" />
+
+            <p className="text-white/70 leading-relaxed max-w-xl">
+              Soy David, Coach especializado en hipertrofia y rendimiento físico.
+              Mi enfoque combina formación estructurada con aplicación práctica real.
+            </p>
+
+            {/* ESTUDIOS */}
+            <div className="mt-10 space-y-6">
+
+              <div className="p-6 border border-white/10 bg-white/5 backdrop-blur">
+                <p className="text-sm uppercase tracking-widest text-white/40 mb-3">
+                  Formación técnica
                 </p>
-              
-                {/* BLOQUE DE ESTUDIOS */}
-                <div className="mt-10 space-y-6">
-              
-                  {/* BLOQUE 1 */}
-                  <div className="p-6 border border-white/10 bg-white/5 backdrop-blur">
-                    <p className="text-sm uppercase tracking-widest text-white/40 mb-3">
-                      Formación técnica
-                    </p>
-              
-                    <ul className="space-y-2 text-white/80">
-                      <li>✔ Técnico en Entrenamiento de Gimnasio — CCAPF</li>
-                      <li>✔ Técnico en Entrenamiento Personalizado — CCAPF</li>
-                    </ul>
-                  </div>
-              
-                  {/* BLOQUE 2 */}
-                  <div className="p-6 border border-white/10 bg-white/5 backdrop-blur">
-                    <p className="text-sm uppercase tracking-widest text-white/40 mb-3">
-                      Especializaciones
-                    </p>
-              
-                    <ul className="space-y-2 text-white/80">
-                      <li>✔ Hipertrofia muscular — ECEP</li>
-                      <li>✔ Entrenamiento en mujeres — ECEP</li>
-                      <li>✔ Biomecánica deportiva — Fitness & Health Institute</li>
-                      <li>✔ Nutrición deportiva — Fitness & Health Institute</li>
-                    </ul>
-                  </div>
-              
-                  {/* BLOQUE 3 */}
-                  <div className="p-6 border border-red-500/30 bg-red-500/5">
-                    <p className="text-sm uppercase tracking-widest text-red-400 mb-3">
-                      Formación actual
-                    </p>
-              
-                    <ul className="space-y-2 text-white/80">
-                      <li>→ Nutrición y suplementación — INAF</li>
-                      <li>→ Certificación profesional en musculación — INAF</li>
-                    </ul>
-                  </div>
-              
-                </div>
-              
-                {/* CIERRE */}
-                <p className="mt-8 text-white/70 leading-relaxed max-w-xl">
-                  Trabajo con variables medibles: volumen, intensidad y progresión.
-                  Nada queda al azar.
-                </p>
-              
-                <p className="mt-4 text-white/70 leading-relaxed max-w-xl">
-                  Si entrenas conmigo, no entrenas más duro.
-                  <span className="text-red-500"> Entrenas mejor.</span>
-                </p>
+                <ul className="space-y-2 text-white/80">
+                  <li>✔ Técnico en Entrenamiento de Gimnasio — CCAPF</li>
+                  <li>✔ Técnico en Entrenamiento Personalizado — CCAPF</li>
+                </ul>
               </div>
 
-          {/* IMAGEN PRINCIPAL */}
+              <div className="p-6 border border-white/10 bg-white/5 backdrop-blur">
+                <p className="text-sm uppercase tracking-widest text-white/40 mb-3">
+                  Especializaciones
+                </p>
+                <ul className="space-y-2 text-white/80">
+                  <li>✔ Hipertrofia muscular — ECEP</li>
+                  <li>✔ Entrenamiento en mujeres — ECEP</li>
+                  <li>✔ Biomecánica deportiva — Fitness & Health Institute</li>
+                  <li>✔ Nutrición deportiva — Fitness & Health Institute</li>
+                </ul>
+              </div>
+
+              <div className="p-6 border border-red-500/30 bg-red-500/5">
+                <p className="text-sm uppercase tracking-widest text-red-400 mb-3">
+                  Formación actual
+                </p>
+                <ul className="space-y-2 text-white/80">
+                  <li>→ Nutrición y suplementación — INAF</li>
+                  <li>→ Certificación profesional en musculación — INAF</li>
+                </ul>
+              </div>
+
+            </div>
+
+            <p className="mt-8 text-white/70 leading-relaxed max-w-xl">
+              Trabajo con variables medibles: volumen, intensidad y progresión.
+              Nada queda al azar.
+            </p>
+
+            <p className="mt-4 text-white/70 leading-relaxed max-w-xl">
+              Si entrenas conmigo, no entrenas más duro.
+              <span className="text-red-500"> Entrenas mejor.</span>
+            </p>
+          </div>
+
+          {/* IMAGEN */}
           <div className="relative">
             <img
               src="/Entrenando_2.jpeg"
               alt="Coach David"
               className="w-full rounded-sm border border-white/10"
             />
-
             <div className="absolute inset-0 border border-red-500/40 translate-x-4 translate-y-4" />
           </div>
-        
+
+        </div>
       </section>
 
       {/* EXPERIENCIA */}
@@ -150,21 +146,19 @@ export default function SobreMi() {
         </div>
       </section>
 
-      {/* FILOSOFÍA CON FONDO */}
+      {/* FILOSOFÍA */}
       <section className="relative py-32 border-t border-white/10 px-6 text-center overflow-hidden">
 
-        {/* FONDO */}
         <div className="absolute inset-0">
           <img
             src="/gym-dark.jpg"
+            alt=""
             className="w-full h-full object-cover opacity-20"
           />
         </div>
 
-        {/* OVERLAY */}
         <div className="absolute inset-0 bg-black/85" />
 
-        {/* CONTENIDO */}
         <div className="relative z-10">
           <h2 className="font-display text-4xl md:text-6xl uppercase">
             Filosofía
@@ -183,7 +177,7 @@ export default function SobreMi() {
 
       </section>
 
-      {/* CTA FINAL */}
+      {/* CTA */}
       <section className="py-32 border-t border-white/10 text-center px-6">
 
         <h2 className="font-display text-4xl md:text-6xl uppercase">
@@ -195,10 +189,10 @@ export default function SobreMi() {
         </p>
 
         <a
-          href="/asesoria"
+          href="/programas"
           className="inline-block mt-10 bg-red-500 hover:bg-red-600 text-white px-10 py-4 font-bold uppercase transition-all hover:scale-105"
         >
-          Ver asesoría
+          Ver programas
         </a>
 
       </section>
