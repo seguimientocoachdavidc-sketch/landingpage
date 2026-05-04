@@ -67,10 +67,10 @@ export default function Navbar() {
           </a>
 
           <a
-            href="/asesoria"
+            href="/programas"
             className="relative overflow-hidden bg-red-500 text-white px-6 py-2 text-sm font-semibold uppercase tracking-wide transition-all duration-300 hover:scale-105"
           >
-            Aplicar
+            Ver programas
 
             {/* EFECTO GLOW */}
             <span className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition" />
