@@ -34,23 +34,24 @@ export default function Navbar() {
         {/* MENU */}
         <nav className="hidden md:flex items-center gap-10 text-sm uppercase tracking-wider">
 
-          {[
-            { name: "Inicio", href: "/" },
-            { name: "Asesoría", href: "/asesoria" },
-            { name: "Sobre mí", href: "/sobre-mi" },
-            { name: "Blog", href: "/blog" },
-          ].map((item) => (
-            <a
-              key={item.name}
-              href={item.href}
-              className="relative text-white/60 hover:text-white transition group"
-            >
-              {item.name}
-
-              {/* UNDERLINE ANIMADO */}
-              <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-red-500 transition-all duration-300 group-hover:w-full" />
-            </a>
-          ))}
+        {[
+          { name: "Inicio", href: "/" },
+          { name: "Programas", href: "/programas" }, // 👈 NUEVO
+          { name: "Asesoría", href: "/asesoria" },
+          { name: "Sobre mí", href: "/sobre-mi" },
+          { name: "Blog", href: "/blog" },
+        ].map((item) => (
+          <a
+            key={item.name}
+            href={item.href}
+            className="relative text-white/60 hover:text-white transition group"
+          >
+            {item.name}
+        
+            {/* UNDERLINE ANIMADO */}
+            <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-red-500 transition-all duration-300 group-hover:w-full" />
+          </a>
+        ))}
 
         </nav>
 
