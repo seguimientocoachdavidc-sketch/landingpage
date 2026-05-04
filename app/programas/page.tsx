@@ -48,7 +48,8 @@ export default function Programas() {
             </p>
 
             <ul className="mt-8 space-y-3 text-muted-foreground">
-              <li>✔ Plan de Entrenamiento personalizado</li>
+              <li>✔ Recolección de Información (Historial Fisico y Médico)</li>
+              <li>✔ Pruebas físicas diagnosticas</li>
               <li>✔ Programa estructurado por objetivos</li>
               <li>✔ Progresión planificada</li>
               <li>✔ Ajustes según rendimiento</li>
