@@ -369,12 +369,12 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
 
         <h1 className="f2" style={{ fontFamily: "'Barlow Condensed', Impact, sans-serif", fontSize: "clamp(62px, 9vw, 116px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.87, letterSpacing: "-0.02em", marginBottom: 36 }}>
           CUESTIONARIO<br />
-          <span style={{ color: R, textShadow: `0 0 60px ${R}40` }}>DE NUTRICIÓN</span>
+          <span style={{ color: R, textShadow: `0 0 60px ${R}40` }}>DIAGNOSTICO ALIMENTICIO</span>
         </h1>
 
         <div className="f3" style={{ maxWidth: 600, marginBottom: 40 }}>
           <p style={{ fontSize: 17, color: "rgba(255,255,255,0.5)", lineHeight: 1.75, fontWeight: 300, marginBottom: 16 }}>
-            Este formulario recopila la información necesaria para diseñar tu plan de alimentación personalizado. Nos permite entender tus hábitos, preferencias y objetivos para crear una estrategia que realmente funcione.
+            Este formulario recopila la información necesaria para diseñar tu guía de alimentación personalizada. Nos permite entender tus hábitos, preferencias y objetivos para crear una estrategia que realmente funcione.
           </p>
           <p style={{ fontSize: 14, color: "rgba(255,255,255,0.28)", lineHeight: 1.6, fontWeight: 300 }}>
             No te tomará más de <strong style={{ color: "rgba(255,255,255,0.55)" }}>10 minutos</strong>. Toda la información será tratada de forma confidencial.
