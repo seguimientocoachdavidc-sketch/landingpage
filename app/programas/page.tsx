@@ -7,7 +7,7 @@ export default function Programas() {
 
         <div className="absolute inset-0">
           <img
-            src="/Entrenando_2.jpeg"
+            src="/Logo Letra negra.jpeg"
             className="w-full h-full object-cover opacity-30"
           />
           <div className="absolute inset-0 bg-black/70" />
