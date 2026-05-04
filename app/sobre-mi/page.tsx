@@ -101,8 +101,8 @@ export default function SobreMi() {
             </div>
 
             <p className="mt-8 text-white/70 leading-relaxed max-w-xl">
-              Trabajo con variables medibles: volumen, intensidad y progresión.
-              Nada queda al azar.
+              Trabajo con una estructura clara y que funciona. 
+              Y si no funciona, la ajustamos. 
             </p>
 
             <p className="mt-4 text-white/70 leading-relaxed max-w-xl">
@@ -170,8 +170,8 @@ export default function SobreMi() {
           </p>
 
           <p className="mt-6 text-white/60 max-w-xl mx-auto">
-            Entrenar sin estructura no es disciplina.
-            Es simplemente perder el tiempo.
+            Aprende a entrenar y enamorate del proceso. 
+            Vamos a lograr un nuevo nivel. 
           </p>
         </div>
 
@@ -181,18 +181,18 @@ export default function SobreMi() {
       <section className="py-32 border-t border-white/10 text-center px-6">
 
         <h2 className="font-display text-4xl md:text-6xl uppercase">
-          Deja de improvisar.
+          Aprende a entrenar de verdad. 
         </h2>
 
         <p className="mt-4 text-white/60">
-          Empieza a entrenar con un sistema real.
+          Con un sistema real.
         </p>
 
         <a
           href="/programas"
           className="inline-block mt-10 bg-red-500 hover:bg-red-600 text-white px-10 py-4 font-bold uppercase transition-all hover:scale-105"
         >
-          Ver programas
+          Ver detalle de programas 
         </a>
 
       </section>
