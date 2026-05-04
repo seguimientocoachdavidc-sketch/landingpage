@@ -182,7 +182,7 @@ export default function Programas() {
               </div>
 
               <div className="text-5xl font-display text-primary">
-                $220.000 <span className="text-sm text-muted-foreground">/mes</span> <span className="text-5xl font-display text-primary">/(20% off)</span>
+                $220.000 <span className="text-sm text-muted-foreground">/mes</span> <span className="text-5xl font-display text-primary"> (20% off)</span>
               </div>
 
               <a
