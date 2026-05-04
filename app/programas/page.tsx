@@ -7,7 +7,7 @@ export default function Programas() {
 
         <div className="absolute inset-0">
           <img
-            src="/Logo Letra negra.jpg"
+            src="/Logo letra blanca arriba.jpg"
             className="w-full h-full object-cover opacity-30"
           />
           <div className="absolute inset-0 bg-black/70" />
@@ -19,13 +19,13 @@ export default function Programas() {
           </span>
 
           <h1 className="font-display text-5xl md:text-7xl uppercase mt-6">
-            No vendes rutinas.<br />
-            Construyes resultados.
+            No diseño "rutinas" de gimnasio.<br />
+            Construyo resultados a partir de programas de Entrenamiento basado en Ciencia
           </h1>
 
           <p className="mt-6 text-lg text-muted-foreground">
-            Cada programa está diseñado con estructura, seguimiento y progresión real.
-            Aquí no improvisas. Ejecutas.
+            Cada programa está diseñado con estructura, seguimiento y progresión. 
+            No improvisamos. Ejecutamos de acuerdo con tus condiciones. 
           </p>
         </div>
 
@@ -39,25 +39,26 @@ export default function Programas() {
           {/* TEXTO */}
           <div>
             <h2 className="font-display text-4xl md:text-6xl uppercase">
-              Programa de entrenamiento
+              Programa de entrenamiento Personalizado
             </h2>
 
             <p className="mt-6 text-muted-foreground leading-relaxed">
-              Un sistema estructurado basado en variables reales de entrenamiento:
-              volumen, intensidad y progresión.
+              Un sistema de Coaching Estructurado de forma Personalizada basado en la ciencia del Entrenamiento de Fuerza e Hipertrofia:
+              Volumen, intensidad, tensión mecanica, sobrecarga progresiva.
             </p>
 
             <ul className="mt-8 space-y-3 text-muted-foreground">
-              <li>✔ Plan completamente personalizado</li>
-              <li>✔ Rutina estructurada por objetivos</li>
-              <li>✔ Progresión semanal planificada</li>
+              <li>✔ Plan de Entrenamiento personalizado</li>
+              <li>✔ Programa estructurado por objetivos</li>
+              <li>✔ Progresión planificada</li>
               <li>✔ Ajustes según rendimiento</li>
-              <li>✔ Seguimiento 1 a 1</li>
+              <li>✔ Seguimiento 1 a 1 constantes</li>
+              <li>✔ Aprenderás a Entrenar de forma optima</li>
             </ul>
 
             <div className="mt-10">
               <div className="text-4xl font-display text-primary">
-                $135.000 <span className="text-sm text-muted-foreground">/mes</span>
+                $140.000 <span className="text-sm text-muted-foreground">/mes</span>
               </div>
 
               <a
@@ -97,20 +98,20 @@ export default function Programas() {
           {/* TEXTO */}
           <div className="order-1 md:order-2">
             <h2 className="font-display text-4xl md:text-6xl uppercase">
-              Plan de alimentación
+              Estrategia/guía de alimentación
             </h2>
 
             <p className="mt-6 text-muted-foreground leading-relaxed">
-              No es una dieta genérica. Es un sistema adaptado a tu contexto,
-              hábitos y preferencias reales.
+              No es solo "una dieta" genérica. Es una estrategia de alimentación adaptada a tu contexto,
+              hábitos y preferencias.
             </p>
 
             <ul className="mt-8 space-y-3 text-muted-foreground">
-              <li>✔ Evaluación nutricional completa</li>
-              <li>✔ Plan adaptado a tus gustos</li>
+              <li>✔ Revisión de habitos alimenticios</li>
+              <li>✔ Recolección de Información</li>
+              <li>✔ Guía de alimentación adaptada a tus gustos</li>
               <li>✔ Ajustes constantes</li>
-              <li>✔ Educación nutricional real</li>
-              <li>✔ Seguimiento continuo</li>
+              <li>✔ Seguimientos continuo</li>
             </ul>
 
             <div className="mt-10">
@@ -167,9 +168,10 @@ export default function Programas() {
 
             <ul className="mt-6 space-y-2 text-muted-foreground">
               <li>✔ Todo el programa de entrenamiento</li>
-              <li>✔ Todo el plan de alimentación</li>
+              <li>✔ Toda la guía de alimentación</li>
               <li>✔ Seguimiento completo</li>
               <li>✔ Ajustes constantes</li>
+              <li>✔ Tips y recomendaciones Avanzadas</li>
             </ul>
 
             <div className="mt-10">
@@ -179,7 +181,7 @@ export default function Programas() {
               </div>
 
               <div className="text-5xl font-display text-primary">
-                $210.000 <span className="text-sm text-muted-foreground">/mes</span>
+                $210.000 (20% off) <span className="text-sm text-muted-foreground">/mes</span>
               </div>
 
               <a
@@ -202,15 +204,15 @@ export default function Programas() {
       <section className="py-32 border-t border-border text-center px-6">
 
         <h2 className="font-display text-4xl md:text-6xl uppercase">
-          Puedes seguir improvisando…<br />
-          o empezar a hacerlo bien.
+          Quiero ayudarte a que lo hagas de forma correcta…<br />
+          Avancemos a un nuevo nivel.
         </h2>
 
         <a
           href="/asesoria"
           className="inline-block mt-10 bg-primary text-primary-foreground px-8 py-4 font-bold uppercase"
         >
-          Aplicar a asesoría
+          Aplicar a asesoría aquí
         </a>
 
       </section>
