@@ -125,8 +125,7 @@ export default function SobreMi() {
 
             <div className="absolute inset-0 border border-red-500/40 translate-x-4 translate-y-4" />
           </div>
-
-        </div>
+        
       </section>
 
       {/* EXPERIENCIA */}
