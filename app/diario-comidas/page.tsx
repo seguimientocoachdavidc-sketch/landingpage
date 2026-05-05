@@ -22,12 +22,23 @@ export default function DiarioComidas() {
     })
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    console.log(form)
+const handleSubmit = async (e) => {
+  e.preventDefault()
 
-    alert("Diario registrado correctamente ✅")
+  const res = await fetch("/api/diario", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(form)
+  })
+
+  if (res.ok) {
+    alert("Diario enviado ✅")
+  } else {
+    alert("Error ❌")
   }
+}
 
   return (
     <main className="min-h-screen bg-black text-white px-6 py-20">
