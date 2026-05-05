@@ -1,517 +1,855 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import Image from "next/image"
-import { ArrowRight, X, Target, MessageCircle, TrendingUp } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 
-const problemas = [
-  { t: "Entrenas sin estructura", d: "Cambias de rutina cada semana, copias lo que ves en redes y nunca sabes si lo que haces realmente funciona." },
-  { t: "No aplicas progresión", d: "Levantas el mismo peso, las mismas repes, los mismos ejercicios. Sin sobrecarga progresiva, no hay crecimiento muscular. Punto." },
-  { t: "Ignoras la ciencia", d: "Te dejas llevar por mitos, influencers y \"rutinas mágicas\". Tu cuerpo responde a estímulos específicos, no a modas." },
+const R = "#E8000D"
+
+/* ── FadeIn al scroll ─────────────────────────────────────────── */
+function FadeIn({ children, delay = 0, from = "bottom" }: {
+  children: React.ReactNode; delay?: number; from?: "bottom" | "left" | "right"
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [v, setV] = useState(false)
+  useEffect(() => {
+    const el = ref.current; if (!el) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setV(true); obs.disconnect() } },
+      { threshold: 0.08 }
+    )
+    obs.observe(el); return () => obs.disconnect()
+  }, [])
+  const tx = from === "left" ? "-48px" : from === "right" ? "48px" : "0"
+  const ty = from === "bottom" ? "44px" : "0"
+  return (
+    <div ref={ref} style={{
+      transition: `opacity 0.85s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 0.85s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
+      opacity: v ? 1 : 0, transform: v ? "translate(0,0)" : `translate(${tx},${ty})`,
+    }}>{children}</div>
+  )
+}
+
+/* ── Contador animado ─────────────────────────────────────────── */
+function Counter({ target, suffix = "" }: { target: number; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const [val, setVal] = useState(0)
+  const done = useRef(false)
+  useEffect(() => {
+    const el = ref.current; if (!el) return
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !done.current) {
+        done.current = true
+        const dur = 1600; const start = Date.now()
+        const tick = () => {
+          const p = Math.min((Date.now() - start) / dur, 1)
+          const ease = 1 - Math.pow(1 - p, 3)
+          setVal(Math.round(ease * target))
+          if (p < 1) requestAnimationFrame(tick)
+        }
+        requestAnimationFrame(tick)
+      }
+    }, { threshold: 0.5 })
+    obs.observe(el); return () => obs.disconnect()
+  }, [target])
+  return <span ref={ref}>{val}{suffix}</span>
+}
+
+const PROBLEMAS = [
+  { n: "01", t: "Entrenas sin estructura", d: "Cambias de rutina cada semana, copias lo que ves en redes y nunca sabes si lo que haces realmente funciona. El caos no genera resultados." },
+  { n: "02", t: "No aplicas progresión", d: "Levantas el mismo peso, las mismas repeticiones, los mismos ejercicios. Sin sobrecarga progresiva, no hay crecimiento muscular. Punto." },
+  { n: "03", t: "Ignoras la ciencia", d: "Te dejas llevar por mitos, influencers y rutinas mágicas. Tu cuerpo responde a estímulos específicos, no a modas del momento." },
 ]
 
-const pilares = [
-  { t: "Plan 100% personalizado", d: "Diseñado para tu nivel, tu disponibilidad y tu morfología. Cada ejercicio tiene un propósito." },
-  { t: "Programación con evidencia", d: "Volumen, frecuencia e intensidad calibrados según la literatura científica más actual en hipertrofia." },
-  { t: "Seguimiento semanal", d: "Reviso tu progreso cada semana y ajusto el plan. No estás solo: estás guiado en cada paso." },
+const PILARES = [
+  { n: "01", t: "Plan 100% personalizado", d: "Diseñado para tu nivel, disponibilidad y morfología. Cada ejercicio tiene un propósito dentro del sistema." },
+  { n: "02", t: "Programación con evidencia", d: "Volumen, frecuencia e intensidad calibrados según la literatura científica más actual en hipertrofia." },
+  { n: "03", t: "Seguimiento semanal real", d: "Reviso tu progreso cada semana y ajusto el plan. No estás solo — estás guiado en cada paso." },
 ]
 
-const beneficios = [
-  { t: "Construye músculo de verdad", d: "Estímulos específicos para hipertrofia. Cada serie cuenta, cada repetición tiene una razón." },
-  { t: "Entrena con estructura", d: "Mesociclos planificados, deloads programados, progresión clara. Sabes exactamente qué hacer cada día." },
-  { t: "Deja de perder el tiempo", d: "Sesiones eficientes de 45–75 min. Sin ejercicios inútiles, sin volumen basura." },
-  { t: "Entrena seguro y sin lesiones", d: "Técnica priorizada, cargas inteligentes y prevención de lesiones desde el día uno." },
+const BENEFICIOS = [
+  { n: "01", t: "Construye músculo de verdad", d: "Estímulos específicos para hipertrofia. Cada serie cuenta, cada repetición tiene una razón científica." },
+  { n: "02", t: "Entrena con estructura", d: "Mesociclos planificados, deloads programados, progresión clara. Sabes exactamente qué hacer cada día." },
+  { n: "03", t: "Deja de perder el tiempo", d: "Sesiones eficientes de 45–75 min. Sin ejercicios inútiles, sin volumen basura." },
+  { n: "04", t: "Entrena seguro", d: "Técnica priorizada, cargas inteligentes y prevención de lesiones desde el día uno." },
 ]
 
+const PASOS = [
+  { n: "01", t: "Aplicas", d: "Rellenas el formulario con tu nivel, objetivos y disponibilidad. Si hay fit, avanzamos." },
+  { n: "02", t: "Recibes tu programa", d: "En 24–72 horas tienes tu programa completo con guía de ejecución y plantilla de seguimiento." },
+  { n: "03", t: "Seguimiento semanal", d: "Cada semana revisamos tu progreso, ajustamos cargas y resolvemos dudas. Sin estancamientos." },
+  { n: "04", t: "Progresión constante", d: "Plantilla de clase mundial para detectar tendencias, aplicar sobrecarga y acelerar resultados." },
+]
 
-
-export default function CoachDavidPage() {
+/* ══ COMPONENTE PRINCIPAL ═════════════════════════════════════════ */
+export default function Asesoria() {
+  const [scrollY, setScrollY] = useState(0)
+  const [heroIn, setHeroIn] = useState(false)
+  const [showWA, setShowWA] = useState(false)
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", goal: "" })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showToast, setShowToast] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [toast, setToast] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
 
-  const [showWhatsApp, setShowWhatsApp] = useState(false)
+  useEffect(() => {
+    setTimeout(() => setHeroIn(true), 80)
+    const onScroll = () => { setScrollY(window.scrollY); setShowWA(window.scrollY > 400) }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
-useEffect(() => {
-  const handleScroll = () => {
-    if (window.scrollY > 300) {
-      setShowWhatsApp(true)
-    } else {
-      setShowWhatsApp(false)
-    }
-  }
-
-  window.addEventListener("scroll", handleScroll)
-  return () => window.removeEventListener("scroll", handleScroll)
-}, [])
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
-    
+    if (!formData.name || !formData.email || !formData.phone || !formData.goal)
+      return setFormError("Completa todos los campos antes de aplicar.")
+    setFormError(null)
+    setSubmitting(true)
     try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       })
-      
-      if (response.ok) {
-        setShowToast(true)
+      if (res.ok) {
+        setSubmitted(true)
+        setToast(true)
         setFormData({ name: "", email: "", phone: "", goal: "" })
-        setTimeout(() => setShowToast(false), 4000)
+        setTimeout(() => setToast(false), 5000)
+      } else {
+        setFormError(`Error del servidor (${res.status}). Intenta de nuevo.`)
       }
-    } catch (error) {
-      console.error('Error submitting form:', error)
-    } finally {
-      setIsSubmitting(false)
+    } catch {
+      setFormError("Sin conexión. Verifica tu internet e intenta de nuevo.")
     }
+    setSubmitting(false)
   }
 
   return (
-    <>
-      {/* NAVBAR */}
-      <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-background/80 border-b border-border/50">
-        <div className="container mx-auto px-8 flex items-center justify-between h-16">
-          <a href="#" className="flex items-center" aria-label="Coach David">
-            <Image 
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/coach-david-logo.png-HJEU1xOKdIZ1vRDRpom9Q5cTJg2WTi.jpeg" 
-              alt="Coach David logo" 
-              width={180} 
-              height={40} 
-              className="h-9 md:h-10 w-auto object-contain"
-            />
+    <div style={{ background: "#000", color: "#fff", fontFamily: "'Barlow', sans-serif", overflowX: "hidden" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,800;0,900;1,900&family=Barlow:wght@300;400;500&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        ::selection { background: ${R}; color: #fff; }
+        .bc { font-family: 'Barlow Condensed', Impact, sans-serif; }
+        .b  { font-family: 'Barlow', sans-serif; }
+        input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.2); }
+        option { background: #111; color: #fff; }
+        @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+        @keyframes pulseR  { 0%,100%{box-shadow:0 0 0 0 ${R}50} 50%{box-shadow:0 0 0 10px transparent} }
+        @keyframes pulseG  { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.5)} 50%{box-shadow:0 0 0 10px transparent} }
+        @keyframes fadeUp  { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes glow    { 0%,100%{box-shadow:0 0 30px ${R}30} 50%{box-shadow:0 0 60px ${R}55} }
+        @keyframes blink   { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        @keyframes slideIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+      `}</style>
+
+      {/* ══ NAVBAR ════════════════════════════════════════════════ */}
+      <header style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        background: "rgba(0,0,0,0.92)", backdropFilter: "blur(16px)",
+        borderBottom: "1px solid rgba(255,255,255,0.05)",
+      }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: R }} />
+        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 48px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+
+          {/* Logo */}
+          <a href="/" className="bc" style={{ fontSize: 22, fontWeight: 900, letterSpacing: "0.05em", textDecoration: "none", color: "#fff" }}>
+            COACH<span style={{ color: R }}>.</span>DAVID
           </a>
-          <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-            <a href="/sobre-mi" className="hover:text-foreground transition-colors">
-              Sobre mí
-            </a>
-            <a href="#problema" className="hover:text-foreground transition-colors">Problema</a>
-            <a href="#metodo" className="hover:text-foreground transition-colors">Método</a>
-            <a href="#resultados" className="hover:text-foreground transition-colors">Resultados</a>
-            <a href="#proceso" className="hover:text-foreground transition-colors">Proceso</a>
+
+          {/* Nav */}
+          <nav style={{ display: "flex", gap: 32, alignItems: "center" }}>
+            {[
+              { label: "Problema", href: "#problema" },
+              { label: "Método", href: "#metodo" },
+              { label: "Resultados", href: "#resultados" },
+              { label: "Proceso", href: "#proceso" },
+              { label: "Sobre mí", href: "/sobre-mi" },
+            ].map(({ label, href }) => (
+              <a key={href} href={href} className="b" style={{ fontSize: 13, fontWeight: 400, color: "rgba(255,255,255,0.45)", textDecoration: "none", letterSpacing: "0.05em", transition: "color 0.2s ease" }}
+                onMouseEnter={e => (e.target as HTMLAnchorElement).style.color = "#fff"}
+                onMouseLeave={e => (e.target as HTMLAnchorElement).style.color = "rgba(255,255,255,0.45)"}
+              >{label}</a>
+            ))}
           </nav>
-          <a href="#contacto" className="inline-flex items-center justify-center h-9 px-4 rounded-sm bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-sm transition-colors">
-            Quiero Aplicar ahora
-          </a>
+
+          {/* CTA navbar */}
+          <a href="#contacto" className="bc" style={{
+            background: R, color: "#fff", padding: "10px 24px",
+            fontSize: 13, fontWeight: 800, letterSpacing: "0.2em",
+            textTransform: "uppercase", textDecoration: "none",
+            clipPath: "polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))",
+            transition: "all 0.2s ease", animation: "glow 3s ease infinite",
+          }}
+            onMouseEnter={e => { (e.target as HTMLAnchorElement).style.background = "#fff"; (e.target as HTMLAnchorElement).style.color = "#000" }}
+            onMouseLeave={e => { (e.target as HTMLAnchorElement).style.background = R; (e.target as HTMLAnchorElement).style.color = "#fff" }}
+          >Quiero aplicar</a>
         </div>
       </header>
 
-      {/* HERO */}
-      <section className="relative min-h-screen flex items-center pt-24 overflow-hidden">
-        <Image 
-          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/hero-athlete-tTtwv27TBXRvv149KOi0bYPpjvp8kO.jpg" 
-          alt="Atleta entrenando hipertrofia con barra" 
-          fill
-          className="object-cover object-right opacity-60"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-hero" />
-        <div className="absolute inset-0 bg-gradient-radial" />
+      {/* ══ HERO ════════════════════════════════════════════════════ */}
+      <section style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", overflow: "hidden", paddingTop: 64 }}>
 
-        <div className="container mx-auto px-8 relative z-10 grid lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7 animate-fade-up">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card/60 backdrop-blur text-xs uppercase tracking-widest text-muted-foreground mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/>
-              </svg>
-              Entrenamiento basado en ciencia
-            </div>
-            <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl uppercase">
-              Entrena con<br />
-              <span className="text-gradient">estructura</span>, no<br />
-              con intuición.
-            </h1>
-            <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-              Programas de Entrenamiento 100% personalizados, diseñados con evidencia y estructura científica. Deja de improvisar y adivinar en el gimnasio y empieza a ver resultados con métodos probados y medibles.
-            </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-4">
-              <a href="#contacto" className="inline-flex items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-base h-14 px-8 rounded-sm animate-pulse-glow transition-colors">
-                Empieza tu transformación
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </a>
-              <a href="#contacto" className="inline-flex items-center justify-center border border-border bg-card/40 backdrop-blur hover:bg-card font-semibold text-base h-14 px-8 rounded-sm transition-colors">
-                Obtén tu programa personalizado
-              </a>
-            </div>
-            <div className="mt-14 grid grid-cols-3 gap-6 max-w-lg">
-              <div>
-                <div className="font-display text-3xl md:text-4xl text-primary">+6</div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Estudios de entrenamiento</div>
-              </div>
-              <div>
-                <div className="font-display text-3xl md:text-4xl text-primary">+8 años</div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">De experiencia</div>
-              </div>
-              <div>
-                <div className="font-display text-3xl md:text-4xl text-primary">100%</div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Basado en Ciencia y Evidencia</div>
-              </div>
-            </div>
-          </div>
+        {/* Imagen hero con parallax */}
+        <div style={{ position: "absolute", inset: 0, transform: `translateY(${scrollY * 0.2}px)`, willChange: "transform" }}>
+          <img src="/Entrenando_1.jpeg" alt="Atleta entrenando"
+            style={{ width: "100%", height: "110%", objectFit: "cover", objectPosition: "center top", filter: "grayscale(25%) contrast(1.1)", opacity: 0.5 }} />
         </div>
-      </section>
 
-        {/* MENSAJE */}
-      <section className="relative py-24 border-t border-border overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-radial opacity-60" />
-      
-        <div className="container mx-auto px-8 relative">
-          <div className="max-w-4xl mx-auto text-center">
-            
-            <span className="text-primary text-sm uppercase tracking-[0.2em] font-semibold">
-              No es para todos
+        {/* Overlays */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(110deg, #000 40%, rgba(0,0,0,0.6) 68%, rgba(0,0,0,0.15) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, #000 0%, transparent 55%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 80% 35%, ${R}14 0%, transparent 50%)` }} />
+
+        {/* Línea vertical */}
+        <div style={{
+          position: "absolute", left: "max(32px, calc(50vw - 700px))",
+          top: 0, bottom: 0, width: 2,
+          background: `linear-gradient(to bottom, transparent, ${R} 20%, ${R} 80%, transparent)`,
+          opacity: heroIn ? 1 : 0, transition: "opacity 1.2s ease 0.5s",
+        }} />
+
+        <div style={{ position: "relative", zIndex: 10, maxWidth: 1400, margin: "0 auto", padding: "80px 64px 100px", width: "100%" }}>
+
+          {/* Badge */}
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 10,
+            padding: "8px 16px", border: `1px solid ${R}40`, background: `${R}12`,
+            marginBottom: 32,
+            opacity: heroIn ? 1 : 0, transform: heroIn ? "none" : "translateY(20px)",
+            transition: "all 0.7s ease 0.2s",
+          }}>
+            <div style={{ width: 6, height: 6, background: R, borderRadius: "50%", animation: "blink 1.5s ease infinite" }} />
+            <span className="bc" style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: R }}>
+              Plazas limitadas cada mes
             </span>
-      
-            <h2 className="font-display text-4xl md:text-6xl uppercase mt-4 leading-tight">
-              Esto no es para personas<br />
-              que buscan <span className="text-destructive">rutinas genéricas</span>.
-            </h2>
-      
-            <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Si quieres resultados reales, necesitas estructura. No más improvisación, no más entrenar sin dirección.
-            </p>
           </div>
-      
-          <div className="grid md:grid-cols-3 gap-6 mt-16 max-w-5xl mx-auto">
-            
-            <div className="p-8 rounded-sm bg-card border border-border hover:border-destructive/40 transition-smooth text-center">
-              <div className="font-display text-4xl text-destructive mb-4">01</div>
-              <h3 className="font-display text-xl uppercase">No improvisación</h3>
-              <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
-                Cada sesión tiene un objetivo claro dentro de un sistema estructurado.
-              </p>
-            </div>
-      
-            <div className="p-8 rounded-sm bg-card border border-border hover:border-destructive/40 transition-smooth text-center">
-              <div className="font-display text-4xl text-destructive mb-4">02</div>
-              <h3 className="font-display text-xl uppercase">No entrenar sin progresión</h3>
-              <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
-                Si no hay sobrecarga progresiva, no hay crecimiento muscular. Así de simple.
-              </p>
-            </div>
-      
-            <div className="p-8 rounded-sm bg-card border border-border hover:border-destructive/40 transition-smooth text-center">
-              <div className="font-display text-4xl text-destructive mb-4">03</div>
-              <h3 className="font-display text-xl uppercase">No programas sin estructura</h3>
-              <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
-                Volumen, intensidad y frecuencia diseñados con intención, no al azar.
-              </p>
-            </div>
-      
+
+          {/* Título */}
+          <div style={{ overflow: "hidden", marginBottom: 36 }}>
+            {[
+              { text: "ENTRENA CON", red: false },
+              { text: "ESTRUCTURA,", red: false },
+              { text: "NO CON", red: true },
+              { text: "INTUICIÓN.", red: false },
+            ].map(({ text, red }, i) => (
+              <div key={i} style={{
+                opacity: heroIn ? 1 : 0, transform: heroIn ? "translateY(0)" : "translateY(100%)",
+                transition: `all 0.9s cubic-bezier(0.16,1,0.3,1) ${0.28 + i * 0.11}s`,
+              }}>
+                <span className="bc" style={{
+                  display: "block", fontSize: "clamp(56px, 8.5vw, 128px)", fontWeight: 900,
+                  textTransform: "uppercase", lineHeight: 0.87, letterSpacing: "-0.02em",
+                  color: red ? R : "#fff",
+                  textShadow: red ? `0 0 80px ${R}50` : "none",
+                }}>{text}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Subtítulo */}
+          <p className="b" style={{
+            fontSize: "clamp(15px, 1.4vw, 18px)", color: "rgba(255,255,255,0.5)",
+            maxWidth: 480, lineHeight: 1.7, fontWeight: 300, marginBottom: 44,
+            opacity: heroIn ? 1 : 0, transform: heroIn ? "none" : "translateY(20px)",
+            transition: "all 0.7s ease 0.8s",
+          }}>
+            Programas de entrenamiento 100% personalizados, diseñados con evidencia científica real.
+            Deja de improvisar y empieza a ver resultados con métodos probados y medibles.
+          </p>
+
+          {/* CTAs */}
+          <div style={{
+            display: "flex", gap: 14, flexWrap: "wrap",
+            opacity: heroIn ? 1 : 0, transform: heroIn ? "none" : "translateY(20px)",
+            transition: "all 0.7s ease 1s",
+          }}>
+            <HeroButton href="#contacto" primary>Empieza tu transformación →</HeroButton>
+            <HeroButton href="#proceso">Cómo funciona</HeroButton>
+          </div>
+
+          {/* Stats */}
+          <div style={{
+            display: "grid", gridTemplateColumns: "repeat(3, auto)", gap: "0 48px",
+            marginTop: 64, width: "fit-content",
+            opacity: heroIn ? 1 : 0, transition: "opacity 1s ease 1.3s",
+          }}>
+            {[
+              { n: "+6", l: "Certificaciones" },
+              { n: "+8", l: "Años de experiencia" },
+              { n: "100%", l: "Basado en ciencia" },
+            ].map((s, i) => (
+              <div key={i} style={{ borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.1)" : "none", paddingLeft: i > 0 ? 48 : 0 }}>
+                <div className="bc" style={{ fontSize: 40, fontWeight: 900, color: R, lineHeight: 1 }}>{s.n}</div>
+                <div className="b" style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.18em", marginTop: 6, fontWeight: 400 }}>{s.l}</div>
+              </div>
+            ))}
           </div>
         </div>
-      </section>
 
-      {/* PROBLEMA */}
-      <section id="problema" className="relative py-24 md:py-32 border-t border-border">
-        <div className="container mx-auto px-8">
-          <div className="max-w-3xl">
-            <span className="text-primary text-sm uppercase tracking-[0.2em] font-semibold">El problema</span>
-            <h2 className="font-display text-4xl md:text-6xl uppercase mt-4">
-              Llevas años en el gym<br />y sigues <span className="text-destructive">improvisando igual</span>.
-            </h2>
-            <p className="mt-6 text-lg text-muted-foreground">
-              No es falta de esfuerzo. Es falta de método. Si no ves resultados, hay tres razones — y probablemente las cometes todas.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6 mt-16">
-            {problemas.map((item, idx) => (
-              <div key={idx} className="group p-8 rounded-sm bg-card border border-border hover:border-destructive/50 transition-smooth">
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-sm bg-destructive/10 border border-destructive/30 flex items-center justify-center">
-                    <X className="w-5 h-5 text-destructive" />
-                  </div>
-                  <span className="font-display text-2xl text-muted-foreground">0{idx + 1}</span>
-                </div>
-                <h3 className="font-display text-2xl uppercase">{item.t}</h3>
-                <p className="mt-3 text-muted-foreground leading-relaxed">{item.d}</p>
-              </div>
+        {/* Marquee */}
+        <div style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          borderTop: "1px solid rgba(255,255,255,0.05)",
+          background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)",
+          padding: "12px 0", overflow: "hidden",
+          opacity: heroIn ? 1 : 0, transition: "opacity 1s ease 1.6s",
+        }}>
+          <div style={{ display: "flex", animation: "marquee 22s linear infinite", width: "max-content" }}>
+            {Array(6).fill(null).map((_, i) => (
+              <span key={i} className="bc" style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", color: "rgba(255,255,255,0.12)", paddingRight: 80, whiteSpace: "nowrap" }}>
+                Hipertrofia · Ciencia Aplicada · Progresión Real · Sin Atajos · Resultados Medibles · Coach David ·&nbsp;
+              </span>
             ))}
           </div>
         </div>
       </section>
 
-      {/* SOLUCIÓN */}
-      <section id="metodo" className="relative py-24 md:py-32 border-t border-border bg-gradient-radial">
-        <div className="container mx-auto px-8 grid lg:grid-cols-2 gap-16 items-center">
-          <div className="relative">
-            <div className="absolute -inset-4 bg-primary/10 blur-3xl rounded-full" />
-            <Image 
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/coach-david.jpg-j0eTn9gq3pqx6bGA07zd0yEC7lNLZ0.png" 
-              alt="Coach David, entrenador especializado en hipertrofia" 
-              width={600}
-              height={800}
-              className="relative rounded-sm border border-border shadow-card w-full"
-            />
-            <div className="absolute -bottom-6 -right-6 bg-primary text-primary-foreground px-6 py-4 rounded-sm font-display text-xl uppercase">
-              Coach David
+      {/* ══ FILTRO — "No es para todos" ═════════════════════════════ */}
+      <section style={{ padding: "120px 64px", position: "relative", overflow: "hidden" }}>
+        <div className="bc" style={{ position: "absolute", right: -60, top: "50%", transform: "translateY(-50%)", fontSize: "38vw", fontWeight: 900, color: "rgba(255,255,255,0.013)", lineHeight: 1, pointerEvents: "none", userSelect: "none" }}>NO</div>
+
+        <div style={{ maxWidth: 1400, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 100, alignItems: "center" }}>
+          <FadeIn from="left">
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
+              <div style={{ width: 36, height: 2, background: "rgba(255,255,255,0.15)" }} />
+              <span className="bc" style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>No es para todos</span>
             </div>
-          </div>
-          <div>
-            <span className="text-primary text-sm uppercase tracking-[0.2em] font-semibold">La solución</span>
-            <h2 className="font-display text-4xl md:text-6xl uppercase mt-4">
-              Un método<br />probado.<br /><span className="text-gradient">Sin atajos.</span>
+            <h2 className="bc" style={{ fontSize: "clamp(44px, 5vw, 80px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.88, letterSpacing: "-0.02em", marginBottom: 28 }}>
+              ESTO NO ES<br />PARA QUIEN<br /><span style={{ color: R }}>BUSCA ATAJOS.</span>
             </h2>
-            <p className="mt-6 text-lg text-muted-foreground">
-              Soy David, Coach especializado en hipertrofia y entrenamiento basado en ciencia (ciencia de verdad). Durante años, He guiado a personas a entrenar y construir un físico estetico de forma correcta.
+            <p className="b" style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.75, fontWeight: 300, maxWidth: 400 }}>
+              Si quieres resultados reales, necesitas estructura. No más improvisación, no más entrenar sin dirección ni propósito.
             </p>
-            <div className="mt-10 space-y-5">
-              {pilares.map((pilar, idx) => (
-                <div key={idx} className="flex gap-4 p-5 rounded-sm bg-card/60 border border-border">
-                  <div className="shrink-0 w-12 h-12 rounded-sm bg-primary/10 border border-primary/30 flex items-center justify-center">
-                    <Target className="w-5 h-5 text-primary" />
-                  </div>
+          </FadeIn>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {[
+              { n: "01", t: "Sin improvisación", b: "Cada sesión tiene un objetivo claro dentro de un sistema estructurado." },
+              { n: "02", t: "Sin entrenar sin progresión", b: "Sin sobrecarga progresiva no hay crecimiento muscular. Así de simple." },
+              { n: "03", t: "Sin programas genéricos", b: "Volumen, intensidad y frecuencia diseñados con intención, no al azar." },
+            ].map((c, i) => (
+              <FadeIn key={c.n} delay={i * 100}>
+                <MiniCard {...c} />
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ PROBLEMA ════════════════════════════════════════════════ */}
+      <section id="problema" style={{ padding: "120px 64px", background: "#080808", position: "relative", overflow: "hidden", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(to right, transparent, ${R}50, transparent)` }} />
+
+        <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <div style={{ width: 36, height: 2, background: R }} />
+              <span className="bc" style={{ color: R, fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>El problema</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 24, marginBottom: 72 }}>
+              <h2 className="bc" style={{ fontSize: "clamp(44px, 5vw, 80px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.88, letterSpacing: "-0.02em" }}>
+                LLEVAS AÑOS<br />EN EL GYM Y<br /><span style={{ color: R }}>SIGUES IGUAL.</span>
+              </h2>
+              <p className="b" style={{ color: "rgba(255,255,255,0.4)", maxWidth: 320, fontSize: 15, lineHeight: 1.65, fontWeight: 300 }}>
+                No es falta de esfuerzo. Es falta de método. Si no ves resultados, hay tres razones — y probablemente las cometes todas.
+              </p>
+            </div>
+          </FadeIn>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 2 }}>
+            {PROBLEMAS.map((p, i) => (
+              <FadeIn key={p.n} delay={i * 120}>
+                <ProblemaCard {...p} />
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ SOLUCIÓN — Split ════════════════════════════════════════ */}
+      <section id="metodo" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: "90vh", position: "relative" }}>
+
+        {/* Imagen */}
+        <div style={{ position: "relative", overflow: "hidden" }}>
+          <img src="/Entrenando_2.jpeg" alt="Coach David"
+            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", filter: "grayscale(15%) contrast(1.05)", transform: `scale(1.04) translateY(${(scrollY - 1800) * 0.05}px)` }} />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, transparent 55%, #000)" }} />
+          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, ${R}18 0%, transparent 40%)` }} />
+          <div style={{ position: "absolute", top: 24, left: 24, width: 36, height: 36, borderTop: `2px solid ${R}`, borderLeft: `2px solid ${R}` }} />
+          <div style={{ position: "absolute", bottom: 24, left: 24, width: 36, height: 36, borderBottom: `2px solid ${R}`, borderLeft: `2px solid ${R}` }} />
+        </div>
+
+        {/* Texto */}
+        <div style={{ background: "#050505", padding: "80px 72px", display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(to right, transparent, ${R}40, transparent)` }} />
+          <div style={{ position: "absolute", top: "35%", right: -60, width: 300, height: 300, background: `${R}06`, borderRadius: "50%", filter: "blur(80px)", pointerEvents: "none" }} />
+
+          <FadeIn from="right">
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+              <div style={{ width: 36, height: 2, background: R }} />
+              <span className="bc" style={{ color: R, fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>La solución</span>
+            </div>
+
+            <h2 className="bc" style={{ fontSize: "clamp(40px, 4vw, 68px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.9, letterSpacing: "-0.02em", marginBottom: 28 }}>
+              UN MÉTODO<br />PROBADO.<br /><span style={{ color: R }}>SIN ATAJOS.</span>
+            </h2>
+
+            <p className="b" style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", lineHeight: 1.75, fontWeight: 300, maxWidth: 440, marginBottom: 36 }}>
+              Soy David, Coach especializado en hipertrofia y entrenamiento basado en ciencia. Durante años he guiado a personas a construir un físico estético de forma correcta, con método y sin improvisación.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 44 }}>
+              {PILARES.map((p, i) => (
+                <div key={p.n} style={{ display: "flex", gap: 16, padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                  <span className="bc" style={{ fontSize: 11, color: R, fontWeight: 700, letterSpacing: "0.2em", flexShrink: 0, marginTop: 3 }}>{p.n}</span>
                   <div>
-                    <h3 className="font-display text-xl uppercase">{pilar.t}</h3>
-                    <p className="text-muted-foreground mt-1">{pilar.d}</p>
+                    <div className="bc" style={{ fontSize: 17, fontWeight: 800, textTransform: "uppercase", color: "rgba(255,255,255,0.85)" }}>{p.t}</div>
+                    <div className="b" style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginTop: 4, lineHeight: 1.5, fontWeight: 300 }}>{p.d}</div>
                   </div>
                 </div>
               ))}
             </div>
-            <a href="#contacto" className="inline-flex items-center justify-center mt-10 bg-primary text-primary-foreground hover:bg-primary/90 font-bold h-14 px-8 rounded-sm transition-colors">
-              Quiero mi programa
-            </a>
-          </div>
+
+            <a href="#contacto" className="bc" style={{
+              display: "inline-flex", alignItems: "center", gap: 12,
+              background: R, color: "#fff", padding: "18px 44px",
+              fontSize: 15, fontWeight: 900, letterSpacing: "0.22em",
+              textTransform: "uppercase", textDecoration: "none",
+              clipPath: "polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))",
+              boxShadow: `0 12px 40px ${R}40`, transition: "all 0.25s ease",
+            }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = "#fff"; el.style.color = "#000"; el.style.boxShadow = "none" }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = R; el.style.color = "#fff"; el.style.boxShadow = `0 12px 40px ${R}40` }}
+            >Quiero mi programa →</a>
+          </FadeIn>
         </div>
       </section>
 
-      {/* BENEFICIOS */}
-      <section id="resultados" className="relative py-24 md:py-32 border-t border-border">
-        <div className="container mx-auto px-8">
-          <div className="max-w-3xl">
-            <span className="text-primary text-sm uppercase tracking-[0.2em] font-semibold">Resultados reales</span>
-            <h2 className="font-display text-4xl md:text-6xl uppercase mt-4">
-              Lo que vas a<br />conseguir.
-            </h2>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-px mt-16 bg-border border border-border rounded-sm overflow-hidden">
-            {beneficios.map((beneficio, idx) => (
-              <div key={idx} className="bg-background p-8 md:p-10 hover:bg-card transition-smooth group">
-                <TrendingUp className="w-8 h-8 text-primary mb-6 group-hover:scale-110 transition-smooth" />
-                <h3 className="font-display text-2xl md:text-3xl uppercase">{beneficio.t}</h3>
-                <p className="text-muted-foreground mt-3 leading-relaxed">{beneficio.d}</p>
+      {/* ══ ESTADÍSTICAS ════════════════════════════════════════════ */}
+      <section style={{ background: R, padding: "72px 64px" }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 2 }}>
+          {[
+            { target: 8, suffix: "+", label: "Años entrenando", sub: "Experiencia real acumulada" },
+            { target: 6, suffix: "+", label: "Certificaciones", sub: "Formación técnica y especializada" },
+            { target: 24, suffix: "h", label: "Respuesta garantizada", sub: "Tiempo máximo de respuesta" },
+            { target: 72, suffix: "h", label: "Tu programa listo", sub: "Desde que aplicas" },
+          ].map((s, i) => (
+            <FadeIn key={s.label} delay={i * 80}>
+              <div style={{ padding: "36px 32px", borderRight: i < 3 ? "1px solid rgba(0,0,0,0.15)" : "none", background: i % 2 === 1 ? "rgba(0,0,0,0.1)" : "transparent" }}>
+                <div className="bc" style={{ fontSize: "clamp(48px, 5vw, 72px)", fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: "-0.03em" }}>
+                  <Counter target={s.target} suffix={s.suffix} />
+                </div>
+                <div className="bc" style={{ fontSize: 18, fontWeight: 800, textTransform: "uppercase", color: "#fff", marginTop: 6 }}>{s.label}</div>
+                <div className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 4, fontWeight: 300 }}>{s.sub}</div>
               </div>
+            </FadeIn>
+          ))}
+        </div>
+      </section>
+
+      {/* ══ BENEFICIOS ══════════════════════════════════════════════ */}
+      <section id="resultados" style={{ padding: "120px 64px", background: "#000", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(to right, transparent, ${R}50, transparent)` }} />
+
+        <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <div style={{ width: 36, height: 2, background: "rgba(255,255,255,0.15)" }} />
+              <span className="bc" style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>Resultados reales</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 24, marginBottom: 72 }}>
+              <h2 className="bc" style={{ fontSize: "clamp(44px, 5vw, 80px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.88, letterSpacing: "-0.02em" }}>
+                LO QUE VAS<br /><span style={{ color: R }}>A CONSEGUIR.</span>
+              </h2>
+              <a href="#contacto" className="bc" style={{
+                display: "inline-flex", alignItems: "center", gap: 10,
+                color: R, fontSize: 13, fontWeight: 800, letterSpacing: "0.2em",
+                textTransform: "uppercase", textDecoration: "none",
+                borderBottom: `2px solid ${R}`, paddingBottom: 4, transition: "gap 0.3s ease",
+              }}
+                onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.gap = "18px"}
+                onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.gap = "10px"}
+              >Empezar ahora →</a>
+            </div>
+          </FadeIn>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 2 }}>
+            {BENEFICIOS.map((b, i) => (
+              <FadeIn key={b.n} delay={i * 100}>
+                <BeneficioCard {...b} />
+              </FadeIn>
             ))}
           </div>
         </div>
       </section>
 
-      {/* PROCESO */}
-      <section id="proceso" className="relative py-24 md:py-32 border-t border-border overflow-hidden">
-        <div className="absolute inset-0 bg-grid opacity-30" />
-        <div className="container mx-auto px-8 relative">
-          <div className="max-w-3xl">
-            <span className="text-primary text-sm uppercase tracking-[0.2em] font-semibold">El proceso</span>
-            <h2 className="font-display text-4xl md:text-6xl uppercase mt-4">
-              Empezar es<br />simple.
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-4 gap-8 mt-16 relative">
-            <div className="hidden md:block absolute top-10 left-[16%] right-[16%] h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-            
-            <div className="relative text-center md:text-left">
-              <div className="inline-flex w-20 h-20 rounded-full bg-background border-2 border-primary items-center justify-center font-display text-2xl text-primary mb-6 relative z-10">01</div>
-              <h3 className="font-display text-3xl uppercase">Aplicas</h3>
-              <p className="text-muted-foreground mt-3 leading-relaxed">Rellenas un breve formulario contándome tu nivel, tus objetivos y tu disponibilidad. Si encajamos, hablamos.</p>
+      {/* ══ PROCESO ═════════════════════════════════════════════════ */}
+      <section id="proceso" style={{ padding: "120px 64px", background: "#080808", position: "relative", overflow: "hidden", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+        {/* Grilla */}
+        <div style={{ position: "absolute", inset: 0, opacity: 0.3, backgroundImage: `linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)`, backgroundSize: "60px 60px" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(to right, transparent, ${R}50, transparent)` }} />
+
+        <div style={{ position: "relative", maxWidth: 1400, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <div style={{ width: 36, height: 2, background: R }} />
+              <span className="bc" style={{ color: R, fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>El proceso</span>
             </div>
-            
-            <div className="relative text-center md:text-left">
-              <div className="inline-flex w-20 h-20 rounded-full bg-background border-2 border-primary items-center justify-center font-display text-2xl text-primary mb-6 relative z-10">02</div>
-              <h3 className="font-display text-3xl uppercase">Recibes tu Programa</h3>
-              <p className="text-muted-foreground mt-3 leading-relaxed">Entre 24-72 horas tienes tu programa de entrenamiento personalizado (y guía de alimentación si aplica), con vídeos y guía de ejecución.</p>
-            </div>
-            
-            <div className="relative text-center md:text-left">
-              <div className="inline-flex w-20 h-20 rounded-full bg-background border-2 border-primary items-center justify-center font-display text-2xl text-primary mb-6 relative z-10">03</div>
-              <h3 className="font-display text-3xl uppercase">Seguimiento semanal</h3>
-              <p className="text-muted-foreground mt-3 leading-relaxed">Cada semana revisamos tu progreso, ajustamos cargas y resolvemos dudas. Avance constante, sin estancamientos.</p>
-            </div>
-            <div className="relative text-center md:text-left">
-              <div className="inline-flex w-20 h-20 rounded-full bg-background border-2 border-primary items-center justify-center font-display text-2xl text-primary mb-6 relative z-10">04</div>
-              <h3 className="font-display text-3xl uppercase">Programa de Clase Mundial</h3>
-              <p className="text-muted-foreground mt-3 leading-relaxed">
-                Hacemos un seguimiento constante mediante una plantilla editable de clase mundial que nos permite ver tendencias, aplicar sobrecarga progresiva y detectar estancamientos a tiempo.
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 24, marginBottom: 80 }}>
+              <h2 className="bc" style={{ fontSize: "clamp(44px, 5vw, 80px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.88, letterSpacing: "-0.02em" }}>
+                EMPEZAR ES<br /><span style={{ color: R }}>SIMPLE.</span>
+              </h2>
+              <p className="b" style={{ color: "rgba(255,255,255,0.35)", maxWidth: 300, fontSize: 15, lineHeight: 1.65, fontWeight: 300 }}>
+                4 pasos que te separan de entrenar con un sistema real.
               </p>
             </div>
+          </FadeIn>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 2, position: "relative" }}>
+            {/* Línea conectora */}
+            <div style={{ position: "absolute", top: 48, left: "12.5%", right: "12.5%", height: 1, background: `linear-gradient(to right, ${R}60, rgba(255,255,255,0.1), ${R}60)`, zIndex: 0 }} />
+
+            {PASOS.map((p, i) => (
+              <FadeIn key={p.n} delay={i * 120}>
+                <div style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)", padding: "40px 32px", position: "relative" }}>
+                  <div style={{
+                    width: 56, height: 56, border: `2px solid ${R}`, display: "flex", alignItems: "center", justifyContent: "center",
+                    marginBottom: 28, background: "#000", position: "relative", zIndex: 1,
+                  }}>
+                    <span className="bc" style={{ fontSize: 20, fontWeight: 900, color: R }}>{p.n}</span>
+                  </div>
+                  <h3 className="bc" style={{ fontSize: 24, fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.01em", marginBottom: 12 }}>{p.t}</h3>
+                  <p className="b" style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", lineHeight: 1.65, fontWeight: 300 }}>{p.d}</p>
+                </div>
+              </FadeIn>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CONTACTO */}
-      <section id="contacto" className="relative py-24 md:py-32 border-t border-border overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-radial" />
-        <div className="container mx-auto px-8 relative">
-          <div className="max-w-4xl mx-auto text-center mb-16">
-            <span className="text-primary text-sm uppercase tracking-[0.2em] font-semibold">Es tu momento</span>
-            <h2 className="font-display text-5xl md:text-7xl uppercase mt-4">
-              Empieza hoy y<br />construye el físico<br />que <span className="text-gradient">quieres.</span>
-            </h2>
-            <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Plazas limitadas cada mes para garantizar un seguimiento personalizado. Aplica ahora y empieza la próxima semana.
-            </p>
-          </div>
-          
-          <div className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            <form onSubmit={handleSubmit} className="p-8 md:p-10 rounded-sm border border-border bg-card shadow-card">
-              <h3 className="font-display text-2xl uppercase mb-6">Solicita tu plan</h3>
-              <div className="space-y-5">
-                <div>
-                  <label htmlFor="name" className="block uppercase text-xs tracking-widest text-muted-foreground">Nombre</label>
-                  <input 
-                    id="name" 
-                    name="name" 
-                    required 
-                    placeholder="Tu nombre" 
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="mt-2 h-12 w-full rounded-sm bg-background border border-border px-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary" 
-                  />
-                </div>
-                <div>
-                  <label htmlFor="email" className="block uppercase text-xs tracking-widest text-muted-foreground">Email</label>
-                  <input 
-                    id="email" 
-                    type="email" 
-                    name="email" 
-                    required 
-                    placeholder="tu@email.com" 
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="mt-2 h-12 w-full rounded-sm bg-background border border-border px-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary" 
-                  />
-                </div>
-                <div>
-                  <label htmlFor="phone" className="block uppercase text-xs tracking-widest text-muted-foreground">WhatsApp / Teléfono</label>
-                  <input 
-                    id="phone" 
-                    type="tel" 
-                    name="phone" 
-                    required 
-                    placeholder="+57 300 123 4567" 
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    className="mt-2 h-12 w-full rounded-sm bg-background border border-border px-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary" 
-                  />
-                </div>
-                <div>
-                  <label htmlFor="goal" className="block uppercase text-xs tracking-widest text-muted-foreground">Objetivo fitness</label>
-                  <textarea 
-                    id="goal" 
-                    name="goal" 
-                    required 
-                    rows={4} 
-                    placeholder="Cuéntame qué quieres conseguir y tu nivel actual…" 
-                    value={formData.goal}
-                    onChange={(e) => setFormData({...formData, goal: e.target.value})}
-                    className="mt-2 w-full rounded-sm bg-background border border-border px-3 py-2 text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary" 
-                  />
-                </div>
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                  className="w-full inline-flex items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90 font-bold h-14 rounded-sm transition-colors disabled:opacity-70"
-                >
-                  {isSubmitting ? "Enviando…" : "Aplicar ahora"}
-                </button>
-              </div>
-            </form>
+      {/* ══ CONTACTO ════════════════════════════════════════════════ */}
+      <section id="contacto" style={{ padding: "120px 64px", background: "#000", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 0%, ${R}0d 0%, transparent 55%)` }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(to right, transparent, ${R}, transparent)` }} />
 
-            <div className="flex flex-col gap-6">
-              <div className="p-8 md:p-10 rounded-sm border border-primary/30 bg-primary/5 flex-1 flex flex-col justify-between">
-                <div>
-                  <MessageCircle className="w-10 h-10 text-primary mb-5" />
-                  <h3 className="font-display text-2xl uppercase">¿Prefieres WhatsApp?</h3>
-                  <p className="text-muted-foreground mt-3">Escríbeme directamente y te respondo personalmente. Sin bots, sin filtros.</p>
-                </div>
-                <a 
-                  href="https://wa.me/573243747367?text=Hola%20Coach%20David%2C%20quiero%20empezar%20un%20plan%20personalizado.%20Mi%20objetivo%20es%20_____" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="inline-flex items-center justify-center mt-8 border border-primary/40 hover:bg-primary hover:text-primary-foreground font-semibold h-14 rounded-sm transition-colors"
-                >
-                  Hablar por WhatsApp
-                </a>
+        <div style={{ position: "relative", maxWidth: 1400, margin: "0 auto" }}>
+
+          {/* Header */}
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 80 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{ width: 36, height: 2, background: "rgba(255,255,255,0.15)" }} />
+                <span className="bc" style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>Es tu momento</span>
+                <div style={{ width: 36, height: 2, background: "rgba(255,255,255,0.15)" }} />
               </div>
-              <div className="p-6 rounded-sm border border-border bg-card">
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div className="font-display text-3xl text-primary">24h</div>
-                    <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Respuesta</div>
-                  </div>
-                  <div>
-                    <div className="font-display text-3xl text-primary">72h</div>
-                    <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Tu plan listo</div>
-                  </div>
-                </div>
-              </div>
+              <h2 className="bc" style={{ fontSize: "clamp(48px, 6vw, 96px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.87, letterSpacing: "-0.02em", marginBottom: 20 }}>
+                EMPIEZA HOY.<br />CONSTRUYE EL FÍSICO<br /><span style={{ color: R, textShadow: `0 0 60px ${R}50` }}>QUE QUIERES.</span>
+              </h2>
+              <p className="b" style={{ fontSize: 17, color: "rgba(255,255,255,0.4)", maxWidth: 560, margin: "0 auto", lineHeight: 1.7, fontWeight: 300 }}>
+                Plazas limitadas cada mes para garantizar un seguimiento personalizado real.
+                Aplica ahora y empieza la próxima semana.
+              </p>
             </div>
+          </FadeIn>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 2, maxWidth: 1100, margin: "0 auto" }}>
+
+            {/* Formulario */}
+            <FadeIn from="left">
+              <div style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.08)", padding: "52px 48px", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: R }} />
+
+                <h3 className="bc" style={{ fontSize: 28, fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.01em", marginBottom: 8 }}>
+                  Solicita tu plan
+                </h3>
+                <p className="b" style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginBottom: 36, fontWeight: 300 }}>
+                  Te respondo en menos de 24 horas — personalmente, sin bots.
+                </p>
+
+                {submitted ? (
+                  <div style={{ textAlign: "center", padding: "48px 0", animation: "fadeUp 0.5s ease" }}>
+                    <div style={{ width: 64, height: 64, border: `2px solid ${R}`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", animation: "pulseR 2s ease infinite" }}>
+                      <span style={{ fontSize: 28, color: R }}>✓</span>
+                    </div>
+                    <h4 className="bc" style={{ fontSize: 28, fontWeight: 900, textTransform: "uppercase", marginBottom: 12 }}>
+                      ¡SOLICITUD ENVIADA!
+                    </h4>
+                    <p className="b" style={{ fontSize: 15, color: "rgba(255,255,255,0.45)", lineHeight: 1.65, fontWeight: 300 }}>
+                      Te contactaré en menos de 24 horas para hablar sobre tu proceso.
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                    {[
+                      { id: "name", label: "Nombre", placeholder: "Tu nombre completo", type: "text", key: "name" },
+                      { id: "email", label: "Email", placeholder: "tu@email.com", type: "email", key: "email" },
+                      { id: "phone", label: "WhatsApp / Teléfono", placeholder: "+57 300 123 4567", type: "tel", key: "phone" },
+                    ].map(({ id, label, placeholder, type, key }) => (
+                      <div key={id}>
+                        <FormLabel>{label}</FormLabel>
+                        <input id={id} type={type} required placeholder={placeholder}
+                          value={formData[key as keyof typeof formData]}
+                          onChange={e => setFormData({ ...formData, [key]: e.target.value })}
+                          style={{ width: "100%", padding: "14px 18px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: "none", transition: "border-color 0.2s ease" }}
+                          onFocus={e => (e.target.style.borderColor = R)}
+                          onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
+                        />
+                      </div>
+                    ))}
+
+                    <div>
+                      <FormLabel>Objetivo y nivel actual</FormLabel>
+                      <textarea required rows={4} placeholder="Cuéntame qué quieres conseguir, cuánto llevas entrenando y cuál es tu mayor obstáculo…"
+                        value={formData.goal}
+                        onChange={e => setFormData({ ...formData, goal: e.target.value })}
+                        style={{ width: "100%", padding: "14px 18px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: "none", resize: "vertical", transition: "border-color 0.2s ease" }}
+                        onFocus={e => (e.target.style.borderColor = R)}
+                        onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
+                      />
+                    </div>
+
+                    {formError && (
+                      <div style={{ padding: "12px 16px", border: `1px solid ${R}50`, background: `${R}0d`, display: "flex", gap: 10, alignItems: "center", animation: "slideIn 0.3s ease" }}>
+                        <span style={{ color: R, fontWeight: 900, fontSize: 16 }}>!</span>
+                        <span className="b" style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>{formError}</span>
+                      </div>
+                    )}
+
+                    <button type="submit" disabled={submitting} style={{
+                      width: "100%", padding: "20px",
+                      background: submitting ? `${R}70` : R,
+                      color: "#fff", border: "none",
+                      fontFamily: "'Barlow Condensed', Impact, sans-serif",
+                      fontSize: 16, fontWeight: 900, letterSpacing: "0.25em",
+                      textTransform: "uppercase", cursor: submitting ? "not-allowed" : "pointer",
+                      clipPath: "polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))",
+                      boxShadow: submitting ? "none" : `0 0 40px ${R}35`,
+                      transition: "all 0.25s ease",
+                    }}
+                      onMouseEnter={e => { if (!submitting) { (e.target as HTMLButtonElement).style.background = "#fff"; (e.target as HTMLButtonElement).style.color = "#000" } }}
+                      onMouseLeave={e => { (e.target as HTMLButtonElement).style.background = submitting ? `${R}70` : R; (e.target as HTMLButtonElement).style.color = "#fff" }}
+                    >
+                      {submitting ? "Enviando..." : "Aplicar ahora →"}
+                    </button>
+                  </form>
+                )}
+              </div>
+            </FadeIn>
+
+            {/* Columna derecha */}
+            <FadeIn from="right" delay={100}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+
+                {/* WhatsApp */}
+                <div style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.07)", padding: "44px 40px", position: "relative", overflow: "hidden", flex: 1 }}>
+                  <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, background: "rgba(34,197,94,0.06)", borderRadius: "50%", filter: "blur(40px)" }} />
+
+                  <div style={{ width: 52, height: 52, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#22c55e">
+                      <path d="M20.52 3.48A11.9 11.9 0 0012.01 0C5.38 0 .01 5.37.01 12c0 2.12.56 4.19 1.62 6.02L0 24l6.15-1.61A11.93 11.93 0 0012.01 24c6.63 0 12-5.37 12-12 0-3.19-1.24-6.19-3.49-8.52z"/>
+                    </svg>
+                  </div>
+
+                  <h3 className="bc" style={{ fontSize: 26, fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.01em", marginBottom: 12 }}>
+                    ¿Prefieres WhatsApp?
+                  </h3>
+                  <p className="b" style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.65, fontWeight: 300, marginBottom: 28 }}>
+                    Escríbeme directamente. Sin bots, sin filtros — te respondo personalmente.
+                  </p>
+
+                  <a href="https://wa.me/573243747367?text=Hola%20Coach%20David%2C%20quiero%20empezar%20un%20plan%20personalizado.%20Mi%20objetivo%20es%20_____"
+                    target="_blank" rel="noopener noreferrer" className="bc"
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 12,
+                      border: "1px solid rgba(34,197,94,0.35)", color: "#22c55e",
+                      padding: "16px", fontSize: 14, fontWeight: 800,
+                      letterSpacing: "0.18em", textTransform: "uppercase", textDecoration: "none",
+                      transition: "all 0.25s ease",
+                    }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = "#22c55e"; el.style.color = "#000" }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = "transparent"; el.style.color = "#22c55e" }}
+                  >
+                    Hablar por WhatsApp →
+                  </a>
+                </div>
+
+                {/* Mini stats */}
+                <div style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.07)", padding: "32px 40px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+                    {[
+                      { n: "24h", l: "Tiempo de respuesta" },
+                      { n: "72h", l: "Tu programa listo" },
+                      { n: "1 a 1", l: "Seguimiento directo" },
+                      { n: "0", l: "Bots ni respuestas automáticas" },
+                    ].map((s, i) => (
+                      <div key={i} style={{ borderLeft: `2px solid ${i < 2 ? R : "rgba(255,255,255,0.08)"}`, paddingLeft: 16 }}>
+                        <div className="bc" style={{ fontSize: 28, fontWeight: 900, color: i < 2 ? R : "#fff", lineHeight: 1 }}>{s.n}</div>
+                        <div className="b" style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 4, letterSpacing: "0.08em", lineHeight: 1.3 }}>{s.l}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Garantía */}
+                <div style={{ padding: "24px 28px", border: `1px solid ${R}25`, background: `${R}06`, display: "flex", gap: 14, alignItems: "flex-start" }}>
+                  <span style={{ color: R, fontSize: 20, flexShrink: 0, marginTop: 2 }}>◆</span>
+                  <div>
+                    <div className="bc" style={{ fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Sin compromisos</div>
+                    <p className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", lineHeight: 1.6, fontWeight: 300 }}>
+                      Una conversación para ver si hay fit. Si no encajamos, te digo sin rodeos. Solo trabajo con personas que están realmente comprometidas.
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+            </FadeIn>
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="border-t border-border py-10">
-        <div className="container mx-auto px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <div className="font-display text-lg tracking-wide text-foreground">COACH<span className="text-primary">.</span>DAVID</div>
-          <p>© {new Date().getFullYear()} Coach David. Entrenamiento basado en ciencia.</p>
-          <div className="flex gap-6">
-            <a 
-              href="https://www.instagram.com/coachfitdavid/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="hover:text-foreground transition-colors"
-            >
-              Instagram
-            </a>
-            
-            <a 
-              href="#" 
-              className="hover:text-foreground transition-colors"
-            >
-              YouTube
-            </a>
+      {/* ══ FOOTER ══════════════════════════════════════════════════ */}
+      <footer style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "40px 64px", background: "#000" }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+          <div className="bc" style={{ fontSize: 20, fontWeight: 900, letterSpacing: "0.05em" }}>
+            COACH<span style={{ color: R }}>.</span>DAVID
+          </div>
+          <p className="b" style={{ fontSize: 13, color: "rgba(255,255,255,0.25)", fontWeight: 300 }}>
+            © {new Date().getFullYear()} Coach David · Entrenamiento basado en ciencia.
+          </p>
+          <div style={{ display: "flex", gap: 28 }}>
+            {[
+              { l: "Instagram", h: "https://www.instagram.com/coachfitdavid/" },
+              { l: "YouTube", h: "#" },
+            ].map(({ l, h }) => (
+              <a key={l} href={h} target={h !== "#" ? "_blank" : undefined} rel="noopener noreferrer" className="b"
+                style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", textDecoration: "none", letterSpacing: "0.05em", transition: "color 0.2s ease" }}
+                onMouseEnter={e => (e.target as HTMLAnchorElement).style.color = "#fff"}
+                onMouseLeave={e => (e.target as HTMLAnchorElement).style.color = "rgba(255,255,255,0.3)"}
+              >{l}</a>
+            ))}
           </div>
         </div>
       </footer>
 
-      {/* TOAST */}
-      <div 
-        className={`fixed bottom-24 right-6 bg-card border border-border p-4 rounded max-w-[360px] transition-transform duration-400 z-50 ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-40 opacity-0 pointer-events-none'}`}
-        role="status" 
-        aria-live="polite"
-      >
-        <div className="font-display text-lg uppercase">¡Solicitud enviada!</div>
-        <div className="text-muted-foreground text-sm mt-1">Te contactaré en menos de 24 horas para empezar tu transformación.</div>
+      {/* ══ TOAST DE ÉXITO ══════════════════════════════════════════ */}
+      <div style={{
+        position: "fixed", bottom: 96, right: 24, zIndex: 200,
+        background: "#0a0a0a", border: `1px solid ${R}40`,
+        padding: "20px 24px", maxWidth: 340,
+        transition: "all 0.4s cubic-bezier(0.16,1,0.3,1)",
+        opacity: toast ? 1 : 0, transform: toast ? "translateY(0)" : "translateY(40px)",
+        pointerEvents: toast ? "auto" : "none",
+        boxShadow: `0 20px 60px rgba(0,0,0,0.6)`,
+      }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: R }} />
+        <div className="bc" style={{ fontSize: 18, fontWeight: 900, textTransform: "uppercase", marginBottom: 6 }}>
+          ¡Solicitud enviada!
+        </div>
+        <div className="b" style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, fontWeight: 300 }}>
+          Te contactaré en menos de 24 horas para empezar tu transformación.
+        </div>
       </div>
 
-      <a
-          href="https://wa.me/573243747367?text=Hola%20Coach%20David,%20quiero%20estructurar%20mi%20entrenamiento%20correctamente."
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`fixed bottom-6 right-6 z-50 transition-all duration-500 ${
-            showWhatsApp
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-10 pointer-events-none"
-          }`}
-        >
-          <div className="flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-full shadow-lg animate-pulse">
-        
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path d="M20.52 3.48A11.9 11.9 0 0012.01 0C5.38 0 .01 5.37.01 12c0 2.12.56 4.19 1.62 6.02L0 24l6.15-1.61A11.93 11.93 0 0012.01 24c6.63 0 12-5.37 12-12 0-3.19-1.24-6.19-3.49-8.52z"/>
-            </svg>
-        
-            <span className="hidden md:inline text-sm font-semibold">
-              Hablar por WhatsApp
-            </span>
-        
-          </div>
-        </a>
-    </>
+      {/* ══ BOTÓN WHATSAPP FLOTANTE ══════════════════════════════════ */}
+      <a href="https://wa.me/573243747367?text=Hola%20Coach%20David,%20quiero%20estructurar%20mi%20entrenamiento%20correctamente."
+        target="_blank" rel="noopener noreferrer"
+        style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 200,
+          display: "flex", alignItems: "center", gap: 12,
+          background: "#22c55e", color: "#fff",
+          padding: "14px 22px", borderRadius: 40,
+          boxShadow: "0 8px 32px rgba(34,197,94,0.4)",
+          textDecoration: "none", transition: "all 0.4s cubic-bezier(0.16,1,0.3,1)",
+          opacity: showWA ? 1 : 0, transform: showWA ? "translateY(0) scale(1)" : "translateY(20px) scale(0.95)",
+          pointerEvents: showWA ? "auto" : "none",
+          animation: showWA ? "pulseG 2.5s ease infinite" : "none",
+        }}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+          <path d="M20.52 3.48A11.9 11.9 0 0012.01 0C5.38 0 .01 5.37.01 12c0 2.12.56 4.19 1.62 6.02L0 24l6.15-1.61A11.93 11.93 0 0012.01 24c6.63 0 12-5.37 12-12 0-3.19-1.24-6.19-3.49-8.52z"/>
+        </svg>
+        <span className="bc" style={{ fontSize: 14, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+          Hablar por WhatsApp
+        </span>
+      </a>
+    </div>
+  )
+}
+
+/* ── Sub-componentes ──────────────────────────────────────────── */
+function HeroButton({ href, children, primary = false }: { href: string; children: React.ReactNode; primary?: boolean }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <a href={href} className="bc"
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 12,
+        padding: "18px 44px", fontSize: 15, fontWeight: 900,
+        letterSpacing: "0.22em", textTransform: "uppercase", textDecoration: "none",
+        transition: "all 0.25s ease",
+        ...(primary
+          ? { background: hover ? "#fff" : R, color: hover ? "#000" : "#fff", boxShadow: hover ? "none" : `0 12px 40px ${R}40`, clipPath: "polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))" }
+          : { border: `1px solid ${hover ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.15)"}`, color: hover ? "#fff" : "rgba(255,255,255,0.55)" }
+        ),
+      }}
+    >{children}</a>
+  )
+}
+
+function MiniCard({ n, t, b }: { n: string; t: string; b: string }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{ padding: "24px 32px", background: hover ? "#0d0d0d" : "#050505", borderLeft: `3px solid ${hover ? R : "rgba(255,255,255,0.05)"}`, transition: "all 0.3s ease", marginBottom: 2 }}>
+      <div style={{ display: "flex", gap: 18, alignItems: "flex-start" }}>
+        <span className="bc" style={{ fontSize: 40, fontWeight: 900, color: hover ? R : "rgba(255,255,255,0.05)", lineHeight: 1, flexShrink: 0, transition: "color 0.3s ease" }}>{n}</span>
+        <div>
+          <h3 className="bc" style={{ fontSize: 18, fontWeight: 800, textTransform: "uppercase", color: hover ? "#fff" : "rgba(255,255,255,0.75)", transition: "color 0.3s ease" }}>{t}</h3>
+          <p className="b" style={{ marginTop: 5, color: "rgba(255,255,255,0.3)", fontSize: 13, lineHeight: 1.55, fontWeight: 300 }}>{b}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ProblemaCard({ n, t, d }: { n: string; t: string; d: string }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{ background: hover ? "#0f0f0f" : "#0a0a0a", border: `1px solid ${hover ? `${R}50` : "rgba(255,255,255,0.05)"}`, padding: "44px 36px", transition: "all 0.3s ease", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: hover ? R : "transparent", transition: "background 0.3s ease" }} />
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
+        <div style={{ width: 36, height: 36, border: `1px solid ${hover ? R : "rgba(255,255,255,0.1)"}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "border-color 0.3s ease", flexShrink: 0 }}>
+          <span style={{ color: hover ? R : "rgba(255,255,255,0.3)", fontSize: 18, fontWeight: 900, lineHeight: 1 }}>✕</span>
+        </div>
+        <span className="bc" style={{ fontSize: 28, fontWeight: 900, color: hover ? R : "rgba(255,255,255,0.1)", transition: "color 0.3s ease" }}>{n}</span>
+      </div>
+      <h3 className="bc" style={{ fontSize: 26, fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.01em", marginBottom: 12 }}>{t}</h3>
+      <p className="b" style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.7, fontWeight: 300 }}>{d}</p>
+    </div>
+  )
+}
+
+function BeneficioCard({ n, t, d }: { n: string; t: string; d: string }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{ background: hover ? "#0d0d0d" : "#080808", borderTop: `2px solid ${hover ? R : "rgba(255,255,255,0.05)"}`, padding: "44px 40px", transition: "all 0.3s ease" }}>
+      <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 16 }}>
+        <div style={{ width: 36, height: 36, background: hover ? `${R}20` : "rgba(255,255,255,0.03)", border: `1px solid ${hover ? R : "rgba(255,255,255,0.08)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.3s ease" }}>
+          <span style={{ color: hover ? R : "rgba(255,255,255,0.2)", fontSize: 14, fontWeight: 900, transition: "color 0.3s ease" }}>↗</span>
+        </div>
+        <span className="bc" style={{ fontSize: 44, fontWeight: 900, color: hover ? `${R}30` : "rgba(255,255,255,0.04)", transition: "color 0.3s ease", lineHeight: 1 }}>{n}</span>
+      </div>
+      <h3 className="bc" style={{ fontSize: 28, fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.01em", marginBottom: 10 }}>{t}</h3>
+      <p className="b" style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.7, fontWeight: 300 }}>{d}</p>
+    </div>
+  )
+}
+
+function FormLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <label style={{ display: "block", marginBottom: 7, fontFamily: "'Barlow Condensed', Impact, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)" }}>
+      {children} <span style={{ color: R }}>*</span>
+    </label>
   )
 }
