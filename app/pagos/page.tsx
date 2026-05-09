@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react"
 
 const R = "#E8000D"
 const NEQUI_PHONE = "3058125122"
-const NEQUI_LINK = `https://nequi.app.link/transfer?phone=${NEQUI_PHONE}`
-const NEQUI_QR = "/qr-nequi.png.jpeg" // ← Sube tu QR a public/qr-nequi.png
+const NEQUI_QR = "/qr-nequi.png" // ← Sube tu QR a public/qr-nequi.png
 const WOMPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY || "pub_prod_cXRe0FNsCRAEba9ktkXCSG7U52gWqIxM"
 
 /* ── Hook responsive ──────────────────────────────────────────── */
@@ -417,18 +416,16 @@ export default function Pagos() {
                     </div>
                   </div>
 
-                  {/* Botón abrir Nequi */}
-                  <a href={NEQUI_LINK} target="_blank" rel="noopener noreferrer"
-                    style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "15px 20px", background: "#7B2FBE", color: "#fff", fontFamily: "'Barlow Condensed', Impact, sans-serif", fontSize: 14, fontWeight: 900, letterSpacing: "0.18em", textTransform: "uppercase", textDecoration: "none", transition: "background 0.25s ease" }}
-                    onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.background = "#9B4FDE"}
-                    onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.background = "#7B2FBE"}
-                  >
-                    💜 Abrir Nequi →
-                  </a>
-
-                  <p className="b" style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", lineHeight: 1.5, textAlign: "center" }}>
-                    Al pagar, envía el comprobante a Coach David por WhatsApp para confirmar tu mensualidad.
-                  </p>
+                  {/* Instrucción */}
+                  <div style={{ padding: "14px 16px", background: "rgba(123,47,190,0.08)", border: "1px solid rgba(123,47,190,0.2)" }}>
+                    <div className="bc" style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Cómo pagar</div>
+                    {["1. Abre tu app Nequi", "2. Toca el ícono $ → Envía", "3. Escribe el número de arriba", `4. Ingresa el monto: ${formatCOP(monto)}`, "5. Envía el comprobante por WhatsApp"].map((step, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: i < 4 ? 6 : 0 }}>
+                        <div style={{ width: 4, height: 4, background: "#7B2FBE", transform: "rotate(45deg)", flexShrink: 0, marginTop: 6 }} />
+                        <span className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", fontWeight: 300, lineHeight: 1.5 }}>{step}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
