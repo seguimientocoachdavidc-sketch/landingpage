@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 
 const R = "#E8000D"
 const NEQUI_PHONE = "3058125122"
-const NEQUI_QR = "/qr-nequi.png" // ← Sube tu QR a public/qr-nequi.png
+const NEQUI_QR = "/qr-nequi.png.jpeg" // ← Sube tu QR a public/qr-nequi.png
 const WOMPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY || "pub_prod_cXRe0FNsCRAEba9ktkXCSG7U52gWqIxM"
 
 /* ── Hook responsive ──────────────────────────────────────────── */
