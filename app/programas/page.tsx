@@ -65,6 +65,90 @@ function BenefitRow({ text, delay }: { text: string; delay: number }) {
   )
 }
 
+/* ── Botón CTA general ────────────────────────────────────────── */
+function CTABtn({ href, children, primary = false, outline = false, ext = false }: {
+  href: string; children: React.ReactNode; primary?: boolean; outline?: boolean; ext?: boolean
+}) {
+  const [hover, setHover] = useState(false)
+  const base: React.CSSProperties = {
+    display: "inline-flex", alignItems: "center", gap: 10,
+    padding: "16px 36px", fontSize: 14, fontWeight: 900,
+    fontFamily: "'Barlow Condensed', Impact, sans-serif",
+    letterSpacing: "0.2em", textTransform: "uppercase", textDecoration: "none",
+    transition: "all 0.25s ease", cursor: "pointer",
+  }
+  const style: React.CSSProperties = primary
+    ? { ...base, background: hover ? "#fff" : R, color: hover ? "#000" : "#fff", boxShadow: hover ? "none" : `0 10px 36px ${R}38`, clipPath: "polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))" }
+    : { ...base, border: `1px solid ${hover ? R : "rgba(255,255,255,0.15)"}`, color: hover ? "#fff" : "rgba(255,255,255,0.55)", background: hover ? `${R}10` : "transparent" }
+  return (
+    <a href={href} target={ext ? "_blank" : undefined} rel={ext ? "noopener noreferrer" : undefined}
+      style={style} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      {children}
+    </a>
+  )
+}
+
+/* ── Bloque de precio + botón de pago ────────────────────────── */
+function PrecioConPago({
+  monto, montoDisplay, programa, ctaLabel, secondaryCta
+}: {
+  monto: number
+  montoDisplay: string
+  programa: string
+  ctaLabel?: string
+  secondaryCta?: { label: string; href: string; ext?: boolean }
+}) {
+  const [hover, setHover] = useState(false)
+  const href = `/pagos?programa=${programa}`
+
+  return (
+    <div>
+      {/* Precio */}
+      <div className="bc" style={{ fontSize: "clamp(44px, 4vw, 64px)", fontWeight: 900, color: R, lineHeight: 1 }}>
+        {montoDisplay}
+      </div>
+      <div className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em", textTransform: "uppercase", marginTop: 4, marginBottom: 24 }}>
+        por mes
+      </div>
+
+      {/* Botón de pago principal */}
+      <a href={href}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+          width: "100%", padding: "17px 24px",
+          background: hover ? "#fff" : R, color: hover ? "#000" : "#fff",
+          fontFamily: "'Barlow Condensed', Impact, sans-serif",
+          fontSize: 15, fontWeight: 900, letterSpacing: "0.2em",
+          textTransform: "uppercase", textDecoration: "none",
+          clipPath: "polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))",
+          boxShadow: hover ? "none" : `0 10px 36px ${R}35`,
+          transition: "all 0.25s ease",
+        }}>
+        🔒 {ctaLabel || "Pagar ahora →"}
+      </a>
+
+      {/* Seguridad */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 10 }}>
+        <span style={{ fontSize: 11 }}>🔒</span>
+        <span className="b" style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", fontWeight: 300 }}>
+          PSE · Tarjeta · Nequi · Daviplata · Bancolombia
+        </span>
+      </div>
+
+      {/* CTA secundario opcional */}
+      {secondaryCta && (
+        <div style={{ marginTop: 12 }}>
+          <CTABtn href={secondaryCta.href} ext={secondaryCta.ext} outline>
+            {secondaryCta.label}
+          </CTABtn>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ══ COMPONENTE PRINCIPAL ═════════════════════════════════════════ */
 export default function Programas() {
   const { isMobile, isTablet } = useBreakpoint()
@@ -96,26 +180,17 @@ export default function Programas() {
 
       {/* ══ HERO ════════════════════════════════════════════════════ */}
       <section style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
-
-        {/* Imagen — parallax solo en desktop */}
         <div style={{ position: "absolute", inset: 0, transform: isMobile ? "none" : `translateY(${scrollY * 0.25}px)`, willChange: "transform" }}>
           <img src="/gym-2.jpg" alt="" style={{ width: "100%", height: "110%", objectFit: "cover", filter: "grayscale(30%) contrast(1.1)", opacity: isMobile ? 0.25 : 0.35 }} />
         </div>
-
-        {/* Overlays */}
         <div style={{ position: "absolute", inset: 0, background: isMobile ? "linear-gradient(to bottom, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.78) 100%)" : "linear-gradient(to right, #000 45%, rgba(0,0,0,0.65) 70%, rgba(0,0,0,0.25) 100%)" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, #000 0%, transparent 55%)" }} />
         <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 75% 40%, ${R}10 0%, transparent 50%)` }} />
-
-        {/* Línea vertical — solo desktop */}
         {!isMobile && (
           <div style={{ position: "absolute", left: "max(32px, calc(50vw - 700px))", top: 0, bottom: 0, width: 2, background: `linear-gradient(to bottom, transparent, ${R} 25%, ${R} 75%, transparent)`, opacity: heroIn ? 1 : 0, transition: "opacity 1.2s ease 0.5s" }} />
         )}
 
-        {/* Contenido */}
         <div style={{ position: "relative", zIndex: 10, maxWidth: 1400, margin: "0 auto", padding: isMobile ? "100px 20px 80px" : "140px 64px 100px", width: "100%" }}>
-
-          {/* Eyebrow */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, opacity: heroIn ? 1 : 0, transform: heroIn ? "none" : "translateY(20px)", transition: "all 0.7s ease 0.2s" }}>
             <div style={{ width: 32, height: 2, background: R }} />
             <span className="bc" style={{ color: R, fontSize: isMobile ? 11 : 12, fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase" }}>
@@ -123,37 +198,21 @@ export default function Programas() {
             </span>
           </div>
 
-          {/* Título */}
           <div style={{ marginBottom: isMobile ? 24 : 32 }}>
             {["NO DISEÑO", '"RUTINAS".', "CONSTRUYO", "RESULTADOS."].map((line, i) => (
               <div key={line} style={{ opacity: heroIn ? 1 : 0, transform: heroIn ? "translateY(0)" : "translateY(80px)", transition: `all 0.9s cubic-bezier(0.16,1,0.3,1) ${0.3 + i * 0.12}s` }}>
-                <span className="bc" style={{
-                  display: "block",
-                  fontSize: isMobile ? "clamp(48px, 13vw, 68px)" : "clamp(56px, 9vw, 140px)",
-                  fontWeight: 900, textTransform: "uppercase", lineHeight: 0.87, letterSpacing: "-0.02em",
-                  color: i === 2 ? R : "#fff",
-                  textShadow: i === 2 ? `0 0 60px ${R}45` : "none",
-                }}>{line}</span>
+                <span className="bc" style={{ display: "block", fontSize: isMobile ? "clamp(48px, 13vw, 68px)" : "clamp(56px, 9vw, 140px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.87, letterSpacing: "-0.02em", color: i === 2 ? R : "#fff", textShadow: i === 2 ? `0 0 60px ${R}45` : "none" }}>{line}</span>
               </div>
             ))}
           </div>
 
-          {/* Subtítulo */}
           <p className="b" style={{ fontSize: isMobile ? 15 : 17, color: "rgba(255,255,255,0.5)", maxWidth: 460, lineHeight: 1.7, fontWeight: 300, opacity: heroIn ? 1 : 0, transform: heroIn ? "none" : "translateY(20px)", transition: "all 0.7s ease 0.9s", marginBottom: isMobile ? 32 : 48 }}>
             Cada programa está diseñado con estructura, seguimiento y progresión real. No improvisamos.
           </p>
 
-          {/* Anclas */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, opacity: heroIn ? 1 : 0, transform: heroIn ? "none" : "translateY(20px)", transition: "all 0.7s ease 1.1s" }}>
             {[{ label: "Entrenamiento", href: "#entrenamiento" }, { label: "Alimentación", href: "#alimentacion" }, { label: "Programa Duo", href: "#duo" }].map((a, i) => (
-              <a key={a.href} href={a.href} className="bc" style={{
-                display: "flex", alignItems: "center", gap: 8, padding: isMobile ? "10px 16px" : "12px 24px",
-                border: `1px solid ${i === 2 ? R : "rgba(255,255,255,0.15)"}`,
-                background: i === 2 ? `${R}18` : "transparent",
-                color: i === 2 ? "#fff" : "rgba(255,255,255,0.5)",
-                fontSize: isMobile ? 12 : 13, fontWeight: 700, letterSpacing: "0.18em",
-                textTransform: "uppercase", textDecoration: "none", transition: "all 0.25s ease",
-              }}
+              <a key={a.href} href={a.href} className="bc" style={{ display: "flex", alignItems: "center", gap: 8, padding: isMobile ? "10px 16px" : "12px 24px", border: `1px solid ${i === 2 ? R : "rgba(255,255,255,0.15)"}`, background: i === 2 ? `${R}18` : "transparent", color: i === 2 ? "#fff" : "rgba(255,255,255,0.5)", fontSize: isMobile ? 12 : 13, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", textDecoration: "none", transition: "all 0.25s ease" }}
                 onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = R; el.style.color = "#fff" }}
                 onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = i === 2 ? R : "rgba(255,255,255,0.15)"; el.style.color = i === 2 ? "#fff" : "rgba(255,255,255,0.5)" }}
               >
@@ -163,7 +222,6 @@ export default function Programas() {
           </div>
         </div>
 
-        {/* Marquee */}
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", padding: "11px 0", overflow: "hidden", opacity: heroIn ? 1 : 0, transition: "opacity 1s ease 1.5s" }}>
           <div style={{ display: "flex", animation: "marquee 22s linear infinite", width: "max-content" }}>
             {Array(6).fill(null).map((_, i) => (
@@ -180,7 +238,6 @@ export default function Programas() {
         {!isMobile && (
           <div className="bc" style={{ position: "absolute", right: -40, top: "50%", transform: "translateY(-50%)", fontSize: "40vw", fontWeight: 900, color: "rgba(255,255,255,0.012)", lineHeight: 1, pointerEvents: "none", userSelect: "none", letterSpacing: "-0.05em" }}>01</div>
         )}
-
         <div style={{ position: "relative", maxWidth: 1400, margin: "0 auto", padding: pad }}>
           <FadeIn>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: isMobile ? 36 : 64 }}>
@@ -189,9 +246,7 @@ export default function Programas() {
             </div>
           </FadeIn>
 
-          {/* Grid — columna única en móvil, imagen abajo */}
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 48 : 80, alignItems: "center" }}>
-
             <FadeIn from={isMobile ? "bottom" : "left"}>
               <div>
                 <h2 className="bc" style={{ fontSize: titleSize, fontWeight: 900, textTransform: "uppercase", lineHeight: 0.88, letterSpacing: "-0.02em", marginBottom: 24 }}>
@@ -205,13 +260,15 @@ export default function Programas() {
                     <BenefitRow key={i} text={item} delay={i * 50} />
                   ))}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 20 : 32, flexWrap: "wrap" }}>
-                  <div>
-                    <div className="bc" style={{ fontSize: isMobile ? 48 : "clamp(44px, 4vw, 64px)", fontWeight: 900, color: R, lineHeight: 1 }}>$140.000</div>
-                    <div className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em", textTransform: "uppercase", marginTop: 4 }}>por mes</div>
-                  </div>
-                  <CTABtn href="/asesoria" primary>Aplicar →</CTABtn>
-                </div>
+
+                {/* ✅ BOTÓN DE PAGO INTEGRADO */}
+                <PrecioConPago
+                  monto={140000}
+                  montoDisplay="$140.000"
+                  programa="entrenamiento"
+                  ctaLabel="Pagar mensualidad →"
+                  secondaryCta={{ label: "Aplicar a asesoría primero", href: "/asesoria" }}
+                />
               </div>
             </FadeIn>
 
@@ -236,7 +293,6 @@ export default function Programas() {
         {!isMobile && (
           <div className="bc" style={{ position: "absolute", left: -40, top: "50%", transform: "translateY(-50%)", fontSize: "40vw", fontWeight: 900, color: "rgba(255,255,255,0.012)", lineHeight: 1, pointerEvents: "none", userSelect: "none", letterSpacing: "-0.05em" }}>02</div>
         )}
-
         <div style={{ position: "relative", maxWidth: 1400, margin: "0 auto", padding: pad }}>
           <FadeIn>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: isMobile ? 36 : 64 }}>
@@ -245,11 +301,8 @@ export default function Programas() {
             </div>
           </FadeIn>
 
-          {/* En móvil: texto primero, imagen abajo. En desktop: imagen izq, texto der */}
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 48 : 80, alignItems: "center" }}>
-
-            {/* Imagen — en móvil va después del texto via order */}
-            <div style={{ order: isMobile ? 2 : 1, position: "relative" }}>
+            <div style={{ order: isMobile ? 2 : 1 }}>
               <FadeIn from={isMobile ? "bottom" : "left"} delay={isMobile ? 0 : 150}>
                 <div style={{ position: "relative" }}>
                   <img src="/comida.jpg" alt="Plan de alimentación" style={{ width: "100%", objectFit: "cover", filter: "grayscale(10%) contrast(1.05)", display: "block" }} />
@@ -262,7 +315,6 @@ export default function Programas() {
               </FadeIn>
             </div>
 
-            {/* Texto */}
             <div style={{ order: isMobile ? 1 : 2 }}>
               <FadeIn from={isMobile ? "bottom" : "right"}>
                 <div>
@@ -277,13 +329,15 @@ export default function Programas() {
                       <BenefitRow key={i} text={item} delay={i * 50} />
                     ))}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 20 : 32, flexWrap: "wrap" }}>
-                    <div>
-                      <div className="bc" style={{ fontSize: isMobile ? 48 : "clamp(44px, 4vw, 64px)", fontWeight: 900, color: R, lineHeight: 1 }}>$130.000</div>
-                      <div className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em", textTransform: "uppercase", marginTop: 4 }}>por mes</div>
-                    </div>
-                    <CTABtn href="/nutricion-cuestionario" outline>Iniciar evaluación →</CTABtn>
-                  </div>
+
+                  {/* ✅ BOTÓN DE PAGO INTEGRADO */}
+                  <PrecioConPago
+                    monto={130000}
+                    montoDisplay="$130.000"
+                    programa="alimentacion"
+                    ctaLabel="Pagar mensualidad →"
+                    secondaryCta={{ label: "Iniciar evaluación nutricional", href: "/nutricion-cuestionario" }}
+                  />
                 </div>
               </FadeIn>
             </div>
@@ -313,7 +367,6 @@ export default function Programas() {
             </p>
           </FadeIn>
 
-          {/* Card DUO — en móvil: columna única */}
           <FadeIn delay={100}>
             <div style={{ border: `2px solid ${R}`, background: "rgba(232,0,13,0.04)", position: "relative", overflow: "hidden", boxShadow: `0 0 60px ${R}15, inset 0 0 60px ${R}06`, animation: "glow 3s ease infinite" }}>
               <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, background: `${R}12`, borderRadius: "50%", filter: "blur(50px)", pointerEvents: "none" }} />
@@ -345,34 +398,37 @@ export default function Programas() {
                   </div>
                 </div>
 
-                {/* Columna derecha — precio */}
+                {/* Columna derecha — precio + pago */}
                 <div style={{ padding: isMobile ? "36px 24px" : "56px 48px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                   <div style={{ marginBottom: 8 }}>
                     <span className="bc" style={{ fontSize: isMobile ? 20 : 24, color: "rgba(255,255,255,0.2)", textDecoration: "line-through", fontWeight: 700 }}>$270.000</span>
                     <span className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", marginLeft: 8 }}>/mes</span>
                   </div>
-                  <div className="bc" style={{ fontSize: isMobile ? "clamp(52px, 14vw, 72px)" : "clamp(52px, 5vw, 76px)", fontWeight: 900, color: R, lineHeight: 1, letterSpacing: "-0.02em" }}>$220.000</div>
-                  <div className="b" style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em", textTransform: "uppercase", marginTop: 6, marginBottom: 20 }}>por mes</div>
 
                   {/* Badge descuento */}
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: R, color: "#fff", padding: "8px 14px", width: "fit-content", marginBottom: isMobile ? 24 : 36 }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: R, color: "#fff", padding: "8px 14px", width: "fit-content", marginBottom: 20 }}>
                     <span className="bc" style={{ fontSize: isMobile ? 18 : 22, fontWeight: 900 }}>20%</span>
                     <span className="bc" style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>de descuento</span>
                   </div>
 
                   {/* Ahorro */}
-                  <div style={{ padding: "14px 18px", border: "1px solid rgba(255,255,255,0.07)", marginBottom: isMobile ? 28 : 36, background: "rgba(255,255,255,0.02)" }}>
+                  <div style={{ padding: "14px 18px", border: "1px solid rgba(255,255,255,0.07)", marginBottom: 28, background: "rgba(255,255,255,0.02)" }}>
                     <div className="bc" style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: 4 }}>Ahorro mensual</div>
                     <div className="bc" style={{ fontSize: 28, fontWeight: 900, color: "#fff" }}>$50.000</div>
                   </div>
 
-                  {/* CTA */}
-                  <a href="https://wa.me/573243747367?text=Hola Coach David, quiero el programa DUO." target="_blank" rel="noopener noreferrer" className="bc"
-                    style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, background: R, color: "#fff", padding: "18px", fontSize: 15, fontWeight: 900, letterSpacing: "0.2em", textTransform: "uppercase", textDecoration: "none", boxShadow: `0 16px 48px ${R}45`, clipPath: "polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))", transition: "all 0.25s ease" }}
-                    onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = "#fff"; el.style.color = "#000"; el.style.boxShadow = "none" }}
-                    onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = R; el.style.color = "#fff"; el.style.boxShadow = `0 16px 48px ${R}45` }}
-                  >Empezar ahora →</a>
-                  <p className="b" style={{ textAlign: "center", marginTop: 14, fontSize: 12, color: "rgba(255,255,255,0.2)" }}>Vía WhatsApp · Respuesta inmediata</p>
+                  {/* ✅ BOTÓN DE PAGO INTEGRADO */}
+                  <PrecioConPago
+                    monto={220000}
+                    montoDisplay="$220.000"
+                    programa="duo"
+                    ctaLabel="Pagar programa DUO →"
+                    secondaryCta={{
+                      label: "Consultar por WhatsApp",
+                      href: "https://wa.me/573243747367?text=Hola Coach David, quiero el programa DUO.",
+                      ext: true,
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -393,13 +449,12 @@ export default function Programas() {
             </h2>
           </FadeIn>
 
-          {/* Tabla — en móvil: versión simplificada en cards */}
           {isMobile ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {[
-                { title: "Entrenamiento", price: "$140.000", color: "rgba(255,255,255,0.6)", items: ["✓ Programa personalizado", "✓ Seguimiento 1 a 1", "✓ Progresión planificada", "✓ Ajustes constantes", "— Plan de alimentación", "— Tips avanzados"], href: "/asesoria", cta: "Aplicar" },
-                { title: "Alimentación", price: "$130.000", color: "rgba(255,255,255,0.6)", items: ["— Programa de entrenamiento", "✓ Plan de alimentación", "✓ Seguimiento 1 a 1", "— Progresión planificada", "✓ Ajustes constantes", "— Tips avanzados"], href: "/nutricion-cuestionario", cta: "Iniciar evaluación" },
-                { title: "DUO ★", price: "$220.000", color: R, items: ["✓ Programa personalizado", "✓ Plan de alimentación", "✓ Seguimiento 1 a 1", "✓ Progresión planificada", "✓ Ajustes constantes", "✓ Tips avanzados exclusivos"], href: "https://wa.me/573243747367?text=Hola Coach David, quiero el programa DUO.", cta: "Empezar ahora", featured: true },
+                { title: "Entrenamiento", price: "$140.000", color: "rgba(255,255,255,0.6)", items: ["✓ Programa personalizado", "✓ Seguimiento 1 a 1", "✓ Progresión planificada", "✓ Ajustes constantes", "— Plan de alimentación", "— Tips avanzados"], href: "/pagos?programa=entrenamiento", cta: "🔒 Pagar ahora", featured: false },
+                { title: "Alimentación", price: "$130.000", color: "rgba(255,255,255,0.6)", items: ["— Programa de entrenamiento", "✓ Plan de alimentación", "✓ Seguimiento 1 a 1", "— Progresión planificada", "✓ Ajustes constantes", "— Tips avanzados"], href: "/pagos?programa=alimentacion", cta: "🔒 Pagar ahora", featured: false },
+                { title: "DUO ★", price: "$220.000", color: R, items: ["✓ Programa personalizado", "✓ Plan de alimentación", "✓ Seguimiento 1 a 1", "✓ Progresión planificada", "✓ Ajustes constantes", "✓ Tips avanzados exclusivos"], href: "/pagos?programa=duo", cta: "🔒 Pagar programa DUO", featured: true },
               ].map((card) => (
                 <FadeIn key={card.title}>
                   <div style={{ background: card.featured ? `${R}08` : "#0a0a0a", border: `${card.featured ? "2px" : "1px"} solid ${card.featured ? R : "rgba(255,255,255,0.07)"}`, padding: "28px 22px" }}>
@@ -412,16 +467,15 @@ export default function Programas() {
                         <div key={i} className="b" style={{ fontSize: 13, color: item.startsWith("✓") ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.2)", fontWeight: 300 }}>{item}</div>
                       ))}
                     </div>
-                    <a href={card.href} target={card.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="bc"
-                      style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "14px", fontSize: 13, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", textDecoration: "none", background: card.featured ? R : "transparent", color: card.featured ? "#fff" : "rgba(255,255,255,0.5)", border: card.featured ? "none" : "1px solid rgba(255,255,255,0.12)" }}>
-                      {card.cta} →
+                    <a href={card.href} className="bc"
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "14px", fontSize: 13, fontWeight: 800, letterSpacing: "0.15em", textTransform: "uppercase", textDecoration: "none", background: card.featured ? R : "transparent", color: card.featured ? "#fff" : "rgba(255,255,255,0.5)", border: card.featured ? "none" : `1px solid rgba(255,255,255,0.12)`, clipPath: card.featured ? "polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))" : "none" }}>
+                      {card.cta}
                     </a>
                   </div>
                 </FadeIn>
               ))}
             </div>
           ) : (
-            /* Tabla desktop — sin cambios */
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 1, background: "rgba(255,255,255,0.04)" }}>
               {["", "Entrenamiento", "Alimentación", "DUO ★"].map((h, i) => (
                 <div key={i} style={{ padding: "20px 24px", background: i === 3 ? `${R}15` : "#080808", borderBottom: `2px solid ${i === 3 ? R : "rgba(255,255,255,0.06)"}` }}>
@@ -437,18 +491,33 @@ export default function Programas() {
                 { feat: "Tips avanzados exclusivos", e: false, a: false, d: true },
                 { feat: "Mayor velocidad de progreso", e: false, a: false, d: true },
                 { feat: "Precio mensual", e: "$140.000", a: "$130.000", d: "$220.000" },
+                { feat: "Pago seguro", e: "🔒 Pagar", a: "🔒 Pagar", d: "🔒 Pagar DUO" },
               ].map((row, ri) => ([
                 <div key={`f${ri}`} style={{ padding: "15px 24px", background: "#080808", display: "flex", alignItems: "center" }}>
                   <span className="b" style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", fontWeight: 300 }}>{row.feat}</span>
                 </div>,
-                ...[row.e, row.a, row.d].map((val, ci) => (
+                ...([
+                  { val: row.e, programa: "entrenamiento" },
+                  { val: row.a, programa: "alimentacion" },
+                  { val: row.d, programa: "duo" },
+                ].map(({ val, programa }, ci) => (
                   <div key={`${ri}-${ci}`} style={{ padding: "15px 24px", display: "flex", alignItems: "center", justifyContent: "center", background: ci === 2 ? `${R}08` : "#080808", borderLeft: "1px solid rgba(255,255,255,0.04)" }}>
-                    {typeof val === "boolean"
-                      ? val ? <span style={{ color: R, fontSize: 17, fontWeight: 900 }}>◈</span> : <span style={{ color: "rgba(255,255,255,0.1)", fontSize: 17 }}>—</span>
-                      : <span className="bc" style={{ fontSize: 15, fontWeight: 800, color: ci === 2 ? R : "rgba(255,255,255,0.7)" }}>{val}</span>
-                    }
+                    {/* Fila de pago */}
+                    {row.feat === "Pago seguro" ? (
+                      <a href={`/pagos?programa=${programa}`} className="bc"
+                        style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", textDecoration: "none", color: ci === 2 ? R : "rgba(255,255,255,0.5)", borderBottom: `1px solid ${ci === 2 ? R : "rgba(255,255,255,0.2)"}`, paddingBottom: 2, transition: "all 0.2s ease" }}
+                        onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.color = "#fff"}
+                        onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.color = ci === 2 ? R : "rgba(255,255,255,0.5)"}
+                      >{typeof val === "string" ? val : ""}</a>
+                    ) : typeof val === "boolean" ? (
+                      val
+                        ? <span style={{ color: R, fontSize: 17, fontWeight: 900 }}>◈</span>
+                        : <span style={{ color: "rgba(255,255,255,0.1)", fontSize: 17 }}>—</span>
+                    ) : (
+                      <span className="bc" style={{ fontSize: 15, fontWeight: 800, color: ci === 2 ? R : "rgba(255,255,255,0.7)" }}>{val}</span>
+                    )}
                   </div>
-                ))
+                )))
               ]))}
             </div>
           )}
@@ -469,6 +538,7 @@ export default function Programas() {
             <p className="b" style={{ marginTop: 24, fontSize: isMobile ? 15 : 17, color: "rgba(255,255,255,0.4)", fontWeight: 300 }}>Avancemos a un nuevo nivel. Con un sistema real.</p>
             <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 44 }}>
               <CTABtn href="/asesoria" primary>Aplicar a asesoría →</CTABtn>
+              <CTABtn href="/pagos" outline>🔒 Ir a pagos</CTABtn>
               <CTABtn href="https://wa.me/573243747367" ext outline>Escribir por WhatsApp</CTABtn>
             </div>
             <p className="b" style={{ marginTop: 20, fontSize: 12, color: "rgba(255,255,255,0.18)" }}>Sin compromisos. Una conversación para ver si hay fit.</p>
@@ -477,28 +547,5 @@ export default function Programas() {
       </section>
 
     </main>
-  )
-}
-
-/* ── Botón CTA reutilizable ───────────────────────────────────── */
-function CTABtn({ href, children, primary = false, outline = false, ext = false }: {
-  href: string; children: React.ReactNode; primary?: boolean; outline?: boolean; ext?: boolean
-}) {
-  const [hover, setHover] = useState(false)
-  const base: React.CSSProperties = {
-    display: "inline-flex", alignItems: "center", gap: 10,
-    padding: "16px 36px", fontSize: 14, fontWeight: 900,
-    fontFamily: "'Barlow Condensed', Impact, sans-serif",
-    letterSpacing: "0.2em", textTransform: "uppercase", textDecoration: "none",
-    transition: "all 0.25s ease", cursor: "pointer",
-  }
-  const style: React.CSSProperties = primary
-    ? { ...base, background: hover ? "#fff" : R, color: hover ? "#000" : "#fff", boxShadow: hover ? "none" : `0 10px 36px ${R}38`, clipPath: "polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))" }
-    : { ...base, border: `1px solid ${hover ? R : "rgba(255,255,255,0.15)"}`, color: hover ? "#fff" : "rgba(255,255,255,0.55)", background: hover ? `${R}10` : "transparent" }
-  return (
-    <a href={href} target={ext ? "_blank" : undefined} rel={ext ? "noopener noreferrer" : undefined}
-      style={style} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
-      {children}
-    </a>
   )
 }
