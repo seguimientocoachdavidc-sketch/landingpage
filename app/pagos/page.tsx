@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 
 const R = "#E8000D"
+const NEQUI_PHONE = "573058125122"
 const WOMPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY || "pub_prod_cXRe0FNsCRAEba9ktkXCSG7U52gWqIxM"
 
 /* ── Hook responsive ──────────────────────────────────────────── */
@@ -102,13 +103,9 @@ export default function Pagos() {
 
   useEffect(() => {
     setTimeout(() => setHeroIn(true), 80)
-
-    // Leer programa preseleccionado desde URL (?programa=entrenamiento)
     const params = new URLSearchParams(window.location.search)
     const prog = params.get("programa")
-    if (prog && PROGRAMAS.find(p => p.id === prog)) {
-      setSelectedId(prog)
-    }
+    if (prog && PROGRAMAS.find(p => p.id === prog)) setSelectedId(prog)
   }, [])
 
   const programa = PROGRAMAS.find(p => p.id === selectedId)
@@ -117,7 +114,6 @@ export default function Pagos() {
     : programa?.precio || 0
   const montoEnCentavos = monto * 100
 
-  /* ── Validación paso 1 ──────────────────────────────────────── */
   const irAFormulario = () => {
     if (!selectedId) return setError("Selecciona un programa para continuar.")
     if (programa?.custom && monto < 10000)
@@ -127,50 +123,33 @@ export default function Pagos() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  /* ── Validación paso 2 + generación de firma ────────────────── */
   const irACheckout = async () => {
     if (!nombre.trim()) return setError("Ingresa tu nombre completo.")
     if (!email.trim() || !email.includes("@")) return setError("Ingresa un correo electrónico válido.")
     setError(null)
     setCargandoFirma(true)
-
     try {
-      // Pedir la firma al backend
       const res = await fetch("/api/wompi-signature", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reference: referencia,
-          amountInCents: montoEnCentavos,
-          currency: "COP",
-        }),
+        body: JSON.stringify({ reference: referencia, amountInCents: montoEnCentavos, currency: "COP" }),
       })
-
       if (!res.ok) throw new Error("Error generando firma")
       const { firma } = await res.json()
-
       setStep("checkout")
       window.scrollTo({ top: 0, behavior: "smooth" })
-
-      // Dar tiempo al DOM para montar el contenedor antes de insertar el script
       setTimeout(() => cargarWidget(firma), 300)
-
-    } catch (err) {
-      console.error(err)
+    } catch {
       setError("Error al preparar el checkout. Intenta de nuevo.")
     } finally {
       setCargandoFirma(false)
     }
   }
 
-  /* ── Cargar widget de Wompi con firma válida ────────────────── */
   const cargarWidget = (firma: string) => {
     const container = widgetRef.current
     if (!container) return
-
-    // Limpiar cualquier widget anterior
     container.innerHTML = ""
-
     const script = document.createElement("script")
     script.src = "https://checkout.wompi.co/widget.js"
     script.setAttribute("data-render", "button")
@@ -179,13 +158,9 @@ export default function Pagos() {
     script.setAttribute("data-amount-in-cents", String(montoEnCentavos))
     script.setAttribute("data-reference", referencia)
     script.setAttribute("data-signature:integrity", firma)
-    script.setAttribute(
-      "data-redirect-url",
-      `${window.location.origin}/pagos/confirmacion?ref=${referencia}`
-    )
+    script.setAttribute("data-redirect-url", `${window.location.origin}/pagos/confirmacion?ref=${referencia}`)
     script.setAttribute("data-customer-data:email", email)
     script.setAttribute("data-customer-data:full-name", nombre)
-
     container.appendChild(script)
   }
 
@@ -204,62 +179,39 @@ export default function Pagos() {
         @keyframes slideIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
         @keyframes blink   { 0%,100%{opacity:1} 50%{opacity:0.3} }
         @keyframes spin    { to{transform:rotate(360deg)} }
-        @keyframes pulseR  { 0%,100%{box-shadow:0 0 0 0 ${R}40} 50%{box-shadow:0 0 0 8px transparent} }
-        /* Fuerza al botón de Wompi a ocupar el ancho completo */
         #wompi-widget-container button,
         #wompi-widget-container .wf-button,
         #wompi-widget-container form { width: 100% !important; }
       `}</style>
 
-      {/* Línea roja fija top */}
       <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 2, background: R, zIndex: 200 }} />
 
       {/* ── HEADER ────────────────────────────────────────────── */}
-      <header style={{
-        position: "fixed", top: 2, left: 0, right: 0, zIndex: 100,
-        background: "rgba(0,0,0,0.95)", backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(255,255,255,0.05)",
-      }}>
+      <header style={{ position: "fixed", top: 2, left: 0, right: 0, zIndex: 100, background: "rgba(0,0,0,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", padding: isMobile ? "0 20px" : "0 48px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <a href="/" className="bc" style={{ fontSize: isMobile ? 16 : 20, fontWeight: 900, letterSpacing: "0.05em", textDecoration: "none", color: "#fff" }}>
             COACH<span style={{ color: R }}>.</span>DAVID
           </a>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 6, height: 6, background: "#22c55e", borderRadius: "50%", animation: "blink 2s ease infinite" }} />
-            <span className="bc" style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", letterSpacing: "0.25em", textTransform: "uppercase" }}>
-              Pago seguro · Wompi
-            </span>
+            <span className="bc" style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", letterSpacing: "0.25em", textTransform: "uppercase" }}>Pago seguro · Wompi</span>
           </div>
         </div>
       </header>
 
       {/* ── STEPPER ───────────────────────────────────────────── */}
-      <div style={{
-        position: "fixed", top: 58, left: 0, right: 0, zIndex: 99,
-        background: "rgba(0,0,0,0.9)", backdropFilter: "blur(8px)",
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
-      }}>
+      <div style={{ position: "fixed", top: 58, left: 0, right: 0, zIndex: 99, background: "rgba(0,0,0,0.9)", backdropFilter: "blur(8px)", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", padding: "12px 20px", display: "flex", alignItems: "center" }}>
-          {[
-            { label: "Programa", key: "select" },
-            { label: "Tus datos", key: "form" },
-            { label: "Pago",     key: "checkout" },
-          ].map((s, i) => {
+          {[{ label: "Programa", key: "select" }, { label: "Tus datos", key: "form" }, { label: "Pago", key: "checkout" }].map((s, i) => {
             const steps = ["select", "form", "checkout"]
             const cur = steps.indexOf(step)
             const idx = steps.indexOf(s.key)
             const isActive = idx === cur
-            const isDone   = idx < cur
+            const isDone = idx < cur
             return (
               <div key={s.key} style={{ display: "flex", alignItems: "center", flex: i < 2 ? 1 : "initial" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: "50%",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    background: isDone ? R : isActive ? "#fff" : "transparent",
-                    border: `2px solid ${isDone ? R : isActive ? "#fff" : "rgba(255,255,255,0.15)"}`,
-                    flexShrink: 0, transition: "all 0.3s ease",
-                  }}>
+                  <div style={{ width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: isDone ? R : isActive ? "#fff" : "transparent", border: `2px solid ${isDone ? R : isActive ? "#fff" : "rgba(255,255,255,0.15)"}`, flexShrink: 0, transition: "all 0.3s ease" }}>
                     {isDone
                       ? <span style={{ color: "#fff", fontSize: 12, fontWeight: 900 }}>✓</span>
                       : <span className="bc" style={{ fontSize: 12, fontWeight: 900, color: isActive ? "#000" : "rgba(255,255,255,0.3)" }}>{String(i + 1).padStart(2, "0")}</span>
@@ -284,7 +236,6 @@ export default function Pagos() {
         {/* ════ PASO 1 — Seleccionar programa ════════════════════ */}
         {step === "select" && (
           <div style={{ animation: "fadeUp 0.5s ease" }}>
-
             <div style={{ marginBottom: 44 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, opacity: heroIn ? 1 : 0, transition: "all 0.7s ease 0.1s" }}>
                 <div style={{ width: 32, height: 2, background: R }} />
@@ -298,30 +249,20 @@ export default function Pagos() {
               </p>
             </div>
 
-            {/* Cards de programa */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 28 }}>
               {PROGRAMAS.map((p, i) => {
                 const isSelected = selectedId === p.id
                 return (
                   <div key={p.id} onClick={() => { setSelectedId(p.id); setError(null) }}
-                    style={{
-                      padding: isMobile ? "18px 16px" : "22px 26px",
-                      border: `${isSelected ? "2px" : "1px"} solid ${isSelected ? R : p.featured && !isSelected ? `${R}28` : "rgba(255,255,255,0.08)"}`,
-                      background: isSelected ? `${R}10` : p.featured ? `${R}04` : "rgba(255,255,255,0.02)",
-                      cursor: "pointer", transition: "all 0.2s ease", position: "relative", overflow: "hidden",
-                      animation: `fadeUp 0.5s ease ${i * 70}ms both`,
-                    }}
-                  >
+                    style={{ padding: isMobile ? "18px 16px" : "22px 26px", border: `${isSelected ? "2px" : "1px"} solid ${isSelected ? R : p.featured && !isSelected ? `${R}28` : "rgba(255,255,255,0.08)"}`, background: isSelected ? `${R}10` : p.featured ? `${R}04` : "rgba(255,255,255,0.02)", cursor: "pointer", transition: "all 0.2s ease", position: "relative", overflow: "hidden", animation: `fadeUp 0.5s ease ${i * 70}ms both` }}>
                     {isSelected && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: R }} />}
                     {p.featured && !isSelected && (
                       <div style={{ position: "absolute", top: 10, right: 12, background: `${R}20`, border: `1px solid ${R}35`, padding: "3px 8px" }}>
                         <span className="bc" style={{ fontSize: 9, color: R, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" }}>Recomendado</span>
                       </div>
                     )}
-
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1 }}>
-                        {/* Radio visual */}
                         <div style={{ width: 20, height: 20, borderRadius: "50%", border: `2px solid ${isSelected ? R : "rgba(255,255,255,0.2)"}`, background: isSelected ? R : "transparent", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease" }}>
                           {isSelected && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff" }} />}
                         </div>
@@ -333,7 +274,6 @@ export default function Pagos() {
                           <p className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.33)", fontWeight: 300, lineHeight: 1.4 }}>{p.desc}</p>
                         </div>
                       </div>
-                      {/* Precio */}
                       {!p.custom && (
                         <div className="bc" style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, color: isSelected ? R : "rgba(255,255,255,0.35)", letterSpacing: "-0.02em", flexShrink: 0, transition: "color 0.2s ease" }}>
                           {formatCOP(p.precio)}
@@ -345,7 +285,6 @@ export default function Pagos() {
                       )}
                     </div>
 
-                    {/* Campo monto personalizado */}
                     {p.custom && isSelected && (
                       <div style={{ marginTop: 18, paddingTop: 18, borderTop: `1px solid ${R}22`, animation: "slideIn 0.3s ease" }}>
                         <label className="bc" style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)", marginBottom: 8 }}>
@@ -353,9 +292,7 @@ export default function Pagos() {
                         </label>
                         <div style={{ position: "relative" }}>
                           <span className="bc" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: "rgba(255,255,255,0.4)", fontWeight: 700 }}>$</span>
-                          <input
-                            type="text" placeholder="Ej: 120.000"
-                            value={montoPersonalizado}
+                          <input type="text" placeholder="Ej: 120.000" value={montoPersonalizado}
                             onClick={e => e.stopPropagation()}
                             onChange={e => {
                               const raw = e.target.value.replace(/\D/g, "")
@@ -380,7 +317,6 @@ export default function Pagos() {
               })}
             </div>
 
-            {/* Resumen seleccionado */}
             {selectedId && programa && monto > 0 && (
               <div style={{ padding: "14px 18px", border: `1px solid ${R}22`, background: `${R}08`, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 20, animation: "slideIn 0.3s ease" }}>
                 <span className="b" style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", fontWeight: 300 }}>{programa.nombre}</span>
@@ -388,7 +324,6 @@ export default function Pagos() {
               </div>
             )}
 
-            {/* Error */}
             {error && (
               <div style={{ padding: "12px 16px", border: `1px solid ${R}40`, background: `${R}0d`, display: "flex", gap: 10, alignItems: "center", marginBottom: 18, animation: "slideIn 0.3s ease" }}>
                 <span style={{ color: R, fontWeight: 900, fontSize: 16 }}>!</span>
@@ -409,7 +344,6 @@ export default function Pagos() {
         {step === "form" && (
           <div style={{ animation: "fadeUp 0.5s ease" }}>
 
-            {/* Resumen programa */}
             <div style={{ padding: "16px 20px", border: `1px solid ${R}22`, background: `${R}08`, marginBottom: 40, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
               <div>
                 <div className="b" style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 4 }}>Pagando</div>
@@ -433,25 +367,20 @@ export default function Pagos() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 28 }}>
               {[
-                { label: "Nombre completo", val: nombre, set: setNombre, type: "text", placeholder: "Tu nombre completo" },
-                { label: "Correo electrónico", val: email, set: setEmail, type: "email", placeholder: "tu@correo.com" },
-              ].map(({ label, val, set, type, placeholder }) => (
+                { label: "Nombre completo", val: nombre, set: setNombre, type: "text", placeholder: "Tu nombre completo", hint: "" },
+                { label: "Correo electrónico", val: email, set: setEmail, type: "email", placeholder: "tu@correo.com", hint: "Wompi enviará la confirmación del pago a este correo." },
+              ].map(({ label, val, set, type, placeholder, hint }) => (
                 <div key={label}>
                   <label className="bc" style={{ display: "block", marginBottom: 8, fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)" }}>
                     {label} <span style={{ color: R }}>*</span>
                   </label>
-                  <input
-                    type={type} value={val} placeholder={placeholder}
+                  <input type={type} value={val} placeholder={placeholder}
                     onChange={e => set(e.target.value)}
                     style={{ width: "100%", padding: "14px 18px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontFamily: "'Barlow', sans-serif", fontSize: 15, outline: "none", transition: "border-color 0.2s ease" }}
                     onFocus={e => (e.target.style.borderColor = R)}
                     onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
                   />
-                  {label.includes("Correo") && (
-                    <p className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.22)", marginTop: 6, fontWeight: 300 }}>
-                      Wompi enviará la confirmación del pago a este correo.
-                    </p>
-                  )}
+                  {hint && <p className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.22)", marginTop: 6, fontWeight: 300 }}>{hint}</p>}
                 </div>
               ))}
             </div>
@@ -480,11 +409,11 @@ export default function Pagos() {
           </div>
         )}
 
-        {/* ════ PASO 3 — Checkout Wompi ════════════════════════════ */}
+        {/* ════ PASO 3 — Checkout ══════════════════════════════════ */}
         {step === "checkout" && (
           <div style={{ animation: "fadeUp 0.5s ease" }}>
 
-            {/* Resumen final */}
+            {/* Resumen */}
             <div style={{ padding: "20px 24px", border: `2px solid ${R}`, background: `${R}08`, marginBottom: 40, position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: R }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
@@ -500,7 +429,6 @@ export default function Pagos() {
               </div>
             </div>
 
-            {/* Métodos disponibles */}
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
               <div style={{ width: 32, height: 2, background: R }} />
               <span className="bc" style={{ color: R, fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>Selecciona tu método de pago</span>
@@ -509,7 +437,7 @@ export default function Pagos() {
               ELIGE CÓMO<br /><span style={{ color: R }}>PAGAR</span>
             </h2>
             <p className="b" style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 24, fontWeight: 300, lineHeight: 1.6 }}>
-              Haz clic en el botón rojo para abrir el checkout seguro de Wompi y elegir tu método de pago.
+              Elige entre el checkout seguro de Wompi o un pago directo por Nequi.
             </p>
 
             {/* Badges de métodos */}
@@ -521,19 +449,59 @@ export default function Pagos() {
               ))}
             </div>
 
-            {/* ✅ WIDGET DE WOMPI — aquí se inyecta el botón real */}
-            <div style={{ background: "#0a0a0a", border: `1px solid ${R}30`, padding: isMobile ? "28px 20px" : "40px", position: "relative" }}>
+            {/* ── OPCIÓN 1: Widget Wompi ─────────────────────────── */}
+            <div style={{ background: "#0a0a0a", border: `1px solid ${R}30`, padding: isMobile ? "28px 20px" : "36px 40px", position: "relative", marginBottom: 2 }}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: R }} />
 
-              <p className="b" style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginBottom: 24, fontWeight: 300, lineHeight: 1.6 }}>
-                Al hacer clic en el botón serás redirigido al entorno seguro de Wompi donde podrás completar tu pago con el método que prefieras.
+              {/* Título opción */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <div style={{ width: 4, height: 4, background: R, transform: "rotate(45deg)", flexShrink: 0 }} />
+                <span className="bc" style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)" }}>
+                  Opción 1 — PSE · Tarjeta · Nequi · Daviplata · Bancolombia
+                </span>
+              </div>
+
+              <p className="b" style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", marginBottom: 22, fontWeight: 300, lineHeight: 1.6 }}>
+                Haz clic en el botón para abrir el checkout seguro de Wompi y elegir tu método preferido.
               </p>
 
-              {/* Contenedor donde Wompi inyecta el botón */}
+              {/* Botón de Wompi */}
               <div id="wompi-widget-container" ref={widgetRef} style={{ minHeight: 52 }} />
 
-              <p className="b" style={{ textAlign: "center", marginTop: 18, fontSize: 12, color: "rgba(255,255,255,0.18)", lineHeight: 1.5 }}>
-                🔒 Transacción cifrada SSL · Procesado por Wompi · Bancolombia
+              <p className="b" style={{ textAlign: "center", marginTop: 14, fontSize: 11, color: "rgba(255,255,255,0.15)", lineHeight: 1.5 }}>
+                🔒 Cifrado SSL · Procesado por Wompi · Bancolombia
+              </p>
+            </div>
+
+            {/* ── OPCIÓN 2: Nequi directo ───────────────────────── */}
+            <div style={{ background: "#0a0a0a", border: "1px solid rgba(123,47,190,0.35)", padding: isMobile ? "28px 20px" : "36px 40px", position: "relative" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "#7B2FBE" }} />
+
+              {/* Título opción */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <div style={{ width: 4, height: 4, background: "#7B2FBE", transform: "rotate(45deg)", flexShrink: 0 }} />
+                <span className="bc" style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)" }}>
+                  Opción 2 — Pago directo por Nequi
+                </span>
+              </div>
+
+              {/* Aviso de monto */}
+              <div style={{ padding: "12px 16px", border: "1px solid rgba(123,47,190,0.25)", background: "rgba(123,47,190,0.08)", marginBottom: 22, display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>💜</span>
+                <p className="b" style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, fontWeight: 300 }}>
+                  Al pagar por Nequi deberás ingresar el monto manualmente en la app.
+                  El valor a pagar es:{" "}
+                  <strong style={{ color: "#fff", fontFamily: "'Barlow Condensed', Impact, sans-serif", fontSize: 16 }}>
+                    {formatCOP(monto)}
+                  </strong>
+                </p>
+              </div>
+
+              {/* Botón Nequi */}
+              <NequiBtn monto={monto} />
+
+              <p className="b" style={{ textAlign: "center", marginTop: 14, fontSize: 11, color: "rgba(255,255,255,0.15)", lineHeight: 1.5 }}>
+                Se abrirá Nequi con el número de cobro preconfigurado · Número: 305 812 5122
               </p>
             </div>
 
@@ -545,11 +513,7 @@ export default function Pagos() {
 
         {/* Sellos de seguridad */}
         <div style={{ marginTop: 52, paddingTop: 28, borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", flexWrap: "wrap", gap: 20, justifyContent: "center" }}>
-          {[
-            { icon: "🔒", t: "Encriptado SSL" },
-            { icon: "🏦", t: "Wompi · Bancolombia" },
-            { icon: "🛡️", t: "Datos protegidos" },
-          ].map(item => (
+          {[{ icon: "🔒", t: "Encriptado SSL" }, { icon: "🏦", t: "Wompi · Bancolombia" }, { icon: "💜", t: "Nequi disponible" }].map(item => (
             <div key={item.t} style={{ display: "flex", alignItems: "center", gap: 7 }}>
               <span style={{ fontSize: 13 }}>{item.icon}</span>
               <span className="b" style={{ fontSize: 11, color: "rgba(255,255,255,0.18)", fontWeight: 300 }}>{item.t}</span>
@@ -559,5 +523,29 @@ export default function Pagos() {
 
       </div>
     </div>
+  )
+}
+
+/* ── Botón Nequi con hover ────────────────────────────────────── */
+function NequiBtn({ monto }: { monto: number }) {
+  const [hover, setHover] = useState(false)
+  const href = `https://www.nequi.com.co/cobrar?phoneNumber=${NEQUI_PHONE}`
+  return (
+    <a
+      href={href} target="_blank" rel="noopener noreferrer"
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 12,
+        width: "100%", padding: "17px 24px",
+        background: hover ? "#9B4FDE" : "#7B2FBE",
+        color: "#fff", textDecoration: "none",
+        fontFamily: "'Barlow Condensed', Impact, sans-serif",
+        fontSize: 15, fontWeight: 900, letterSpacing: "0.2em",
+        textTransform: "uppercase", transition: "all 0.25s ease",
+        boxShadow: hover ? "0 10px 36px rgba(123,47,190,0.5)" : "0 4px 20px rgba(123,47,190,0.3)",
+      }}
+    >
+      💜 Pagar {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(monto)} por Nequi →
+    </a>
   )
 }
