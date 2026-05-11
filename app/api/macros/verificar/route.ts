@@ -5,7 +5,7 @@ import { NextResponse } from "next/server"
 // Para agregar un cliente: genera un token único y agrégalo aquí
 const USUARIOS: Record<string, { nombre: string; activo: boolean }> = {
   // Ejemplo — reemplaza con tokens reales generados
-  // "abc123xyz789": { nombre: "María García", activo: true },
+  "UsuarioSofiqazwsx123": { nombre: "Sofi", activo: true }
   // "def456uvw012": { nombre: "Juan Pérez",   activo: true },
 }
 
