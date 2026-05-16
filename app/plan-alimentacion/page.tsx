@@ -35,7 +35,7 @@ export default function PlanAlimentacion() {
   const [nombreUsuario, setNombreUsuario] = useState("")
   const [accesoDenegado, setAccesoDenegado] = useState(false)
   const [menuSeleccionado, setMenuSeleccionado] = useState<MenuPlan | null>(null)
-  const [filtro, setFiltro] = useState<"Todos" | "CHO Bajos" | "CHO Moderados">("Todos")
+  const [filtro, setFiltro] = useState<"Todos" | "CHO Bajos" | "CHO Moderados" | "CHO Altos">("Todos")
   const [comidaAbierta, setComidaAbierta] = useState<number | null>(0)
 
   /* ── Verificar token ──────────────────────────────────────── */
@@ -153,7 +153,7 @@ export default function PlanAlimentacion() {
 
             {/* Filtros */}
             <div style={{ display: "flex", gap: 8, marginBottom: 32, flexWrap: "wrap" }}>
-              {(["Todos", "CHO Bajos", "CHO Moderados"] as const).map(f => {
+              {(["Todos", "CHO Bajos", "CHO Moderados","CHO Altos"] as const).map(f => {
                 const ts = f === "Todos" ? null : tagStyle(f)
                 const activo = filtro === f
                 return (
