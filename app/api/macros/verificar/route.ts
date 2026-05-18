@@ -18,7 +18,8 @@ const USUARIOS: Record<string, {
 }> = {
   // ── Agrega aquí los tokens de tus clientes ──────────────────
   "UsuarioSofiqazwsx123": { nombre: "Sofi", activo: true, plan: "sofi" },
-  "UsuarioAndersona1s2d3": { nombre: "Anderson", activo: true, plan: "anderson" }
+  "UsuarioAndersona1s2d3": { nombre: "Anderson", activo: true, plan: "anderson" },
+  "UsuarioRivs": { nombre: "Rivs", activo: true}
 }
 
 export async function GET(req: Request) {
