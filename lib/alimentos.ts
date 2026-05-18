@@ -1,5 +1,6 @@
-// 243 alimentos — generado automáticamente
+// 339 alimentos — originales + Tabla de Composición de Alimentos Colombianos ICBF 2018
 export const ALIMENTOS = [
+  // ── ALIMENTOS ORIGINALES (ids 1–245) ─────────────────────────────────────
   { id: 1, nombre: "Jamon de Pollo", kcal: 213, proteina: 19.0, lipidos: 11.0, cho: 10.0 },
   { id: 2, nombre: "Queso Mozarella", kcal: 296, proteina: 22.9, lipidos: 21.4, cho: 3.1 },
   { id: 3, nombre: "Arepa de Maiz con Sal", kcal: 163, proteina: 3.3, lipidos: 0.9, cho: 35.0 },
@@ -242,7 +243,121 @@ export const ALIMENTOS = [
   { id: 242, nombre: "Semillas de Chía", kcal: 486, proteina: 16.5, lipidos: 30.7, cho: 42.1 },
   { id: 243, nombre: "Kefir - Pasco", kcal: 40, proteina: 3.5, lipidos: 1.5, cho: 3.0 },
   { id: 244, nombre: "Carne molida, pesada cruda", kcal: 260, proteina: 24.0, lipidos: 16.0, cho: 0.0 },
-  { id: 245, nombre: "Higado de res", kcal: 135, proteina: 20.4, lipidos: 3.6, cho: 3.9 }
+  { id: 245, nombre: "Higado de res", kcal: 135, proteina: 20.4, lipidos: 3.6, cho: 3.9 },
+
+  // ── TABLA DE COMPOSICIÓN DE ALIMENTOS COLOMBIANOS — ICBF 2018 ─────────────
+  // Fuente: TCAC 2018, Instituto Colombiano de Bienestar Familiar
+  // Valores por 100g de parte comestible
+
+  // B. Verduras, hortalizas y derivados
+  { id: 246, nombre: "Cebolla puerro, cruda", kcal: 69, proteina: 1.6, lipidos: 0.1, cho: 14.4 },
+  { id: 247, nombre: "Champiñón, crudo", kcal: 32, proteina: 3.1, lipidos: 0.6, cho: 3.0 },
+  { id: 248, nombre: "Col o repollitas de bruselas, cruda", kcal: 60, proteina: 3.4, lipidos: 0.3, cho: 9.1 },
+  { id: 249, nombre: "Coliflor cocida, sin sal", kcal: 41, proteina: 1.9, lipidos: 0.2, cho: 6.7 },
+  { id: 250, nombre: "Coliflor, cruda", kcal: 36, proteina: 1.9, lipidos: 0.1, cho: 5.7 },
+  { id: 251, nombre: "Espárrago cocido, sin sal", kcal: 35, proteina: 2.6, lipidos: 0.3, cho: 4.4 },
+  { id: 252, nombre: "Espárrago crudo", kcal: 32, proteina: 2.0, lipidos: 0.2, cho: 4.4 },
+  { id: 253, nombre: "Guascas, crudas", kcal: 50, proteina: 3.2, lipidos: 0.5, cho: 8.3 },
+  { id: 254, nombre: "Guatila, sin cáscara, cruda", kcal: 27, proteina: 0.8, lipidos: 0.0, cho: 5.2 },
+  { id: 255, nombre: "Guisantes dulces, crudos", kcal: 53, proteina: 2.6, lipidos: 0.1, cho: 10.5 },
+  { id: 256, nombre: "Habichuela cocida, sin sal", kcal: 32, proteina: 1.6, lipidos: 0.1, cho: 4.8 },
+  { id: 257, nombre: "Habichuela cruda", kcal: 43, proteina: 2.1, lipidos: 0.0, cho: 7.2 },
+  { id: 258, nombre: "Lechuga romana, cruda", kcal: 23, proteina: 1.1, lipidos: 0.1, cho: 3.3 },
+  { id: 259, nombre: "Nabo, sin cáscara, crudo", kcal: 30, proteina: 0.7, lipidos: 0.0, cho: 5.9 },
+  { id: 260, nombre: "Ocra, cruda", kcal: 45, proteina: 1.9, lipidos: 0.2, cho: 7.2 },
+  { id: 261, nombre: "Papa sabanera, sin cáscara, cruda", kcal: 80, proteina: 2.2, lipidos: 0.1, cho: 16.9 },
+  { id: 262, nombre: "Papa sabanera, frita, sin sal", kcal: 274, proteina: 5.9, lipidos: 5.6, cho: 49.9 },
+  { id: 263, nombre: "Papa, tipo francesa, frita, sin sal", kcal: 313, proteina: 3.4, lipidos: 15.5, cho: 38.2 },
+  { id: 264, nombre: "Papa criolla, sin cáscara, cruda", kcal: 106, proteina: 2.0, lipidos: 0.4, cho: 23.3 },
+  { id: 265, nombre: "Papa pastusa cocida, sin sal", kcal: 96, proteina: 2.0, lipidos: 0.1, cho: 20.9 },
+  { id: 266, nombre: "Pepino cohombro crudo (ICBF)", kcal: 14, proteina: 0.5, lipidos: 0.1, cho: 2.3 },
+  { id: 267, nombre: "Perejil, crudo", kcal: 55, proteina: 2.9, lipidos: 1.0, cho: 6.9 },
+  { id: 268, nombre: "Pimentón verde, crudo", kcal: 28, proteina: 0.9, lipidos: 0.1, cho: 4.9 },
+  { id: 269, nombre: "Plátano hartón maduro cocido, sin sal", kcal: 130, proteina: 0.8, lipidos: 0.2, cho: 30.1 },
+  { id: 270, nombre: "Plátano hartón maduro, crudo", kcal: 132, proteina: 1.1, lipidos: 0.2, cho: 30.3 },
+  { id: 271, nombre: "Plátano hartón maduro frito en tajadas", kcal: 312, proteina: 1.2, lipidos: 10.2, cho: 52.6 },
+  { id: 272, nombre: "Plátano hartón verde cocido", kcal: 133, proteina: 0.9, lipidos: 0.3, cho: 30.6 },
+  { id: 273, nombre: "Plátano hartón verde crudo", kcal: 166, proteina: 1.2, lipidos: 0.2, cho: 39.3 },
+  { id: 274, nombre: "Remolacha cocida, sin sal", kcal: 53, proteina: 1.5, lipidos: 0.2, cho: 10.1 },
+  { id: 275, nombre: "Repollo blanco crudo", kcal: 40, proteina: 1.8, lipidos: 0.3, cho: 6.4 },
+  { id: 276, nombre: "Repollo morado cocido, sin sal", kcal: 30, proteina: 1.0, lipidos: 0.2, cho: 4.7 },
+  { id: 277, nombre: "Repollo morado crudo", kcal: 39, proteina: 1.4, lipidos: 0.3, cho: 6.5 },
+  { id: 278, nombre: "Tomate escaldado, sin sal", kcal: 25, proteina: 0.9, lipidos: 0.1, cho: 4.3 },
+  { id: 279, nombre: "Tomate, extracto fresco", kcal: 19, proteina: 0.6, lipidos: 0.0, cho: 4.0 },
+  { id: 280, nombre: "Yuca blanca sin cáscara, cruda", kcal: 159, proteina: 0.9, lipidos: 0.3, cho: 37.4 },
+  { id: 281, nombre: "Zanahoria cocida, sin sal", kcal: 43, proteina: 0.8, lipidos: 0.2, cho: 8.1 },
+  { id: 282, nombre: "Zapallo crudo", kcal: 46, proteina: 0.9, lipidos: 0.2, cho: 9.5 },
+
+  // C. Frutas y derivados
+  { id: 283, nombre: "Banano bocadillo crudo", kcal: 125, proteina: 1.2, lipidos: 0.1, cho: 28.9 },
+  { id: 284, nombre: "Cereza cruda", kcal: 104, proteina: 1.2, lipidos: 0.1, cho: 23.7 },
+  { id: 285, nombre: "Coco crudo", kcal: 402, proteina: 3.6, lipidos: 35.5, cho: 12.6 },
+  { id: 286, nombre: "Curuba cruda", kcal: 38, proteina: 0.6, lipidos: 0.1, cho: 8.5 },
+  { id: 287, nombre: "Granada cruda", kcal: 70, proteina: 1.0, lipidos: 1.2, cho: 12.9 },
+  { id: 288, nombre: "Guanábana cruda", kcal: 33, proteina: 0.6, lipidos: 0.2, cho: 6.8 },
+  { id: 289, nombre: "Higo maduro crudo", kcal: 48, proteina: 0.7, lipidos: 0.1, cho: 9.7 },
+  { id: 290, nombre: "Lima cruda", kcal: 35, proteina: 0.5, lipidos: 0.1, cho: 6.6 },
+  { id: 291, nombre: "Limón crudo (ICBF)", kcal: 44, proteina: 0.3, lipidos: 0.3, cho: 9.3 },
+  { id: 292, nombre: "Lulo crudo", kcal: 48, proteina: 0.9, lipidos: 0.1, cho: 8.9 },
+  { id: 293, nombre: "Macadamia, seca", kcal: 579, proteina: 5.9, lipidos: 36.4, cho: 52.6 },
+  { id: 294, nombre: "Mango Tommy Atkins crudo", kcal: 194, proteina: 0.4, lipidos: 0.1, cho: 46.9 },
+  { id: 295, nombre: "Noni crudo", kcal: 36, proteina: 0.6, lipidos: 0.2, cho: 8.0 },
+  { id: 296, nombre: "Nuez de Brasil, seca", kcal: 721, proteina: 14.3, lipidos: 66.8, cho: 11.8 },
+  { id: 297, nombre: "Pistacho tostado, sin sal", kcal: 666, proteina: 14.9, lipidos: 52.8, cho: 27.6 },
+  { id: 298, nombre: "Pitahaya amarilla cruda", kcal: 63, proteina: 0.4, lipidos: 0.1, cho: 13.6 },
+  { id: 299, nombre: "Pitahaya roja cruda", kcal: 56, proteina: 0.5, lipidos: 0.1, cho: 11.6 },
+  { id: 300, nombre: "Tomate de árbol amarillo crudo", kcal: 58, proteina: 1.7, lipidos: 0.1, cho: 12.5 },
+  { id: 301, nombre: "Tomate de árbol rojo crudo", kcal: 55, proteina: 2.0, lipidos: 0.2, cho: 10.2 },
+  { id: 302, nombre: "Toronja cruda", kcal: 53, proteina: 0.7, lipidos: 0.1, cho: 11.4 },
+  { id: 303, nombre: "Uchuva cruda", kcal: 77, proteina: 1.5, lipidos: 0.5, cho: 14.2 },
+  { id: 304, nombre: "Uva blanca cruda", kcal: 38, proteina: 0.5, lipidos: 0.0, cho: 8.6 },
+
+  // D. Grasas y aceites
+  { id: 305, nombre: "Manteca o grasa de cerdo", kcal: 891, proteina: 0.0, lipidos: 99.0, cho: 0.0 },
+  { id: 306, nombre: "Mantequilla de maní (ICBF)", kcal: 643, proteina: 24.6, lipidos: 50.0, cho: 20.7 },
+  { id: 307, nombre: "Margarina de canola", kcal: 731, proteina: 0.5, lipidos: 81.0, cho: 0.0 },
+
+  // E. Pescados y mariscos
+  { id: 308, nombre: "Atún enlatado en aceite", kcal: 211, proteina: 25.5, lipidos: 12.1, cho: 0.0 },
+  { id: 309, nombre: "Atún enlatado en agua", kcal: 127, proteina: 24.2, lipidos: 3.0, cho: 0.9 },
+  { id: 310, nombre: "Calamar crudo", kcal: 79, proteina: 16.4, lipidos: 1.5, cho: 0.1 },
+  { id: 311, nombre: "Lenguado entero crudo", kcal: 81, proteina: 16.7, lipidos: 1.4, cho: 0.3 },
+  { id: 312, nombre: "Merluza filete crudo", kcal: 85, proteina: 18.3, lipidos: 1.3, cho: 0.1 },
+  { id: 313, nombre: "Mero entero crudo", kcal: 89, proteina: 19.4, lipidos: 1.2, cho: 0.2 },
+  { id: 314, nombre: "Salmón enlatado en aceite", kcal: 212, proteina: 21.7, lipidos: 13.9, cho: 0.1 },
+  { id: 315, nombre: "Sardinas en salsa de tomate", kcal: 177, proteina: 20.9, lipidos: 10.3, cho: 0.1 },
+  { id: 316, nombre: "Trucha de mar entera cruda", kcal: 142, proteina: 20.8, lipidos: 6.6, cho: 0.0 },
+
+  // F. Carnes y derivados
+  { id: 317, nombre: "Cabra o chivo, carne cocida, sin sal", kcal: 137, proteina: 27.1, lipidos: 3.0, cho: 0.4 },
+  { id: 318, nombre: "Cerdo, brazo cocido, sin sal", kcal: 184, proteina: 26.8, lipidos: 8.5, cho: 0.0 },
+  { id: 319, nombre: "Cerdo, carne semigorda, cruda", kcal: 245, proteina: 17.2, lipidos: 19.4, cho: 0.3 },
+  { id: 320, nombre: "Cerdo, pierna o pernil cocida, sin sal", kcal: 148, proteina: 27.1, lipidos: 4.3, cho: 0.0 },
+  { id: 321, nombre: "Cerdo, pierna o pernil, cruda", kcal: 131, proteina: 20.5, lipidos: 5.4, cho: 0.2 },
+  { id: 322, nombre: "Codorniz o perdiz, sin piel, cruda", kcal: 133, proteina: 22.4, lipidos: 4.5, cho: 0.8 },
+  { id: 323, nombre: "Conejo, carne, cruda", kcal: 134, proteina: 20.1, lipidos: 5.8, cho: 0.2 },
+  { id: 324, nombre: "Pollo, ala con piel, asada, sin sal", kcal: 247, proteina: 23.8, lipidos: 16.9, cho: 0.0 },
+  { id: 325, nombre: "Pollo, contramuslo con piel, cocido", kcal: 221, proteina: 22.9, lipidos: 14.4, cho: 0.0 },
+  { id: 326, nombre: "Pollo, molleja cocida, sin sal", kcal: 138, proteina: 27.1, lipidos: 2.7, cho: 1.4 },
+  { id: 327, nombre: "Pollo, molleja cruda", kcal: 89, proteina: 17.7, lipidos: 2.1, cho: 0.0 },
+  { id: 328, nombre: "Pollo, pechuga con piel, cocida, sin sal", kcal: 174, proteina: 26.9, lipidos: 7.4, cho: 0.0 },
+
+  // J. Huevos y derivados
+  { id: 329, nombre: "Huevo de codorniz, entero, crudo", kcal: 154, proteina: 13.0, lipidos: 11.1, cho: 0.5 },
+  { id: 330, nombre: "Huevo de gallina, clara, cruda", kcal: 47, proteina: 10.8, lipidos: 0.2, cho: 0.6 },
+  { id: 331, nombre: "Huevo de gallina, entero, crudo", kcal: 149, proteina: 12.6, lipidos: 10.8, cho: 0.3 },
+  { id: 332, nombre: "Huevo de pata, entero, crudo", kcal: 188, proteina: 13.0, lipidos: 13.8, cho: 3.1 },
+
+  // K. Productos azucarados
+  { id: 333, nombre: "Helado de crema", kcal: 196, proteina: 3.2, lipidos: 10.3, cho: 22.8 },
+  { id: 334, nombre: "Helado de leche", kcal: 63, proteina: 0.4, lipidos: 0.2, cho: 14.8 },
+
+  // L. Misceláneos
+  { id: 335, nombre: "Jengibre crudo", kcal: 391, proteina: 9.0, lipidos: 4.2, cho: 72.3 },
+  { id: 336, nombre: "Sal de cocina", kcal: 0, proteina: 0.0, lipidos: 0.0, cho: 0.0 },
+  { id: 337, nombre: "Salsa de mostaza", kcal: 107, proteina: 3.6, lipidos: 3.3, cho: 14.1 },
+  { id: 338, nombre: "Salsa de tomate (ketchup)", kcal: 109, proteina: 1.3, lipidos: 0.3, cho: 25.0 },
+  { id: 339, nombre: "Vinagre", kcal: 24, proteina: 0.0, lipidos: 0.0, cho: 6.0 },
 ] as const
 
 export type Alimento = typeof ALIMENTOS[number]
