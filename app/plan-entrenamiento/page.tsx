@@ -17,8 +17,38 @@ interface RegAnterior { serie_num: number; kg: number | null; reps: number | nul
 
 const R = "#E8000D"
 
+/* ── Calentamiento por tipo de día ─────────────────── */
+const CALENTAMIENTO_GENERAL = {
+  descripcion: "5 minutos de cardio suave a elección",
+  zona: "Zona 1 — baja intensidad",
+}
+
+const CALENTAMIENTO_SUPERIOR = [
+  { nombre: "Circunducción de hombro", series: "2 series × 15 reps", link: "https://www.youtube.com/watch?v=aXR9dM8TZvc" },
+  { nombre: "Rotación externa de hombro", series: "2 series × 10 reps", link: "https://www.youtube.com/watch?v=m5t2BqBJW9w" },
+  { nombre: "Rotación interna de hombro", series: "2 series × 10 reps", link: "https://www.youtube.com/watch?v=96uCABKiHXU" },
+  { nombre: "Abducción horizontal", series: "1 serie × 15 reps", link: "https://www.youtube.com/watch?v=k4SJcYp3cuk" },
+  { nombre: "Flexión de brazo", series: "1 serie × 15 reps c/brazo", link: "https://www.youtube.com/watch?v=treKYMELQHY" },
+  { nombre: "Rotación de hombro a 90°", series: "1 serie × 15 reps c/brazo", link: "https://www.youtube.com/shorts/iNn_sNA6TbU?sttick=0" },
+]
+
+const CALENTAMIENTO_INFERIOR = [
+  { nombre: "Rotación de cadera", series: "2 series × 10 reps", link: "https://www.youtube.com/watch?v=qkrJXGVj_OQ" },
+  { nombre: "Flexo/Extensión de cadera", series: "2 series × 15 reps", link: "https://www.youtube.com/watch?v=UezSaXf9mtI" },
+  { nombre: "Abducción de cadera", series: "2 series × 15 reps", link: "https://www.youtube.com/shorts/TAHk1yccDmM" },
+  { nombre: "Aperturas de cadera", series: "1 serie × 15 reps", link: "https://www.youtube.com/watch?v=Zv1wILGzeec" },
+  { nombre: "Movilidad de tobillo I", series: "1 serie × 15 reps c/pierna", link: "https://www.youtube.com/shorts/D-IYqUE92PI" },
+  { nombre: "Movilidad de tobillo II", series: "1 serie × 15 reps", link: "https://www.youtube.com/watch?v=EG4YKX3-Ygk" },
+]
+
+function getTipoCalentamiento(nombreDia: string): "superior" | "inferior" {
+  const n = nombreDia.toLowerCase()
+  if (n.includes("inferior")) return "inferior"
+  return "superior"
+}
+
 function formatFecha(iso: string) {
-  const [y, m, d] = iso.split("-")
+  const [, m, d] = iso.split("-")
   const meses = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"]
   return `${d} ${meses[parseInt(m)-1]}`
 }
@@ -30,6 +60,82 @@ function parsearSegundos(descanso: string | null): number {
   return 60
 }
 
+/* ── Componente calentamiento ──────────────────────── */
+function SeccionCalentamiento({ nombreDia }: { nombreDia: string }) {
+  const tipo = getTipoCalentamiento(nombreDia)
+  const ejercicios = tipo === "superior" ? CALENTAMIENTO_SUPERIOR : CALENTAMIENTO_INFERIOR
+
+  return (
+    <div style={{ marginBottom: 24, border: `1px solid rgba(255,255,255,0.1)`, background: "#0a0a0a" }}>
+
+      {/* Header */}
+      <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)",
+        background: "rgba(255,255,255,0.02)", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 3, height: 32, background: "#f59e0b" }} />
+        <div>
+          <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 900,
+            textTransform: "uppercase", color: "#fcd34d", letterSpacing: "0.05em" }}>
+            Calentamiento
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>
+            Realiza esto antes de empezar · Tren {tipo}
+          </div>
+        </div>
+      </div>
+
+      {/* General */}
+      <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)",
+        background: "rgba(245,158,11,0.04)" }}>
+        <div style={{ fontSize: 11, color: "#f59e0b", letterSpacing: "0.12em",
+          textTransform: "uppercase", marginBottom: 4, fontWeight: 700 }}>
+          Aeróbico general
+        </div>
+        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>
+          {CALENTAMIENTO_GENERAL.descripcion}
+        </div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+          {CALENTAMIENTO_GENERAL.zona}
+        </div>
+      </div>
+
+      {/* Dinámico */}
+      <div style={{ padding: "12px 16px 4px" }}>
+        <div style={{ fontSize: 11, color: "#f59e0b", letterSpacing: "0.12em",
+          textTransform: "uppercase", marginBottom: 12, fontWeight: 700 }}>
+          Dinámico específico — tren {tipo}
+        </div>
+        {ejercicios.map((ej, i) => (
+          <a key={i} href={ej.link} target="_blank" rel="noopener noreferrer"
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "11px 12px", marginBottom: 6, background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.06)", textDecoration: "none",
+              transition: "border-color 0.15s" }}>
+            <div>
+              <div style={{ fontSize: 14, color: "#fff", fontWeight: 500 }}>{ej.nombre}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{ej.series}</div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+              <span style={{ fontSize: 11, color: "#f59e0b", letterSpacing: "0.05em" }}>Ver video</span>
+              <div style={{ width: 28, height: 28, background: "#f59e0b", borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ color: "#000", fontSize: 10, fontWeight: 900, marginLeft: 2 }}>▶</span>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+
+      {/* Separador listo */}
+      <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: 4 }}>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textAlign: "center" }}>
+          ↓ Cuando termines el calentamiento, empieza con los ejercicios de abajo
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Página principal ──────────────────────────────── */
 export default function PlanEntrenamientoPage() {
   const [token, setToken]           = useState<string | null>(null)
   const [cliente, setCliente]       = useState<Cliente | null>(null)
@@ -41,14 +147,15 @@ export default function PlanEntrenamientoPage() {
   const [regs, setRegs]             = useState<Record<string, Record<number,{kg:string;reps:string}>>>({})
   const [ants, setAnts]             = useState<Record<string, {fecha:string; data:RegAnterior[]}>>({})
   const [cargando, setCargando]     = useState(true)
-  const [guardando, setGuardando]   = useState<string|null>(null)
   const [toast, setToast]           = useState<string|null>(null)
   const [cronSeg, setCronSeg]       = useState(0)
   const [cronActivo, setCronActivo] = useState(false)
   const [sesionCerrada, setSesionCerrada] = useState(false)
+  const [imgError, setImgError]     = useState<Record<string, boolean>>({})
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3500) }
 
+  /* ── Auth ── */
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("token")
     if (!t) { setDenegado(true); setCargando(false); return }
@@ -71,14 +178,11 @@ export default function PlanEntrenamientoPage() {
     setCargando(false)
   }
 
+  /* ── Seleccionar día ── */
   const seleccionarDia = useCallback(async (dia: Dia) => {
     if (!token) return
-    setDiaActivo(dia)
-    setEjercicios([])
-    setRegs({})
-    setAnts({})
-    setSesionId(null)
-    setSesionCerrada(false)
+    setDiaActivo(dia); setEjercicios([]); setRegs({}); setAnts({})
+    setSesionId(null); setSesionCerrada(false); setImgError({})
 
     const { data: ejs } = await supabase
       .from("ejercicios").select("*").eq("dia_id", dia.id).order("orden")
@@ -86,14 +190,10 @@ export default function PlanEntrenamientoPage() {
     setEjercicios(ejs)
 
     const base: Record<string, Record<number,{kg:string;reps:string}>> = {}
-    ejs.forEach(e => {
-      base[e.id] = {}
-      for (let s = 1; s <= e.series_trabajo; s++) base[e.id][s] = { kg: "", reps: "" }
-    })
+    ejs.forEach(e => { base[e.id] = {}; for (let s=1; s<=e.series_trabajo; s++) base[e.id][s]={kg:"",reps:""} })
     setRegs(base)
 
     const hoy = new Date().toISOString().split("T")[0]
-
     let { data: ses } = await supabase
       .from("sesiones").select("id,completada")
       .eq("cliente_token", token).eq("dia_id", dia.id).eq("fecha", hoy).single()
@@ -104,17 +204,12 @@ export default function PlanEntrenamientoPage() {
       ses = nueva
     }
     if (ses) {
-      setSesionId(ses.id)
-      setSesionCerrada(ses.completada ?? false)
+      setSesionId(ses.id); setSesionCerrada(ses.completada ?? false)
       const { data: rHoy } = await supabase
         .from("registros").select("ejercicio_id,serie_num,kg,reps").eq("sesion_id", ses.id)
       if (rHoy) {
         const m = { ...base }
-        rHoy.forEach(r => {
-          if (m[r.ejercicio_id]) {
-            m[r.ejercicio_id][r.serie_num] = { kg: r.kg?.toString() ?? "", reps: r.reps?.toString() ?? "" }
-          }
-        })
+        rHoy.forEach(r => { if (m[r.ejercicio_id]) m[r.ejercicio_id][r.serie_num]={kg:r.kg?.toString()??"",reps:r.reps?.toString()??""} })
         setRegs(m)
       }
     }
@@ -123,44 +218,43 @@ export default function PlanEntrenamientoPage() {
       .from("sesiones").select("id,fecha")
       .eq("cliente_token", token).eq("dia_id", dia.id).eq("completada", true)
       .neq("fecha", hoy).order("fecha", { ascending: false }).limit(1)
-    if (sesAnt && sesAnt.length > 0) {
+    if (sesAnt?.length) {
       const { data: rAnt } = await supabase
         .from("registros").select("ejercicio_id,serie_num,kg,reps").eq("sesion_id", sesAnt[0].id)
       if (rAnt) {
         const ma: Record<string, {fecha:string; data:RegAnterior[]}> = {}
         rAnt.forEach(r => {
-          if (!ma[r.ejercicio_id]) ma[r.ejercicio_id] = { fecha: sesAnt[0].fecha, data: [] }
-          ma[r.ejercicio_id].data.push({ serie_num: r.serie_num, kg: r.kg, reps: r.reps })
+          if (!ma[r.ejercicio_id]) ma[r.ejercicio_id]={fecha:sesAnt[0].fecha,data:[]}
+          ma[r.ejercicio_id].data.push({serie_num:r.serie_num,kg:r.kg,reps:r.reps})
         })
         setAnts(ma)
       }
     }
   }, [token])
 
+  /* ── Guardar serie ── */
   const guardarSerie = async (ejId: string, serie: number) => {
     if (!sesionId || sesionCerrada) return
     const val = regs[ejId]?.[serie]
     if (!val?.kg && !val?.reps) return
-    const key = `${ejId}-${serie}`
-    setGuardando(key)
     await supabase.from("registros").upsert(
       { sesion_id: sesionId, ejercicio_id: ejId, serie_num: serie,
-        kg: parseFloat(val.kg) || null, reps: parseInt(val.reps) || null },
+        kg: parseFloat(val.kg)||null, reps: parseInt(val.reps)||null },
       { onConflict: "sesion_id,ejercicio_id,serie_num" }
     )
-    setGuardando(null)
     showToast("✓ Serie guardada")
   }
 
+  /* ── Cerrar sesión ── */
   const cerrarSesion = async () => {
     if (!sesionId) return
     await supabase.from("sesiones")
-      .update({ completada: true, completada_en: new Date().toISOString() })
-      .eq("id", sesionId)
+      .update({ completada: true, completada_en: new Date().toISOString() }).eq("id", sesionId)
     setSesionCerrada(true)
     showToast("✓ Sesión cerrada y enviada al coach")
   }
 
+  /* ── Cronómetro ── */
   useEffect(() => {
     if (!cronActivo) return
     const i = setInterval(() => setCronSeg(s => {
@@ -171,252 +265,304 @@ export default function PlanEntrenamientoPage() {
   }, [cronActivo])
 
   const iniciarCron = (seg: number) => { setCronSeg(seg); setCronActivo(true) }
-  const fmtCron = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`
+  const fmtCron = (s: number) => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`
 
+  /* ── Acceso denegado ── */
   if (denegado) return (
-    <div style={{ background: "#000", minHeight: "100vh", display: "flex", alignItems: "center",
-      justifyContent: "center", flexDirection: "column", color: "#fff",
-      fontFamily: "sans-serif", textAlign: "center", padding: 32 }}>
-      <div style={{ fontSize: 48, color: R, marginBottom: 16 }}>🔒</div>
-      <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 12 }}>Acceso restringido</h1>
-      <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", maxWidth: 340 }}>
+    <div style={{background:"#000",minHeight:"100vh",display:"flex",alignItems:"center",
+      justifyContent:"center",flexDirection:"column",color:"#fff",fontFamily:"sans-serif",textAlign:"center",padding:32}}>
+      <div style={{fontSize:48,color:R,marginBottom:16}}>🔒</div>
+      <h1 style={{fontSize:28,fontWeight:900,marginBottom:12}}>Acceso restringido</h1>
+      <p style={{fontSize:14,color:"rgba(255,255,255,0.45)",maxWidth:340}}>
         Esta página es exclusiva para clientes de Coach David. Contacta a tu coach para obtener tu enlace personalizado.
       </p>
     </div>
   )
 
   if (cargando) return (
-    <div style={{ background: "#000", minHeight: "100vh", display: "flex", alignItems: "center",
-      justifyContent: "center", color: "#fff", fontFamily: "sans-serif" }}>
+    <div style={{background:"#000",minHeight:"100vh",display:"flex",alignItems:"center",
+      justifyContent:"center",color:"#fff",fontFamily:"sans-serif"}}>
       Cargando programa...
     </div>
   )
 
   return (
-    <div style={{ background: "#000", minHeight: "100vh", color: "#fff",
-      fontFamily: "'Barlow', sans-serif", paddingBottom: 80 }}>
+    <div style={{background:"#000",minHeight:"100vh",color:"#fff",fontFamily:"'Barlow',sans-serif",paddingBottom:80}}>
 
-      <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet"/>
 
       <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        input[type=number] { -moz-appearance: textfield; }
+        *{box-sizing:border-box;margin:0;padding:0}
+        input[type=number]{-moz-appearance:textfield}
         input[type=number]::-webkit-outer-spin-button,
-        input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
-        @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+        a:hover{border-color:rgba(245,158,11,0.4) !important}
       `}</style>
 
       {/* Header */}
-      <div style={{ position: "sticky", top: 0, background: "rgba(0,0,0,0.95)",
-        backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)", zIndex: 100 }}>
-        <div style={{ height: 2, background: R }} />
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 16px", height: 52,
-          display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 900 }}>
-              COACH<span style={{ color: R }}>.</span>DAVID
+      <div style={{position:"sticky",top:0,background:"rgba(0,0,0,0.95)",backdropFilter:"blur(12px)",
+        borderBottom:"1px solid rgba(255,255,255,0.06)",zIndex:100}}>
+        <div style={{height:2,background:R}}/>
+        <div style={{maxWidth:680,margin:"0 auto",padding:"0 16px",height:52,
+          display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900}}>
+              COACH<span style={{color:R}}>.</span>DAVID
             </span>
-            <span style={{ width: 1, height: 14, background: "rgba(255,255,255,0.15)" }} />
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", letterSpacing: "0.2em", textTransform: "uppercase" }}>
+            <span style={{width:1,height:14,background:"rgba(255,255,255,0.15)"}}/>
+            <span style={{fontSize:11,color:"rgba(255,255,255,0.4)",letterSpacing:"0.2em",textTransform:"uppercase"}}>
               Entrenamiento
             </span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 6, height: 6, background: "#22c55e", borderRadius: "50%", animation: "blink 2s infinite" }} />
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{cliente?.nombre}</span>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <div style={{width:6,height:6,background:"#22c55e",borderRadius:"50%",animation:"blink 2s infinite"}}/>
+            <span style={{fontSize:12,color:"rgba(255,255,255,0.4)"}}>{cliente?.nombre}</span>
           </div>
         </div>
       </div>
 
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px" }}>
+      <div style={{maxWidth:680,margin:"0 auto",padding:"24px 16px"}}>
 
-        {/* Título */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 11, color: R, letterSpacing: "0.4em", textTransform: "uppercase", marginBottom: 6 }}>
+        {/* Saludo */}
+        <div style={{marginBottom:24}}>
+          <div style={{fontSize:11,color:R,letterSpacing:"0.4em",textTransform:"uppercase",marginBottom:6}}>
             Tu programa
           </div>
-          <h1 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 32, fontWeight: 900,
-            textTransform: "uppercase", lineHeight: 1 }}>
-            Hola, <span style={{ color: R }}>{cliente?.nombre.split(" ")[0]}</span>
+          <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:34,fontWeight:900,
+            textTransform:"uppercase",lineHeight:1}}>
+            Hola, <span style={{color:R}}>{cliente?.nombre.split(" ")[0]}</span>
           </h1>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>
+          <p style={{fontSize:13,color:"rgba(255,255,255,0.4)",marginTop:6}}>
             Selecciona el día que vas a entrenar hoy
           </p>
         </div>
 
-        {/* Selector días */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 8, marginBottom: 28 }}>
+        {/* Selector de días */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:8,marginBottom:28}}>
           {dias.map(d => (
             <button key={d.id} onClick={() => seleccionarDia(d)} style={{
-              padding: "12px 8px",
-              border: `1px solid ${diaActivo?.id === d.id ? R : "rgba(255,255,255,0.1)"}`,
-              background: diaActivo?.id === d.id ? `${R}18` : "transparent",
-              color: diaActivo?.id === d.id ? "#fff" : "rgba(255,255,255,0.5)",
-              fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700,
-              cursor: "pointer", letterSpacing: "0.05em", textAlign: "center", lineHeight: 1.3,
-              transition: "all 0.2s"
+              padding:"14px 8px",
+              border:`1px solid ${diaActivo?.id===d.id ? R : "rgba(255,255,255,0.1)"}`,
+              background:diaActivo?.id===d.id ? `${R}18` : "transparent",
+              color:diaActivo?.id===d.id ? "#fff" : "rgba(255,255,255,0.45)",
+              fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,
+              cursor:"pointer",textAlign:"center",lineHeight:1.4,transition:"all 0.2s"
             }}>
-              <div style={{ fontSize: 10, color: diaActivo?.id === d.id ? R : "rgba(255,255,255,0.3)", marginBottom: 4 }}>
+              <div style={{fontSize:10,color:diaActivo?.id===d.id?R:"rgba(255,255,255,0.3)",marginBottom:4,letterSpacing:"0.1em"}}>
                 DÍA {d.numero}
               </div>
-              {d.nombre.replace(/Día \d+ — /, "")}
+              {d.nombre.replace(/Día \d+ — /,"")}
             </button>
           ))}
         </div>
 
         {/* Cronómetro sticky */}
         {cronActivo && (
-          <div style={{
-            position: "sticky", top: 54, zIndex: 90,
-            background: cronSeg <= 10 ? "#7f1d1d" : cronSeg <= 30 ? "#78350f" : "#052e16",
-            border: `1px solid ${cronSeg <= 10 ? R : cronSeg <= 30 ? "#d97706" : "#16a34a"}`,
-            padding: "10px 16px", marginBottom: 16,
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            animation: "fadeUp 0.2s ease"
-          }}>
-            <span style={{
-              fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13,
-              letterSpacing: "0.15em", textTransform: "uppercase",
-              color: cronSeg <= 10 ? "#fca5a5" : cronSeg <= 30 ? "#fcd34d" : "#86efac"
-            }}>
-              {cronSeg <= 10 ? "¡Última!" : cronSeg <= 30 ? "Preparándose..." : "Descansando"}
+          <div style={{position:"sticky",top:54,zIndex:90,marginBottom:16,
+            background:cronSeg<=10?"#7f1d1d":cronSeg<=30?"#78350f":"#052e16",
+            border:`1px solid ${cronSeg<=10?R:cronSeg<=30?"#d97706":"#16a34a"}`,
+            padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",
+            animation:"fadeUp 0.2s ease"}}>
+            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,
+              letterSpacing:"0.15em",textTransform:"uppercase",
+              color:cronSeg<=10?"#fca5a5":cronSeg<=30?"#fcd34d":"#86efac"}}>
+              {cronSeg<=10?"¡Última!":cronSeg<=30?"Preparándose...":"Descansando"}
             </span>
-            <span style={{
-              fontFamily: "'Barlow Condensed',sans-serif", fontSize: 32, fontWeight: 900,
-              color: cronSeg <= 10 ? R : cronSeg <= 30 ? "#f59e0b" : "#22c55e"
-            }}>
+            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:36,fontWeight:900,
+              color:cronSeg<=10?R:cronSeg<=30?"#f59e0b":"#22c55e"}}>
               {fmtCron(cronSeg)}
             </span>
-            <button onClick={() => setCronActivo(false)}
-              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 18 }}>
-              ✕
-            </button>
+            <button onClick={()=>setCronActivo(false)}
+              style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:20}}>✕</button>
           </div>
         )}
 
-        {/* Ejercicios */}
-        {diaActivo && ejercicios.length > 0 && (
-          <div style={{ animation: "fadeUp 0.3s ease" }}>
+        {/* Contenido del día */}
+        {diaActivo && (
+          <div style={{animation:"fadeUp 0.3s ease"}}>
+
+            {/* ── Calentamiento ── */}
+            <SeccionCalentamiento nombreDia={diaActivo.nombre} />
+
+            {/* ── Ejercicios ── */}
+            <div style={{marginBottom:10}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+                <div style={{width:3,height:32,background:R}}/>
+                <div>
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,
+                    textTransform:"uppercase",color:"rgba(255,255,255,0.9)",letterSpacing:"0.05em"}}>
+                    Ejercicios de trabajo
+                  </div>
+                  <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:1}}>
+                    Ingresa kg y reps al terminar cada serie
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {ejercicios.map((ej, idx) => {
               const ant = ants[ej.id]
+              const tieneImagen = ej.video_url && !imgError[ej.id]
               return (
-                <div key={ej.id} style={{ marginBottom: 20, border: "1px solid rgba(255,255,255,0.08)", background: "#0a0a0a" }}>
+                <div key={ej.id} style={{marginBottom:20,border:"1px solid rgba(255,255,255,0.08)",background:"#0a0a0a"}}>
 
-                  {/* Cabecera */}
-                  <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)",
-                    background: ej.es_biserie ? "rgba(232,0,13,0.06)" : "transparent" }}>
+                  {/* Imagen del ejercicio */}
+                  {tieneImagen && (
+                    <div style={{width:"100%",height:180,overflow:"hidden",borderBottom:"1px solid rgba(255,255,255,0.06)",position:"relative"}}>
+                      <img
+                        src={ej.video_url!}
+                        alt={ej.nombre}
+                        onError={() => setImgError(e => ({...e,[ej.id]:true}))}
+                        style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center top",display:"block"}}
+                      />
+                      <div style={{position:"absolute",bottom:0,left:0,right:0,height:60,
+                        background:"linear-gradient(to top, #0a0a0a, transparent)"}}/>
+                    </div>
+                  )}
+
+                  {/* Cabecera ejercicio */}
+                  <div style={{padding:"16px 16px 12px",borderBottom:"1px solid rgba(255,255,255,0.06)",
+                    background:ej.es_biserie?"rgba(232,0,13,0.05)":"transparent"}}>
+
                     {ej.es_biserie && (
-                      <span style={{ fontSize: 10, background: `${R}20`, color: R, padding: "2px 8px",
-                        letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700,
-                        marginBottom: 6, display: "inline-block" }}>
+                      <div style={{fontSize:10,background:`${R}25`,color:R,padding:"3px 10px",
+                        letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:700,
+                        marginBottom:8,display:"inline-block"}}>
                         Biserie
-                      </span>
-                    )}
-                    <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 18, fontWeight: 800,
-                      textTransform: "uppercase", lineHeight: 1 }}>
-                      <span style={{ color: R, marginRight: 8, opacity: 0.5 }}>{String(idx + 1).padStart(2, "0")}</span>
-                      {ej.nombre}
-                    </div>
-                    {ej.nota_tecnica && (
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>{ej.nota_tecnica}</div>
-                    )}
-
-                    {/* Tags protocolo */}
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-                      {ej.reps_objetivo && (
-                        <span style={{ fontSize: 11, padding: "3px 8px", background: "rgba(255,255,255,0.05)",
-                          border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }}>
-                          {ej.reps_objetivo}
-                        </span>
-                      )}
-                      {ej.rir_objetivo && (
-                        <span style={{ fontSize: 11, padding: "3px 8px", background: "rgba(255,255,255,0.05)",
-                          border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }}>
-                          {ej.rir_objetivo}
-                        </span>
-                      )}
-                      {ej.descanso && (
-                        <span style={{ fontSize: 11, padding: "3px 8px", background: "rgba(255,255,255,0.05)",
-                          border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }}>
-                          ⏱ {ej.descanso}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Calentamiento */}
-                    {ej.series_calentamiento > 0 && (
-                      <div style={{ marginTop: 10, padding: "8px 10px", background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.06)" }}>
-                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em",
-                          textTransform: "uppercase", marginBottom: 2 }}>Calentamiento</div>
-                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-                          {ej.series_calentamiento} serie{ej.series_calentamiento > 1 ? "s" : ""} × {ej.reps_calentamiento}
-                        </div>
                       </div>
                     )}
+
+                    <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,
+                      textTransform:"uppercase",lineHeight:1,marginBottom:6}}>
+                      <span style={{color:R,marginRight:8,opacity:0.5,fontSize:16}}>{String(idx+1).padStart(2,"0")}</span>
+                      {ej.nombre}
+                    </div>
+
+                    {ej.nota_tecnica && (
+                      <div style={{fontSize:12,color:"rgba(255,255,255,0.4)",marginBottom:12,lineHeight:1.5}}>
+                        {ej.nota_tecnica}
+                      </div>
+                    )}
+
+                    {/* Protocolo — más grande y visible */}
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}}>
+                      {ej.reps_objetivo && (
+                        <div style={{padding:"10px 12px",background:"rgba(255,255,255,0.04)",
+                          border:"1px solid rgba(255,255,255,0.1)"}}>
+                          <div style={{fontSize:10,color:"rgba(255,255,255,0.35)",letterSpacing:"0.1em",
+                            textTransform:"uppercase",marginBottom:3}}>Reps objetivo</div>
+                          <div style={{fontSize:15,color:"#fff",fontWeight:500}}>{ej.reps_objetivo}</div>
+                        </div>
+                      )}
+                      {ej.rir_objetivo && (
+                        <div style={{padding:"10px 12px",background:"rgba(255,255,255,0.04)",
+                          border:"1px solid rgba(255,255,255,0.1)"}}>
+                          <div style={{fontSize:10,color:"rgba(255,255,255,0.35)",letterSpacing:"0.1em",
+                            textTransform:"uppercase",marginBottom:3}}>RIR / Intensidad</div>
+                          <div style={{fontSize:15,color:"#fff",fontWeight:500}}>{ej.rir_objetivo}</div>
+                        </div>
+                      )}
+                      {ej.descanso && (
+                        <div style={{padding:"10px 12px",background:"rgba(255,255,255,0.04)",
+                          border:"1px solid rgba(255,255,255,0.1)",gridColumn:ej.reps_objetivo&&ej.rir_objetivo?"1 / -1":"auto"}}>
+                          <div style={{fontSize:10,color:"rgba(255,255,255,0.35)",letterSpacing:"0.1em",
+                            textTransform:"uppercase",marginBottom:3}}>Descanso entre series</div>
+                          <div style={{fontSize:15,color:"#fff",fontWeight:500}}>⏱ {ej.descanso}</div>
+                        </div>
+                      )}
+                      {ej.series_calentamiento > 0 && (
+                        <div style={{padding:"10px 12px",background:"rgba(255,255,255,0.04)",
+                          border:"1px solid rgba(255,255,255,0.1)"}}>
+                          <div style={{fontSize:10,color:"rgba(255,255,255,0.35)",letterSpacing:"0.1em",
+                            textTransform:"uppercase",marginBottom:3}}>Calentamiento</div>
+                          <div style={{fontSize:15,color:"rgba(255,255,255,0.7)",fontWeight:500}}>
+                            {ej.series_calentamiento} serie{ej.series_calentamiento>1?"s":""} × {ej.reps_calentamiento}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Semana anterior */}
                   {ant && (
-                    <div style={{ padding: "8px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)",
-                      background: "rgba(255,255,255,0.02)" }}>
-                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em",
-                        textTransform: "uppercase", marginBottom: 6 }}>
-                        Semana anterior · {formatFecha(ant.fecha)}
+                    <div style={{padding:"10px 16px",borderBottom:"1px solid rgba(255,255,255,0.05)",
+                      background:"rgba(255,255,255,0.015)"}}>
+                      <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",letterSpacing:"0.1em",
+                        textTransform:"uppercase",marginBottom:8}}>
+                        Última sesión · {formatFecha(ant.fecha)}
                       </div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        {ant.data.sort((a, b) => a.serie_num - b.serie_num).map(r => (
-                          <div key={r.serie_num} style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
-                            S{r.serie_num}: <span style={{ color: "rgba(255,255,255,0.8)" }}>
-                              {r.kg ? `${r.kg}kg` : "—"} × {r.reps ?? "—"}
-                            </span>
+                      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                        {ant.data.sort((a,b)=>a.serie_num-b.serie_num).map(r => (
+                          <div key={r.serie_num} style={{display:"flex",flexDirection:"column",
+                            alignItems:"center",padding:"6px 10px",background:"rgba(255,255,255,0.04)",
+                            border:"1px solid rgba(255,255,255,0.08)",minWidth:52}}>
+                            <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",marginBottom:2}}>S{r.serie_num}</div>
+                            <div style={{fontSize:13,color:"#fff",fontWeight:700,fontFamily:"'Barlow Condensed',sans-serif"}}>
+                              {r.kg ?? "—"}
+                            </div>
+                            <div style={{fontSize:11,color:"rgba(255,255,255,0.5)"}}>
+                              {r.reps ? `${r.reps} reps` : "—"}
+                            </div>
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Series */}
-                  <div style={{ padding: "12px 16px" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "56px 1fr 1fr 36px", gap: 8, marginBottom: 8,
-                      fontSize: 10, color: "rgba(255,255,255,0.25)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                      <span>Serie</span><span>Kg</span><span>Reps</span><span></span>
+                  {/* Series de trabajo */}
+                  <div style={{padding:"14px 16px"}}>
+                    <div style={{fontSize:11,color:"rgba(255,255,255,0.3)",letterSpacing:"0.1em",
+                      textTransform:"uppercase",marginBottom:12}}>
+                      Registra tu sesión de hoy
                     </div>
-                    {Array.from({ length: ej.series_trabajo }, (_, i) => i + 1).map(serie => {
-                      const val = regs[ej.id]?.[serie] || { kg: "", reps: "" }
+                    {Array.from({length:ej.series_trabajo},(_,i)=>i+1).map(serie => {
+                      const val = regs[ej.id]?.[serie]||{kg:"",reps:""}
+                      const completa = !!val.kg && !!val.reps
                       return (
-                        <div key={serie} style={{ display: "grid", gridTemplateColumns: "56px 1fr 1fr 36px",
-                          gap: 8, marginBottom: 8, alignItems: "center" }}>
-                          <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13,
-                            color: "rgba(255,255,255,0.35)", fontWeight: 700 }}>
-                            S{serie}
+                        <div key={serie} style={{marginBottom:10}}>
+                          <div style={{fontSize:12,color:"rgba(255,255,255,0.35)",marginBottom:6,
+                            fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:"0.05em"}}>
+                            SERIE {serie}
+                            {completa && <span style={{color:"#22c55e",marginLeft:8,fontSize:11}}>✓</span>}
                           </div>
-                          <input type="number" inputMode="decimal" placeholder="kg"
-                            value={val.kg} disabled={sesionCerrada}
-                            onChange={e => setRegs(r => ({ ...r, [ej.id]: { ...r[ej.id], [serie]: { ...r[ej.id][serie], kg: e.target.value } } }))}
-                            onBlur={() => guardarSerie(ej.id, serie)}
-                            style={{ padding: "10px 12px", background: "rgba(255,255,255,0.04)",
-                              border: `1px solid ${val.kg ? "rgba(232,0,13,0.5)" : "rgba(255,255,255,0.1)"}`,
-                              color: "#fff", fontSize: 16, fontFamily: "'Barlow Condensed',sans-serif",
-                              fontWeight: 700, outline: "none", width: "100%" }}
-                          />
-                          <input type="number" inputMode="numeric" placeholder="reps"
-                            value={val.reps} disabled={sesionCerrada}
-                            onChange={e => setRegs(r => ({ ...r, [ej.id]: { ...r[ej.id], [serie]: { ...r[ej.id][serie], reps: e.target.value } } }))}
-                            onBlur={() => guardarSerie(ej.id, serie)}
-                            style={{ padding: "10px 12px", background: "rgba(255,255,255,0.04)",
-                              border: `1px solid ${val.reps ? "rgba(232,0,13,0.5)" : "rgba(255,255,255,0.1)"}`,
-                              color: "#fff", fontSize: 16, fontFamily: "'Barlow Condensed',sans-serif",
-                              fontWeight: 700, outline: "none", width: "100%" }}
-                          />
-                          <button onClick={() => iniciarCron(parsearSegundos(ej.descanso))}
-                            title="Iniciar descanso" disabled={sesionCerrada}
-                            style={{ width: 36, height: 36, background: "rgba(255,255,255,0.04)",
-                              border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)",
-                              cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            ⏱
-                          </button>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 44px",gap:8}}>
+                            <div>
+                              <div style={{fontSize:10,color:"rgba(255,255,255,0.25)",marginBottom:4,letterSpacing:"0.05em"}}>PESO (KG)</div>
+                              <input type="number" inputMode="decimal" placeholder="0"
+                                value={val.kg} disabled={sesionCerrada}
+                                onChange={e => setRegs(r=>({...r,[ej.id]:{...r[ej.id],[serie]:{...r[ej.id][serie],kg:e.target.value}}}))}
+                                onBlur={() => guardarSerie(ej.id, serie)}
+                                style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.04)",
+                                  border:`1px solid ${val.kg?"rgba(232,0,13,0.5)":"rgba(255,255,255,0.1)"}`,
+                                  color:"#fff",fontSize:20,fontFamily:"'Barlow Condensed',sans-serif",
+                                  fontWeight:900,outline:"none"}}
+                              />
+                            </div>
+                            <div>
+                              <div style={{fontSize:10,color:"rgba(255,255,255,0.25)",marginBottom:4,letterSpacing:"0.05em"}}>REPS</div>
+                              <input type="number" inputMode="numeric" placeholder="0"
+                                value={val.reps} disabled={sesionCerrada}
+                                onChange={e => setRegs(r=>({...r,[ej.id]:{...r[ej.id],[serie]:{...r[ej.id][serie],reps:e.target.value}}}))}
+                                onBlur={() => guardarSerie(ej.id, serie)}
+                                style={{width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.04)",
+                                  border:`1px solid ${val.reps?"rgba(232,0,13,0.5)":"rgba(255,255,255,0.1)"}`,
+                                  color:"#fff",fontSize:20,fontFamily:"'Barlow Condensed',sans-serif",
+                                  fontWeight:900,outline:"none"}}
+                              />
+                            </div>
+                            <div>
+                              <div style={{fontSize:10,color:"rgba(255,255,255,0.25)",marginBottom:4,letterSpacing:"0.05em"}}>⏱</div>
+                              <button onClick={()=>iniciarCron(parsearSegundos(ej.descanso))}
+                                disabled={sesionCerrada} title="Iniciar descanso"
+                                style={{width:"100%",height:46,background:"rgba(255,255,255,0.04)",
+                                  border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)",
+                                  cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                ▶
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       )
                     })}
@@ -426,40 +572,40 @@ export default function PlanEntrenamientoPage() {
             })}
 
             {/* Cerrar sesión */}
-            <div style={{ marginTop: 8, padding: 20,
-              border: `1px solid ${sesionCerrada ? "rgba(34,197,94,0.2)" : "rgba(255,255,255,0.08)"}`,
-              background: sesionCerrada ? "rgba(34,197,94,0.05)" : "rgba(232,0,13,0.04)" }}>
+            <div style={{marginTop:12,padding:20,
+              border:`1px solid ${sesionCerrada?"rgba(34,197,94,0.2)":"rgba(255,255,255,0.08)"}`,
+              background:sesionCerrada?"rgba(34,197,94,0.05)":"rgba(232,0,13,0.03)"}}>
               {sesionCerrada ? (
-                <div style={{ textAlign: "center", color: "#22c55e",
-                  fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14,
-                  fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" }}>
+                <div style={{textAlign:"center",color:"#22c55e",
+                  fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,
+                  fontWeight:700,letterSpacing:"0.2em",textTransform:"uppercase"}}>
                   ✓ Sesión enviada al coach
                 </div>
               ) : (
                 <>
-                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 14, fontWeight: 300, lineHeight: 1.6 }}>
+                  <p style={{fontSize:13,color:"rgba(255,255,255,0.4)",marginBottom:16,fontWeight:300,lineHeight:1.6}}>
                     Al cerrar la sesión, el resumen se envía automáticamente a Coach David para el seguimiento de tu progreso.
                   </p>
                   <button onClick={cerrarSesion} style={{
-                    width: "100%", padding: 16, background: "#22c55e", border: "none", color: "#fff",
-                    fontFamily: "'Barlow Condensed',sans-serif", fontSize: 15, fontWeight: 900,
-                    letterSpacing: "0.2em", textTransform: "uppercase", cursor: "pointer"
-                  }}>
+                    width:"100%",padding:18,background:"#22c55e",border:"none",color:"#fff",
+                    fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,
+                    letterSpacing:"0.2em",textTransform:"uppercase",cursor:"pointer"}}>
                     Cerrar sesión y enviar al coach ✓
                   </button>
                 </>
               )}
             </div>
+
           </div>
         )}
       </div>
 
       {/* Toast */}
       {toast && (
-        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
-          padding: "12px 20px", background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.4)",
-          color: "#86efac", fontSize: 14, zIndex: 200, backdropFilter: "blur(8px)",
-          animation: "fadeUp 0.3s ease", whiteSpace: "nowrap" }}>
+        <div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",
+          padding:"12px 20px",background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.4)",
+          color:"#86efac",fontSize:14,zIndex:200,backdropFilter:"blur(8px)",
+          animation:"fadeUp 0.3s ease",whiteSpace:"nowrap"}}>
           {toast}
         </div>
       )}
