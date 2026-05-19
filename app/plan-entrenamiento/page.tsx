@@ -485,6 +485,20 @@ export default function PlanEntrenamientoPage() {
               marginBottom:3, letterSpacing:"0.1em" }}>ZONA</div>
             CORE
           </button>
+          {/* Botón Running — solo aparece si el cliente tiene running */}
+          <a href={`/plan-entrenamiento/running?token=${token}`}
+            style={{
+              padding:"12px 10px", minWidth:80, textAlign:"center", lineHeight:1.4,
+              border:"1px solid rgba(34,197,94,0.25)",
+              background:"rgba(34,197,94,0.06)",
+              color:"rgba(34,197,94,0.7)",
+              fontFamily:"'Barlow Condensed',sans-serif", fontSize:12, fontWeight:700,
+              cursor:"pointer", textDecoration:"none", display:"block"
+            }}>
+            <div style={{ fontSize:10, color:"rgba(34,197,94,0.4)",
+              marginBottom:3, letterSpacing:"0.1em" }}>🏃</div>
+            RUNNING
+          </a>
         </div>
 
         {/* Cronómetro sticky */}
