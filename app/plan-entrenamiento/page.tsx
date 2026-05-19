@@ -17,25 +17,49 @@ interface RegAnterior { serie_num: number; kg: number | null; reps: number | nul
 
 const R = "#E8000D"
 
+/* ── Parsear valor por serie ───────────────────────────────────────
+   "RIR 2 / RIR 1 / Fallo" → ["RIR 2", "RIR 1", "Fallo"]
+   Si hay menos valores que series, repite el último.
+──────────────────────────────────────────────────────────────────── */
+function parsearPorSerie(texto: string | null, serie: number, total: number): string {
+  if (!texto) return "—"
+  const partes = texto.split(" / ").map(s => s.trim())
+  // Si solo hay 1 parte, aplica a todas las series
+  if (partes.length === 1) return partes[0]
+  // Índice base 0
+  const idx = serie - 1
+  // Si hay menos partes que series, repite la última
+  return partes[idx] ?? partes[partes.length - 1]
+}
+
+function colorRIR(rir: string): string {
+  const r = rir.toLowerCase()
+  if (r.includes("fallo")) return "#ef4444"
+  if (r.includes("rir 1")) return "#f97316"
+  if (r.includes("rir 2")) return "#eab308"
+  if (r.includes("rir 3") || r.includes("rir 4")) return "#22c55e"
+  return "rgba(255,255,255,0.6)"
+}
+
 /* ── Calentamiento ─────────────────────────────────── */
 const CAL_GENERAL = { descripcion: "5 minutos de cardio suave a elección", zona: "Zona 1 — baja intensidad" }
 
 const CAL_SUPERIOR = [
-  { nombre: "Circunducción de hombro",     series: "2 × 15 reps",          link: "https://www.youtube.com/watch?v=aXR9dM8TZvc" },
-  { nombre: "Rotación externa de hombro",  series: "2 × 10 reps",          link: "https://www.youtube.com/watch?v=m5t2BqBJW9w" },
-  { nombre: "Rotación interna de hombro",  series: "2 × 10 reps",          link: "https://www.youtube.com/watch?v=96uCABKiHXU" },
-  { nombre: "Abducción horizontal",        series: "1 × 15 reps",          link: "https://www.youtube.com/watch?v=k4SJcYp3cuk" },
-  { nombre: "Flexión de brazo",            series: "1 × 15 reps c/brazo",  link: "https://www.youtube.com/watch?v=treKYMELQHY" },
-  { nombre: "Rotación de hombro a 90°",   series: "1 × 15 reps c/brazo",  link: "https://www.youtube.com/shorts/iNn_sNA6TbU" },
+  { nombre: "Circunducción de hombro",    series: "2 × 15 reps",         link: "https://www.youtube.com/watch?v=aXR9dM8TZvc" },
+  { nombre: "Rotación externa de hombro", series: "2 × 10 reps",         link: "https://www.youtube.com/watch?v=m5t2BqBJW9w" },
+  { nombre: "Rotación interna de hombro", series: "2 × 10 reps",         link: "https://www.youtube.com/watch?v=96uCABKiHXU" },
+  { nombre: "Abducción horizontal",       series: "1 × 15 reps",         link: "https://www.youtube.com/watch?v=k4SJcYp3cuk" },
+  { nombre: "Flexión de brazo",           series: "1 × 15 reps c/brazo", link: "https://www.youtube.com/watch?v=treKYMELQHY" },
+  { nombre: "Rotación de hombro a 90°",  series: "1 × 15 reps c/brazo", link: "https://www.youtube.com/shorts/iNn_sNA6TbU" },
 ]
 
 const CAL_INFERIOR = [
-  { nombre: "Rotación de cadera",          series: "2 × 10 reps",          link: "https://www.youtube.com/watch?v=qkrJXGVj_OQ" },
-  { nombre: "Flexo/Extensión de cadera",   series: "2 × 15 reps",          link: "https://www.youtube.com/watch?v=UezSaXf9mtI" },
-  { nombre: "Abducción de cadera",         series: "2 × 15 reps",          link: "https://www.youtube.com/shorts/TAHk1yccDmM" },
-  { nombre: "Aperturas de cadera",         series: "1 × 15 reps",          link: "https://www.youtube.com/watch?v=Zv1wILGzeec" },
-  { nombre: "Movilidad de tobillo I",      series: "1 × 15 reps c/pierna", link: "https://www.youtube.com/shorts/D-IYqUE92PI" },
-  { nombre: "Movilidad de tobillo II",     series: "1 × 15 reps",          link: "https://www.youtube.com/watch?v=EG4YKX3-Ygk" },
+  { nombre: "Rotación de cadera",         series: "2 × 10 reps",          link: "https://www.youtube.com/watch?v=qkrJXGVj_OQ" },
+  { nombre: "Flexo/Extensión de cadera",  series: "2 × 15 reps",          link: "https://www.youtube.com/watch?v=UezSaXf9mtI" },
+  { nombre: "Abducción de cadera",        series: "2 × 15 reps",          link: "https://www.youtube.com/shorts/TAHk1yccDmM" },
+  { nombre: "Aperturas de cadera",        series: "1 × 15 reps",          link: "https://www.youtube.com/watch?v=Zv1wILGzeec" },
+  { nombre: "Movilidad de tobillo I",     series: "1 × 15 reps c/pierna", link: "https://www.youtube.com/shorts/D-IYqUE92PI" },
+  { nombre: "Movilidad de tobillo II",    series: "1 × 15 reps",          link: "https://www.youtube.com/watch?v=EG4YKX3-Ygk" },
 ]
 
 function getTipo(nombreDia: string): "superior" | "inferior" {
@@ -47,28 +71,28 @@ const CORE_OPCIONES = [
   {
     num: 1,
     ejercicios: [
-      { nombre: "Plancha Estática",              protocolo: "3 series × 40 seg",                    descanso: "60 seg", link: null },
-      { nombre: "Russian Twist",                 protocolo: "3 series × RIR 2",                     descanso: "60 seg", link: "https://www.youtube.com/shorts/-cPtvFdT8dc" },
-      { nombre: "Crunch Abdominal",              protocolo: "3 series × RIR 2",                     descanso: "60 seg", link: null },
-      { nombre: "Flexión de abdomen en máquina", protocolo: "2 series × RIR 2 · 1 serie × Fallo",  descanso: "60 seg", link: null },
+      { nombre: "Plancha Estática",              protocolo: "3 series × 40 seg",                   descanso: "60 seg", link: null },
+      { nombre: "Russian Twist",                 protocolo: "3 series × RIR 2",                    descanso: "60 seg", link: "https://www.youtube.com/shorts/-cPtvFdT8dc" },
+      { nombre: "Crunch Abdominal",              protocolo: "3 series × RIR 2",                    descanso: "60 seg", link: null },
+      { nombre: "Flexión de abdomen en máquina", protocolo: "2 × RIR 2 · 1 × Fallo",              descanso: "60 seg", link: null },
     ],
   },
   {
     num: 2,
     ejercicios: [
-      { nombre: "Plancha Dinámica (arrastre lateral)", protocolo: "3 series × RIR 4",                    descanso: "60 seg", link: "https://www.youtube.com/watch?v=zS0f6nCmwrI" },
-      { nombre: "Plancha Lateral",                     protocolo: "3 series × 40 seg",                    descanso: "60 seg", link: "https://www.youtube.com/shorts/sLazig0sm8Q" },
-      { nombre: "Caminata del Granjero Unilateral",    protocolo: "2 series × 20 pasos",                  descanso: "60 seg", link: "https://www.youtube.com/watch?v=P9EgrAyp1UA" },
-      { nombre: "Flexión de abdomen en máquina",       protocolo: "2 series × RIR 2 · 1 serie × Fallo",  descanso: "60 seg", link: null },
+      { nombre: "Plancha Dinámica (arrastre lateral)", protocolo: "3 series × RIR 4",             descanso: "60 seg", link: "https://www.youtube.com/watch?v=zS0f6nCmwrI" },
+      { nombre: "Plancha Lateral",                     protocolo: "3 series × 40 seg",             descanso: "60 seg", link: "https://www.youtube.com/shorts/sLazig0sm8Q" },
+      { nombre: "Caminata del Granjero Unilateral",    protocolo: "2 series × 20 pasos",           descanso: "60 seg", link: "https://www.youtube.com/watch?v=P9EgrAyp1UA" },
+      { nombre: "Flexión de abdomen en máquina",       protocolo: "2 × RIR 2 · 1 × Fallo",        descanso: "60 seg", link: null },
     ],
   },
   {
     num: 3,
     ejercicios: [
-      { nombre: "Caminata del Granjero Unilateral", protocolo: "2 series × 20 pasos",                  descanso: "60 seg", link: "https://www.youtube.com/watch?v=P9EgrAyp1UA" },
-      { nombre: "PallOff Press",                    protocolo: "3 series × 10 reps",                   descanso: "60 seg", link: "https://www.youtube.com/watch?v=AH_QZLm_0-s" },
-      { nombre: "Plancha Estática",                 protocolo: "4 series × 40 seg",                    descanso: "60 seg", link: null },
-      { nombre: "Crunch Abdominal",                 protocolo: "3 series × RIR 2",                     descanso: "60 seg", link: null },
+      { nombre: "Caminata del Granjero Unilateral", protocolo: "2 series × 20 pasos",             descanso: "60 seg", link: "https://www.youtube.com/watch?v=P9EgrAyp1UA" },
+      { nombre: "PallOff Press",                    protocolo: "3 series × 10 reps",               descanso: "60 seg", link: "https://www.youtube.com/watch?v=AH_QZLm_0-s" },
+      { nombre: "Plancha Estática",                 protocolo: "4 series × 40 seg",                descanso: "60 seg", link: null },
+      { nombre: "Crunch Abdominal",                 protocolo: "3 series × RIR 2",                 descanso: "60 seg", link: null },
     ],
   },
 ]
@@ -148,22 +172,17 @@ function SeccionCore() {
   const [opcion, setOpcion] = useState<number | null>(null)
   return (
     <div style={{ marginTop: 32, border: "1px solid rgba(99,102,241,0.3)", background: "#0a0a0a" }}>
-      {/* Header */}
       <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(99,102,241,0.15)",
         background: "rgba(99,102,241,0.05)", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 3, height: 32, background: "#818cf8", flexShrink: 0 }} />
         <div>
           <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 900,
-            textTransform: "uppercase", color: "#a5b4fc", letterSpacing: "0.05em" }}>
-            Entrenamiento CORE
-          </div>
+            textTransform: "uppercase", color: "#a5b4fc", letterSpacing: "0.05em" }}>Entrenamiento CORE</div>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>
-            Disponible cualquier día de la semana · Elige una opción
+            Disponible cualquier día · Elige una opción
           </div>
         </div>
       </div>
-
-      {/* Selector de opción */}
       <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(99,102,241,0.1)" }}>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em",
           textTransform: "uppercase", marginBottom: 10 }}>Selecciona la opción de hoy</div>
@@ -183,8 +202,6 @@ function SeccionCore() {
           ))}
         </div>
       </div>
-
-      {/* Lista de ejercicios de la opción seleccionada */}
       {opcion !== null && (
         <div style={{ padding: "14px 16px" }}>
           {CORE_OPCIONES.find(o => o.num === opcion)?.ejercicios.map((ej, i) => (
@@ -210,9 +227,7 @@ function SeccionCore() {
                       border: "1px solid rgba(255,255,255,0.08)" }}>
                       <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em",
                         textTransform: "uppercase", marginBottom: 2 }}>Descanso</div>
-                      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>
-                        ⏱ {ej.descanso}
-                      </div>
+                      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>⏱ {ej.descanso}</div>
                     </div>
                   </div>
                 </div>
@@ -225,8 +240,7 @@ function SeccionCore() {
                       display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <span style={{ color: "#fff", fontSize: 10, marginLeft: 2 }}>▶</span>
                     </div>
-                    <span style={{ fontSize: 9, color: "#818cf8", letterSpacing: "0.05em",
-                      textTransform: "uppercase" }}>Video</span>
+                    <span style={{ fontSize: 9, color: "#818cf8", letterSpacing: "0.05em", textTransform: "uppercase" }}>Video</span>
                   </a>
                 )}
               </div>
@@ -443,37 +457,34 @@ export default function PlanEntrenamientoPage() {
           </p>
         </div>
 
-        {/* Tabs: días + CORE */}
-        <div style={{ marginBottom:24 }}>
-          <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:6 }}>
-            {dias.map(d => (
-              <button key={d.id} onClick={() => { seleccionarDia(d); setVistaCore(false) }} style={{
-                padding:"12px 10px", minWidth:100,
-                border:`1px solid ${diaActivo?.id===d.id && !vistaCore ? R : "rgba(255,255,255,0.1)"}`,
-                background:diaActivo?.id===d.id && !vistaCore ? `${R}18` : "transparent",
-                color:diaActivo?.id===d.id && !vistaCore ? "#fff" : "rgba(255,255,255,0.45)",
-                fontFamily:"'Barlow Condensed',sans-serif", fontSize:12, fontWeight:700,
-                cursor:"pointer", textAlign:"center", lineHeight:1.4, transition:"all 0.2s"
-              }}>
-                <div style={{ fontSize:10, color:diaActivo?.id===d.id && !vistaCore ? R : "rgba(255,255,255,0.3)",
-                  marginBottom:3, letterSpacing:"0.1em" }}>DÍA {d.numero}</div>
-                {d.nombre.replace(/Día \d+ — /,"")}
-              </button>
-            ))}
-            {/* Botón CORE */}
-            <button onClick={() => { setVistaCore(true); setDiaActivo(null) }} style={{
-              padding:"12px 10px", minWidth:80,
-              border:`1px solid ${vistaCore ? "#818cf8" : "rgba(255,255,255,0.1)"}`,
-              background:vistaCore ? "rgba(99,102,241,0.15)" : "transparent",
-              color:vistaCore ? "#a5b4fc" : "rgba(255,255,255,0.45)",
+        {/* Selector días + CORE */}
+        <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:24 }}>
+          {dias.map(d => (
+            <button key={d.id} onClick={() => { seleccionarDia(d); setVistaCore(false) }} style={{
+              padding:"12px 10px", minWidth:100, flex:1,
+              border:`1px solid ${diaActivo?.id===d.id && !vistaCore ? R : "rgba(255,255,255,0.1)"}`,
+              background:diaActivo?.id===d.id && !vistaCore ? `${R}18` : "transparent",
+              color:diaActivo?.id===d.id && !vistaCore ? "#fff" : "rgba(255,255,255,0.45)",
               fontFamily:"'Barlow Condensed',sans-serif", fontSize:12, fontWeight:700,
               cursor:"pointer", textAlign:"center", lineHeight:1.4, transition:"all 0.2s"
             }}>
-              <div style={{ fontSize:10, color:vistaCore ? "#818cf8" : "rgba(255,255,255,0.3)",
-                marginBottom:3, letterSpacing:"0.1em" }}>ZONA</div>
-              CORE
+              <div style={{ fontSize:10, color:diaActivo?.id===d.id && !vistaCore ? R : "rgba(255,255,255,0.3)",
+                marginBottom:3, letterSpacing:"0.1em" }}>DÍA {d.numero}</div>
+              {d.nombre.replace(/Día \d+ — /,"")}
             </button>
-          </div>
+          ))}
+          <button onClick={() => { setVistaCore(true); setDiaActivo(null) }} style={{
+            padding:"12px 10px", minWidth:80,
+            border:`1px solid ${vistaCore ? "#818cf8" : "rgba(255,255,255,0.1)"}`,
+            background:vistaCore ? "rgba(99,102,241,0.15)" : "transparent",
+            color:vistaCore ? "#a5b4fc" : "rgba(255,255,255,0.45)",
+            fontFamily:"'Barlow Condensed',sans-serif", fontSize:12, fontWeight:700,
+            cursor:"pointer", textAlign:"center", lineHeight:1.4, transition:"all 0.2s"
+          }}>
+            <div style={{ fontSize:10, color:vistaCore ? "#818cf8" : "rgba(255,255,255,0.3)",
+              marginBottom:3, letterSpacing:"0.1em" }}>ZONA</div>
+            CORE
+          </button>
         </div>
 
         {/* Cronómetro sticky */}
@@ -504,13 +515,12 @@ export default function PlanEntrenamientoPage() {
           </div>
         )}
 
-        {/* ── Vista día de entrenamiento ── */}
+        {/* ── Vista día ── */}
         {diaActivo && !vistaCore && ejercicios.length > 0 && (
           <div style={{ animation:"fadeUp 0.3s ease" }}>
 
             <SeccionCalentamiento nombreDia={diaActivo.nombre} />
 
-            {/* Label ejercicios */}
             <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
               <div style={{ width:3, height:32, background:R }}/>
               <div>
@@ -530,6 +540,7 @@ export default function PlanEntrenamientoPage() {
               return (
                 <div key={ej.id} style={{ marginBottom:20, border:"1px solid rgba(255,255,255,0.08)", background:"#0a0a0a" }}>
 
+                  {/* Imagen */}
                   {tieneImg && (
                     <div style={{ width:"100%", height:170, overflow:"hidden",
                       borderBottom:"1px solid rgba(255,255,255,0.06)", position:"relative" }}>
@@ -559,28 +570,11 @@ export default function PlanEntrenamientoPage() {
                         {ej.nota_tecnica}
                       </div>
                     )}
-                    {/* Protocolo */}
+                    {/* Protocolo general */}
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:8 }}>
-                      {ej.reps_objetivo && (
-                        <div style={{ padding:"10px 12px", background:"rgba(255,255,255,0.04)",
-                          border:"1px solid rgba(255,255,255,0.1)" }}>
-                          <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)", letterSpacing:"0.1em",
-                            textTransform:"uppercase", marginBottom:3 }}>Reps objetivo</div>
-                          <div style={{ fontSize:14, color:"#fff", fontWeight:500 }}>{ej.reps_objetivo}</div>
-                        </div>
-                      )}
-                      {ej.rir_objetivo && (
-                        <div style={{ padding:"10px 12px", background:"rgba(255,255,255,0.04)",
-                          border:"1px solid rgba(255,255,255,0.1)" }}>
-                          <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)", letterSpacing:"0.1em",
-                            textTransform:"uppercase", marginBottom:3 }}>RIR / Intensidad</div>
-                          <div style={{ fontSize:14, color:"#fff", fontWeight:500 }}>{ej.rir_objetivo}</div>
-                        </div>
-                      )}
                       {ej.descanso && (
                         <div style={{ padding:"10px 12px", background:"rgba(255,255,255,0.04)",
-                          border:"1px solid rgba(255,255,255,0.1)",
-                          gridColumn:ej.reps_objetivo&&ej.rir_objetivo?"1 / -1":"auto" }}>
+                          border:"1px solid rgba(255,255,255,0.1)" }}>
                           <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)", letterSpacing:"0.1em",
                             textTransform:"uppercase", marginBottom:3 }}>Descanso</div>
                           <div style={{ fontSize:14, color:"#fff", fontWeight:500 }}>⏱ {ej.descanso}</div>
@@ -624,57 +618,108 @@ export default function PlanEntrenamientoPage() {
                     </div>
                   )}
 
-                  {/* Series */}
+                  {/* ── Series: 4 columnas ─────────────────────────────
+                      Col 1: Reps objetivo (por serie)
+                      Col 2: RIR (por serie, con color)
+                      Col 3: Campo KG
+                      Col 4: Campo Reps
+                  ─────────────────────────────────────────────────── */}
                   <div style={{ padding:"14px 16px" }}>
-                    <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", letterSpacing:"0.1em",
-                      textTransform:"uppercase", marginBottom:12 }}>Registra tu sesión de hoy</div>
+
+                    {/* Header de columnas */}
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 80px 1fr 1fr",
+                      gap:6, marginBottom:10, alignItems:"center" }}>
+                      <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", letterSpacing:"0.1em",
+                        textTransform:"uppercase" }}>Reps objetivo</div>
+                      <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", letterSpacing:"0.1em",
+                        textTransform:"uppercase" }}>RIR</div>
+                      <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", letterSpacing:"0.1em",
+                        textTransform:"uppercase" }}>Peso (kg)</div>
+                      <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", letterSpacing:"0.1em",
+                        textTransform:"uppercase" }}>Reps</div>
+                    </div>
+
                     {Array.from({length:ej.series_trabajo},(_,i)=>i+1).map(serie => {
                       const val = regs[ej.id]?.[serie]||{kg:"",reps:""}
                       const ok = !!val.kg && !!val.reps
+                      const repsObj = parsearPorSerie(ej.reps_objetivo, serie, ej.series_trabajo)
+                      const rirObj  = parsearPorSerie(ej.rir_objetivo, serie, ej.series_trabajo)
+                      const rirColor = colorRIR(rirObj)
+
                       return (
-                        <div key={serie} style={{ marginBottom:10 }}>
-                          <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", marginBottom:6,
-                            fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700, letterSpacing:"0.05em" }}>
+                        <div key={serie} style={{ marginBottom:8 }}>
+                          {/* Número de serie */}
+                          <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", marginBottom:5,
+                            fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700,
+                            letterSpacing:"0.08em", display:"flex", alignItems:"center", gap:6 }}>
                             SERIE {serie}
-                            {ok && <span style={{ color:"#22c55e", marginLeft:8, fontSize:11 }}>✓</span>}
+                            {ok && <span style={{ color:"#22c55e", fontSize:11 }}>✓</span>}
                           </div>
-                          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 44px", gap:8 }}>
+
+                          {/* 4 columnas */}
+                          <div style={{ display:"grid", gridTemplateColumns:"1fr 80px 1fr 1fr", gap:6, alignItems:"stretch" }}>
+
+                            {/* Col 1: Reps objetivo */}
+                            <div style={{ padding:"10px 10px", background:"rgba(255,255,255,0.03)",
+                              border:"1px solid rgba(255,255,255,0.07)", display:"flex",
+                              alignItems:"center", justifyContent:"center", textAlign:"center" }}>
+                              <span style={{ fontSize:13, color:"rgba(255,255,255,0.75)", fontWeight:500,
+                                lineHeight:1.3 }}>{repsObj}</span>
+                            </div>
+
+                            {/* Col 2: RIR */}
+                            <div style={{ padding:"10px 6px", background:`${rirColor}12`,
+                              border:`1px solid ${rirColor}35`, display:"flex",
+                              alignItems:"center", justifyContent:"center", textAlign:"center" }}>
+                              <span style={{ fontSize:13, color:rirColor, fontWeight:700,
+                                fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:"0.03em",
+                                lineHeight:1.2 }}>{rirObj}</span>
+                            </div>
+
+                            {/* Col 3: Campo KG */}
                             <div>
-                              <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", marginBottom:4,
-                                letterSpacing:"0.05em" }}>PESO (KG)</div>
                               <input type="number" inputMode="decimal" placeholder="0"
                                 value={val.kg} disabled={sesionCerrada}
                                 onChange={e => setRegs(r=>({...r,[ej.id]:{...r[ej.id],[serie]:{...r[ej.id][serie],kg:e.target.value}}}))}
                                 onBlur={() => guardarSerie(ej.id, serie)}
-                                style={{ width:"100%", padding:"12px 14px", background:"rgba(255,255,255,0.04)",
-                                  border:`1px solid ${val.kg?"rgba(232,0,13,0.5)":"rgba(255,255,255,0.1)"}`,
+                                style={{ width:"100%", height:"100%", minHeight:46,
+                                  padding:"10px 10px", background:"rgba(255,255,255,0.04)",
+                                  border:`1px solid ${val.kg?"rgba(232,0,13,0.6)":"rgba(255,255,255,0.12)"}`,
                                   color:"#fff", fontSize:20, fontFamily:"'Barlow Condensed',sans-serif",
-                                  fontWeight:900, outline:"none" }}
+                                  fontWeight:900, outline:"none", textAlign:"center",
+                                  display:"block" }}
                               />
                             </div>
-                            <div>
-                              <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", marginBottom:4,
-                                letterSpacing:"0.05em" }}>REPS</div>
+
+                            {/* Col 4: Campo Reps */}
+                            <div style={{ position:"relative" }}>
                               <input type="number" inputMode="numeric" placeholder="0"
                                 value={val.reps} disabled={sesionCerrada}
                                 onChange={e => setRegs(r=>({...r,[ej.id]:{...r[ej.id],[serie]:{...r[ej.id][serie],reps:e.target.value}}}))}
                                 onBlur={() => guardarSerie(ej.id, serie)}
-                                style={{ width:"100%", padding:"12px 14px", background:"rgba(255,255,255,0.04)",
-                                  border:`1px solid ${val.reps?"rgba(232,0,13,0.5)":"rgba(255,255,255,0.1)"}`,
+                                style={{ width:"100%", height:"100%", minHeight:46,
+                                  padding:"10px 10px", background:"rgba(255,255,255,0.04)",
+                                  border:`1px solid ${val.reps?"rgba(232,0,13,0.6)":"rgba(255,255,255,0.12)"}`,
                                   color:"#fff", fontSize:20, fontFamily:"'Barlow Condensed',sans-serif",
-                                  fontWeight:900, outline:"none" }}
+                                  fontWeight:900, outline:"none", textAlign:"center",
+                                  display:"block" }}
                               />
                             </div>
-                            <div>
-                              <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", marginBottom:4 }}>⏱</div>
-                              <button onClick={()=>iniciarCron(parsearSeg(ej.descanso))}
-                                disabled={sesionCerrada} title="Iniciar descanso"
-                                style={{ width:"100%", height:46, background:"rgba(255,255,255,0.04)",
-                                  border:"1px solid rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.5)",
-                                  cursor:"pointer", fontSize:18, display:"flex",
-                                  alignItems:"center", justifyContent:"center" }}>▶</button>
-                            </div>
                           </div>
+
+                          {/* Botón cronómetro debajo, ancho completo */}
+                          <button onClick={()=>iniciarCron(parsearSeg(ej.descanso))}
+                            disabled={sesionCerrada} title="Iniciar descanso"
+                            style={{ width:"100%", marginTop:5, padding:"7px",
+                              background:"rgba(255,255,255,0.03)",
+                              border:"1px solid rgba(255,255,255,0.08)",
+                              color:"rgba(255,255,255,0.35)", cursor:"pointer",
+                              fontSize:12, fontFamily:"'Barlow Condensed',sans-serif",
+                              letterSpacing:"0.1em", textTransform:"uppercase",
+                              display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                            <span style={{ fontSize:14 }}>⏱</span>
+                            Iniciar descanso · {ej.descanso ?? "60 seg"}
+                          </button>
                         </div>
                       )
                     })}
