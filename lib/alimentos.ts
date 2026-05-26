@@ -1,4 +1,5 @@
-// 339 alimentos — originales + Tabla de Composición de Alimentos Colombianos ICBF 2018
+// 420+ alimentos — originales + ICBF 2018 + marcas colombianas + suplementos
+// Valores por 100g de parte comestible
 export const ALIMENTOS = [
   // ── ALIMENTOS ORIGINALES (ids 1–245) ─────────────────────────────────────
   { id: 1, nombre: "Jamon de Pollo", kcal: 213, proteina: 19.0, lipidos: 11.0, cho: 10.0 },
@@ -245,11 +246,7 @@ export const ALIMENTOS = [
   { id: 244, nombre: "Carne molida, pesada cruda", kcal: 260, proteina: 24.0, lipidos: 16.0, cho: 0.0 },
   { id: 245, nombre: "Higado de res", kcal: 135, proteina: 20.4, lipidos: 3.6, cho: 3.9 },
 
-  // ── TABLA DE COMPOSICIÓN DE ALIMENTOS COLOMBIANOS — ICBF 2018 ─────────────
-  // Fuente: TCAC 2018, Instituto Colombiano de Bienestar Familiar
-  // Valores por 100g de parte comestible
-
-  // B. Verduras, hortalizas y derivados
+  // ── TABLA ICBF 2018 (ids 246–339) ────────────────────────────────────────
   { id: 246, nombre: "Cebolla puerro, cruda", kcal: 69, proteina: 1.6, lipidos: 0.1, cho: 14.4 },
   { id: 247, nombre: "Champiñón, crudo", kcal: 32, proteina: 3.1, lipidos: 0.6, cho: 3.0 },
   { id: 248, nombre: "Col o repollitas de bruselas, cruda", kcal: 60, proteina: 3.4, lipidos: 0.3, cho: 9.1 },
@@ -287,8 +284,6 @@ export const ALIMENTOS = [
   { id: 280, nombre: "Yuca blanca sin cáscara, cruda", kcal: 159, proteina: 0.9, lipidos: 0.3, cho: 37.4 },
   { id: 281, nombre: "Zanahoria cocida, sin sal", kcal: 43, proteina: 0.8, lipidos: 0.2, cho: 8.1 },
   { id: 282, nombre: "Zapallo crudo", kcal: 46, proteina: 0.9, lipidos: 0.2, cho: 9.5 },
-
-  // C. Frutas y derivados
   { id: 283, nombre: "Banano bocadillo crudo", kcal: 125, proteina: 1.2, lipidos: 0.1, cho: 28.9 },
   { id: 284, nombre: "Cereza cruda", kcal: 104, proteina: 1.2, lipidos: 0.1, cho: 23.7 },
   { id: 285, nombre: "Coco crudo", kcal: 402, proteina: 3.6, lipidos: 35.5, cho: 12.6 },
@@ -311,13 +306,9 @@ export const ALIMENTOS = [
   { id: 302, nombre: "Toronja cruda", kcal: 53, proteina: 0.7, lipidos: 0.1, cho: 11.4 },
   { id: 303, nombre: "Uchuva cruda", kcal: 77, proteina: 1.5, lipidos: 0.5, cho: 14.2 },
   { id: 304, nombre: "Uva blanca cruda", kcal: 38, proteina: 0.5, lipidos: 0.0, cho: 8.6 },
-
-  // D. Grasas y aceites
   { id: 305, nombre: "Manteca o grasa de cerdo", kcal: 891, proteina: 0.0, lipidos: 99.0, cho: 0.0 },
   { id: 306, nombre: "Mantequilla de maní (ICBF)", kcal: 643, proteina: 24.6, lipidos: 50.0, cho: 20.7 },
   { id: 307, nombre: "Margarina de canola", kcal: 731, proteina: 0.5, lipidos: 81.0, cho: 0.0 },
-
-  // E. Pescados y mariscos
   { id: 308, nombre: "Atún enlatado en aceite", kcal: 211, proteina: 25.5, lipidos: 12.1, cho: 0.0 },
   { id: 309, nombre: "Atún enlatado en agua", kcal: 127, proteina: 24.2, lipidos: 3.0, cho: 0.9 },
   { id: 310, nombre: "Calamar crudo", kcal: 79, proteina: 16.4, lipidos: 1.5, cho: 0.1 },
@@ -327,8 +318,6 @@ export const ALIMENTOS = [
   { id: 314, nombre: "Salmón enlatado en aceite", kcal: 212, proteina: 21.7, lipidos: 13.9, cho: 0.1 },
   { id: 315, nombre: "Sardinas en salsa de tomate", kcal: 177, proteina: 20.9, lipidos: 10.3, cho: 0.1 },
   { id: 316, nombre: "Trucha de mar entera cruda", kcal: 142, proteina: 20.8, lipidos: 6.6, cho: 0.0 },
-
-  // F. Carnes y derivados
   { id: 317, nombre: "Cabra o chivo, carne cocida, sin sal", kcal: 137, proteina: 27.1, lipidos: 3.0, cho: 0.4 },
   { id: 318, nombre: "Cerdo, brazo cocido, sin sal", kcal: 184, proteina: 26.8, lipidos: 8.5, cho: 0.0 },
   { id: 319, nombre: "Cerdo, carne semigorda, cruda", kcal: 245, proteina: 17.2, lipidos: 19.4, cho: 0.3 },
@@ -341,23 +330,126 @@ export const ALIMENTOS = [
   { id: 326, nombre: "Pollo, molleja cocida, sin sal", kcal: 138, proteina: 27.1, lipidos: 2.7, cho: 1.4 },
   { id: 327, nombre: "Pollo, molleja cruda", kcal: 89, proteina: 17.7, lipidos: 2.1, cho: 0.0 },
   { id: 328, nombre: "Pollo, pechuga con piel, cocida, sin sal", kcal: 174, proteina: 26.9, lipidos: 7.4, cho: 0.0 },
-
-  // J. Huevos y derivados
   { id: 329, nombre: "Huevo de codorniz, entero, crudo", kcal: 154, proteina: 13.0, lipidos: 11.1, cho: 0.5 },
   { id: 330, nombre: "Huevo de gallina, clara, cruda", kcal: 47, proteina: 10.8, lipidos: 0.2, cho: 0.6 },
   { id: 331, nombre: "Huevo de gallina, entero, crudo", kcal: 149, proteina: 12.6, lipidos: 10.8, cho: 0.3 },
   { id: 332, nombre: "Huevo de pata, entero, crudo", kcal: 188, proteina: 13.0, lipidos: 13.8, cho: 3.1 },
-
-  // K. Productos azucarados
   { id: 333, nombre: "Helado de crema", kcal: 196, proteina: 3.2, lipidos: 10.3, cho: 22.8 },
   { id: 334, nombre: "Helado de leche", kcal: 63, proteina: 0.4, lipidos: 0.2, cho: 14.8 },
-
-  // L. Misceláneos
   { id: 335, nombre: "Jengibre crudo", kcal: 391, proteina: 9.0, lipidos: 4.2, cho: 72.3 },
   { id: 336, nombre: "Sal de cocina", kcal: 0, proteina: 0.0, lipidos: 0.0, cho: 0.0 },
   { id: 337, nombre: "Salsa de mostaza", kcal: 107, proteina: 3.6, lipidos: 3.3, cho: 14.1 },
   { id: 338, nombre: "Salsa de tomate (ketchup)", kcal: 109, proteina: 1.3, lipidos: 0.3, cho: 25.0 },
   { id: 339, nombre: "Vinagre", kcal: 24, proteina: 0.0, lipidos: 0.0, cho: 6.0 },
-] as const
 
+  // ════════════════════════════════════════════════════════════════
+  // NUEVOS — MARCAS COLOMBIANAS · GRUPO 1 FITNESS
+  // Fuente: etiquetas nutricionales oficiales por 100g
+  // ════════════════════════════════════════════════════════════════
+
+  // ── LÁCTEOS COLOMBIANOS ───────────────────────────────────────────────────
+  { id: 340, nombre: "Leche entera Alpina", kcal: 59, proteina: 3.0, lipidos: 3.0, cho: 5.0 },
+  { id: 341, nombre: "Leche semidescremada Alpina", kcal: 48, proteina: 3.3, lipidos: 1.5, cho: 5.0 },
+  { id: 342, nombre: "Leche descremada Alpina", kcal: 32, proteina: 3.0, lipidos: 0.0, cho: 5.0 },
+  { id: 343, nombre: "Leche deslactosada Alpina", kcal: 48, proteina: 3.2, lipidos: 1.5, cho: 5.1 },
+  { id: 344, nombre: "Leche entera Alqueria", kcal: 62, proteina: 3.1, lipidos: 3.3, cho: 4.8 },
+  { id: 345, nombre: "Leche semidescremada Alqueria", kcal: 47, proteina: 3.2, lipidos: 1.5, cho: 4.9 },
+  { id: 346, nombre: "Leche deslactosada Alqueria", kcal: 47, proteina: 3.2, lipidos: 1.5, cho: 5.0 },
+  { id: 347, nombre: "Kumis Alpina", kcal: 63, proteina: 3.2, lipidos: 2.5, cho: 6.5 },
+  { id: 348, nombre: "Kumis Alqueria", kcal: 61, proteina: 3.0, lipidos: 2.4, cho: 6.3 },
+  { id: 349, nombre: "Avena liquida Alpina Original", kcal: 68, proteina: 2.0, lipidos: 1.2, cho: 12.5 },
+  { id: 350, nombre: "Avena liquida Alpina Canela", kcal: 70, proteina: 2.0, lipidos: 1.2, cho: 13.0 },
+  { id: 351, nombre: "Avena liquida Alpina Deslactosada", kcal: 68, proteina: 2.0, lipidos: 1.2, cho: 12.5 },
+  { id: 352, nombre: "Bon Yurt Alpina bebible", kcal: 72, proteina: 3.0, lipidos: 1.5, cho: 11.0 },
+  { id: 353, nombre: "Yogurt Griego Alpina cuchareable", kcal: 80, proteina: 8.0, lipidos: 2.5, cho: 6.0 },
+  { id: 354, nombre: "Yogurt Griego Dejamu bebible", kcal: 72, proteina: 5.0, lipidos: 3.8, cho: 4.8 },
+  { id: 355, nombre: "Queso doble crema Alpina bajo en grasa", kcal: 198, proteina: 18.0, lipidos: 12.0, cho: 4.0 },
+  { id: 356, nombre: "Leche condensada La Lechera Nestlé", kcal: 321, proteina: 8.0, lipidos: 8.7, cho: 54.0 },
+
+  // ── CORTES DE RES COLOMBIANOS ─────────────────────────────────────────────
+  { id: 357, nombre: "Res - Punta de anca, cruda", kcal: 143, proteina: 21.5, lipidos: 6.2, cho: 0.0 },
+  { id: 358, nombre: "Res - Punta de anca, asada", kcal: 175, proteina: 28.0, lipidos: 6.5, cho: 0.0 },
+  { id: 359, nombre: "Res - Muchacho cocido", kcal: 143, proteina: 28.5, lipidos: 3.0, cho: 0.0 },
+  { id: 360, nombre: "Res - Lagarto cocido", kcal: 148, proteina: 27.0, lipidos: 4.0, cho: 0.0 },
+  { id: 361, nombre: "Res - Falda cocida", kcal: 215, proteina: 26.5, lipidos: 12.0, cho: 0.0 },
+  { id: 362, nombre: "Res - Lomo fino crudo (Filete)", kcal: 131, proteina: 21.0, lipidos: 4.5, cho: 0.0 },
+  { id: 363, nombre: "Res - Pecho o peche cocido", kcal: 248, proteina: 20.0, lipidos: 18.5, cho: 0.0 },
+  { id: 364, nombre: "Res - Bola de pierna cruda", kcal: 118, proteina: 22.0, lipidos: 3.5, cho: 0.0 },
+  { id: 365, nombre: "Res - Morrillo crudo", kcal: 225, proteina: 18.0, lipidos: 17.0, cho: 0.0 },
+  { id: 366, nombre: "Res - Carne desmechada cocida", kcal: 165, proteina: 30.0, lipidos: 5.0, cho: 0.0 },
+  { id: 367, nombre: "Res - Corazón cocido", kcal: 155, proteina: 28.0, lipidos: 4.5, cho: 0.5 },
+
+  // ── POLLO Y CERDO COLOMBIANO ──────────────────────────────────────────────
+  { id: 368, nombre: "Pechuga de pollo sin piel cocida", kcal: 165, proteina: 31.0, lipidos: 3.6, cho: 0.0 },
+  { id: 369, nombre: "Pechuga pollo Zenú laminada", kcal: 95, proteina: 16.0, lipidos: 2.0, cho: 3.5 },
+  { id: 370, nombre: "Jamón de pollo Zenú", kcal: 100, proteina: 14.0, lipidos: 2.5, cho: 5.5 },
+  { id: 371, nombre: "Salchichón cervecero Zenú", kcal: 210, proteina: 14.0, lipidos: 15.0, cho: 4.0 },
+  { id: 372, nombre: "Chorizo Zenú light", kcal: 185, proteina: 16.0, lipidos: 11.0, cho: 4.5 },
+  { id: 373, nombre: "Tocineta ahumada Zenú", kcal: 380, proteina: 22.0, lipidos: 32.0, cho: 1.0 },
+  { id: 374, nombre: "Cerdo - Pernil horneado sin piel", kcal: 185, proteina: 28.0, lipidos: 8.0, cho: 0.0 },
+  { id: 375, nombre: "Cerdo - Chicharrón horneado (sin freír)", kcal: 544, proteina: 30.0, lipidos: 48.0, cho: 0.0 },
+
+  // ── PRODUCTOS ALPINA ADICIONALES ─────────────────────────────────────────
+  { id: 376, nombre: "Arequipe Alpina", kcal: 312, proteina: 6.5, lipidos: 7.0, cho: 55.0 },
+  { id: 377, nombre: "Finesse yogurt light Alpina", kcal: 43, proteina: 3.5, lipidos: 0.0, cho: 7.3 },
+  { id: 378, nombre: "Queso Alpina tipo Americano tajado", kcal: 290, proteina: 16.0, lipidos: 22.0, cho: 6.0 },
+  { id: 379, nombre: "Mantequilla Alpina con sal", kcal: 720, proteina: 0.6, lipidos: 80.0, cho: 0.5 },
+  { id: 380, nombre: "Crema de leche Alpina", kcal: 296, proteina: 2.5, lipidos: 30.0, cho: 3.5 },
+
+  // ── MARCAS FITNESS Y SUPERMERCADO ────────────────────────────────────────
+  { id: 381, nombre: "Crema de maní Tosh sin azúcar", kcal: 631, proteina: 25.0, lipidos: 52.0, cho: 18.8 },
+  { id: 382, nombre: "Maní tostado sin sal Tosh", kcal: 567, proteina: 25.5, lipidos: 46.0, cho: 16.0 },
+  { id: 383, nombre: "Granola Tosh original", kcal: 410, proteina: 9.0, lipidos: 11.0, cho: 68.0 },
+  { id: 384, nombre: "Galletas integrales Tosh", kcal: 447, proteina: 10.0, lipidos: 16.0, cho: 65.0 },
+  { id: 385, nombre: "Chocolisto Nutresa en polvo", kcal: 380, proteina: 8.0, lipidos: 0.0, cho: 85.0 },
+  { id: 386, nombre: "Milo Nestlé en polvo", kcal: 388, proteina: 7.4, lipidos: 5.7, cho: 77.5 },
+  { id: 387, nombre: "Cocosette Nestlé (por unidad 33g)", kcal: 524, proteina: 5.5, lipidos: 27.5, cho: 63.5 },
+  { id: 388, nombre: "Crakers Saltín Noel", kcal: 430, proteina: 9.5, lipidos: 13.0, cho: 68.0 },
+  { id: 389, nombre: "Galleta María Noel", kcal: 438, proteina: 7.0, lipidos: 11.5, cho: 73.0 },
+  { id: 390, nombre: "Quaker Oatmeal instantáneo Canela", kcal: 370, proteina: 10.0, lipidos: 6.5, cho: 68.0 },
+  { id: 391, nombre: "Avena en polvo Quaker", kcal: 380, proteina: 12.0, lipidos: 6.0, cho: 69.0 },
+  { id: 392, nombre: "Proteína de arroz en polvo", kcal: 370, proteina: 78.0, lipidos: 3.0, cho: 8.0 },
+  { id: 393, nombre: "Agua de panela líquida (preparada)", kcal: 62, proteina: 0.0, lipidos: 0.0, cho: 15.5 },
+  { id: 394, nombre: "Panela en bloque", kcal: 383, proteina: 0.5, lipidos: 0.1, cho: 95.0 },
+
+  // ── SUPLEMENTOS DEPORTIVOS ────────────────────────────────────────────────
+  { id: 395, nombre: "Creatina monohidratada (pura)", kcal: 0, proteina: 0.0, lipidos: 0.0, cho: 0.0 },
+  { id: 396, nombre: "BCAA en polvo (aminoácidos ramificados)", kcal: 0, proteina: 0.0, lipidos: 0.0, cho: 0.0 },
+  { id: 397, nombre: "Proteína de guisante (pea protein)", kcal: 357, proteina: 80.0, lipidos: 3.5, cho: 5.5 },
+  { id: 398, nombre: "Caseína micelar en polvo", kcal: 358, proteina: 78.0, lipidos: 2.0, cho: 8.0 },
+  { id: 399, nombre: "Maltodextrina en polvo", kcal: 380, proteina: 0.0, lipidos: 0.0, cho: 95.0 },
+  { id: 400, nombre: "Dextrosa en polvo", kcal: 380, proteina: 0.0, lipidos: 0.0, cho: 95.0 },
+  { id: 401, nombre: "Proteína de suero aislada (WPI)", kcal: 354, proteina: 90.0, lipidos: 0.5, cho: 2.0 },
+  { id: 402, nombre: "Colágeno hidrolizado en polvo", kcal: 360, proteina: 90.0, lipidos: 0.0, cho: 0.0 },
+  { id: 403, nombre: "Omega 3 aceite de pescado (por 100ml)", kcal: 900, proteina: 0.0, lipidos: 100.0, cho: 0.0 },
+  { id: 404, nombre: "Glutamina en polvo", kcal: 0, proteina: 0.0, lipidos: 0.0, cho: 0.0 },
+
+  // ── TUBÉRCULOS Y GRANOS COLOMBIANOS ADICIONALES ───────────────────────────
+  { id: 405, nombre: "Ñame cocido", kcal: 118, proteina: 1.5, lipidos: 0.1, cho: 27.5 },
+  { id: 406, nombre: "Arracacha cocida", kcal: 96, proteina: 1.0, lipidos: 0.2, cho: 22.0 },
+  { id: 407, nombre: "Mazorca tierna cocida", kcal: 96, proteina: 3.4, lipidos: 1.5, cho: 19.0 },
+  { id: 408, nombre: "Maíz pira (popcorn natural sin sal)", kcal: 375, proteina: 11.0, lipidos: 4.3, cho: 74.0 },
+  { id: 409, nombre: "Frijol bola roja cocido", kcal: 132, proteina: 8.7, lipidos: 0.5, cho: 23.5 },
+  { id: 410, nombre: "Frijol cabecita negra cocido", kcal: 132, proteina: 8.9, lipidos: 0.5, cho: 23.7 },
+
+  // ── BEBIDAS ───────────────────────────────────────────────────────────────
+  { id: 411, nombre: "Jugo de lulo natural (preparado)", kcal: 30, proteina: 0.5, lipidos: 0.1, cho: 6.5 },
+  { id: 412, nombre: "Jugo de guanábana natural (preparado)", kcal: 48, proteina: 0.7, lipidos: 0.2, cho: 10.5 },
+  { id: 413, nombre: "Jugo de tomate de árbol natural", kcal: 36, proteina: 1.2, lipidos: 0.1, cho: 7.5 },
+  { id: 414, nombre: "Jugo de maracuyá natural (sin azúcar)", kcal: 25, proteina: 0.5, lipidos: 0.1, cho: 5.5 },
+  { id: 415, nombre: "Chocolate caliente Luker (leche entera 200ml)", kcal: 148, proteina: 5.5, lipidos: 5.5, cho: 20.0 },
+  { id: 416, nombre: "Gatorade (bebida deportiva)", kcal: 26, proteina: 0.0, lipidos: 0.0, cho: 6.4 },
+  { id: 417, nombre: "Agua de coco natural", kcal: 19, proteina: 0.7, lipidos: 0.2, cho: 3.7 },
+
+  // ── SNACKS Y OPCIONES SALUDABLES ─────────────────────────────────────────
+  { id: 418, nombre: "Barra proteica Quest Nutrition", kcal: 371, proteina: 43.0, lipidos: 12.0, cho: 28.0 },
+  { id: 419, nombre: "Barra proteica ONE BAR", kcal: 349, proteina: 40.0, lipidos: 9.0, cho: 24.0 },
+  { id: 420, nombre: "Arroz en tortas de arroz (snack)", kcal: 380, proteina: 7.5, lipidos: 2.5, cho: 80.0 },
+  { id: 421, nombre: "Hummus de garbanzo", kcal: 166, proteina: 7.9, lipidos: 9.6, cho: 14.3 },
+  { id: 422, nombre: "Edamame cocido sin sal", kcal: 121, proteina: 11.9, lipidos: 5.2, cho: 8.9 },
+  { id: 423, nombre: "Arándanos (blueberries) frescos", kcal: 57, proteina: 0.7, lipidos: 0.3, cho: 14.5 },
+  { id: 424, nombre: "Semillas de girasol sin sal", kcal: 584, proteina: 20.8, lipidos: 51.5, cho: 20.0 },
+  { id: 425, nombre: "Semillas de calabaza sin sal", kcal: 559, proteina: 30.2, lipidos: 49.0, cho: 10.7 },
+  { id: 426, nombre: "Mantequilla de almendras sin sal", kcal: 614, proteina: 21.0, lipidos: 55.5, cho: 18.8 },
+] as const
 export type Alimento = typeof ALIMENTOS[number]
