@@ -451,5 +451,75 @@ export const ALIMENTOS = [
   { id: 424, nombre: "Semillas de girasol sin sal", kcal: 584, proteina: 20.8, lipidos: 51.5, cho: 20.0 },
   { id: 425, nombre: "Semillas de calabaza sin sal", kcal: 559, proteina: 30.2, lipidos: 49.0, cho: 10.7 },
   { id: 426, nombre: "Mantequilla de almendras sin sal", kcal: 614, proteina: 21.0, lipidos: 55.5, cho: 18.8 },
+
+// ════════════════════════════════════════════════════════════════
+// PROTEÍNAS EN POLVO — POR SCOOP
+// Valores por 1 scoop (porción indicada en el nombre)
+// Fuente: etiquetas nutricionales oficiales de cada marca
+// IMPORTANTE: los valores kcal/proteina/lipidos/cho corresponden
+// a 1 scoop completo, NO a 100g. Usar cantidad = número de scoops.
+// ════════════════════════════════════════════════════════════════
+
+// ── WHEY ISOLATE E HIDROLIZADA ────────────────────────────────
+  { id: 427, nombre: "Dymatize ISO100 - 1 scoop (31g)", kcal: 120, proteina: 25.0, lipidos: 0.5, cho: 2.0 },
+  { id: 428, nombre: "Dymatize Elite Whey - 1 scoop (36g)", kcal: 130, proteina: 25.0, lipidos: 2.5, cho: 3.0 },
+  { id: 429, nombre: "Dymatize Elite Casein - 1 scoop (36g)", kcal: 130, proteina: 25.0, lipidos: 1.5, cho: 5.0 },
+  { id: 430, nombre: "Gold Standard 100% Whey ON - 1 scoop (32g)", kcal: 120, proteina: 24.0, lipidos: 1.0, cho: 3.0 },
+  { id: 431, nombre: "ON Platinum Hydrowhey - 1 scoop (38g)", kcal: 140, proteina: 30.0, lipidos: 1.0, cho: 3.0 },
+  { id: 432, nombre: "Isopure Zero Carb - 1 scoop (31g)", kcal: 105, proteina: 25.0, lipidos: 0.0, cho: 0.0 },
+  { id: 433, nombre: "Rule1 R1 Whey Isolate - 1 scoop (30g)", kcal: 110, proteina: 25.0, lipidos: 0.5, cho: 2.0 },
+  { id: 434, nombre: "Rule1 R1 Whey Blend - 1 scoop (33g)", kcal: 130, proteina: 25.0, lipidos: 2.0, cho: 3.0 },
+  { id: 435, nombre: "Ghost Whey - 1 scoop (34.5g)", kcal: 130, proteina: 25.0, lipidos: 1.5, cho: 4.0 },
+
+// ── MUSCLETECH ────────────────────────────────────────────────
+  { id: 436, nombre: "MuscleTech NitroTech - 1 scoop (45g)", kcal: 160, proteina: 30.0, lipidos: 2.5, cho: 4.0 },
+  { id: 437, nombre: "MuscleTech NitroTech Ripped - 1 scoop (45g)", kcal: 160, proteina: 30.0, lipidos: 1.5, cho: 5.0 },
+
+// ── BSN ───────────────────────────────────────────────────────
+  { id: 438, nombre: "BSN Syntha-6 - 1 scoop (47g)", kcal: 200, proteina: 22.0, lipidos: 6.0, cho: 15.0 },
+  { id: 439, nombre: "BSN True Mass - 1 scoop (86g)", kcal: 340, proteina: 24.0, lipidos: 6.0, cho: 46.0 },
+
+// ── BI PRO ────────────────────────────────────────────────────
+  { id: 440, nombre: "Bi Pro Whey Isolate - 1 scoop (26g)", kcal: 90, proteina: 20.0, lipidos: 0.5, cho: 1.0 },
+  { id: 441, nombre: "Bi Pro Elite Whey Isolate - 1 scoop (28g)", kcal: 100, proteina: 22.0, lipidos: 0.5, cho: 2.0 },
+
+// ── CELLUCOR / C4 ─────────────────────────────────────────────
+  { id: 442, nombre: "Cellucor Whey Sport - 1 scoop (33g)", kcal: 130, proteina: 25.0, lipidos: 2.0, cho: 5.0 },
+  { id: 462, nombre: "C4 Ultimate Protein - 1 scoop (43g)", kcal: 160, proteina: 30.0, lipidos: 2.0, cho: 5.0 },
+
+// ── ALLMAX ────────────────────────────────────────────────────
+  { id: 443, nombre: "Allmax Isoflex - 1 scoop (30g)", kcal: 110, proteina: 27.0, lipidos: 0.0, cho: 1.0 },
+  { id: 444, nombre: "Allmax Hexapro - 1 scoop (42g)", kcal: 160, proteina: 25.0, lipidos: 4.0, cho: 8.0 },
+
+// ── ANIMAL / UNIVERSAL ───────────────────────────────────────
+  { id: 446, nombre: "Animal Whey - 1 scoop (35g)", kcal: 130, proteina: 25.0, lipidos: 2.0, cho: 4.0 },
+  { id: 447, nombre: "Universal Nutrition Ultra Whey - 1 scoop (33g)", kcal: 130, proteina: 25.0, lipidos: 2.5, cho: 4.0 },
+
+// ── SCITEC ────────────────────────────────────────────────────
+  { id: 448, nombre: "Scitec 100% Whey Professional - 1 scoop (30g)", kcal: 110, proteina: 22.0, lipidos: 1.5, cho: 3.0 },
+
+// ── MUSCLEBLAZE ───────────────────────────────────────────────
+  { id: 449, nombre: "MuscleBlaze Whey Gold - 1 scoop (33g)", kcal: 120, proteina: 25.0, lipidos: 1.5, cho: 3.0 },
+
+// ── PROTEÍNAS VEGANAS ─────────────────────────────────────────
+  { id: 450, nombre: "Vega Sport Premium Protein - 1 scoop (41g)", kcal: 160, proteina: 30.0, lipidos: 3.5, cho: 7.0 },
+  { id: 451, nombre: "Garden of Life Sport Organic Plant - 1 scoop (42g)", kcal: 160, proteina: 30.0, lipidos: 3.0, cho: 8.0 },
+  { id: 452, nombre: "NOW Foods Pea Protein - 1 scoop (22g)", kcal: 80, proteina: 15.0, lipidos: 1.5, cho: 1.0 },
+
+// ── CASEÍNA ───────────────────────────────────────────────────
+  { id: 453, nombre: "ON Gold Standard Casein - 1 scoop (34g)", kcal: 120, proteina: 24.0, lipidos: 1.0, cho: 4.0 },
+  { id: 454, nombre: "Dymatize Elite Casein Noche - 1 scoop (36g)", kcal: 130, proteina: 25.0, lipidos: 1.5, cho: 5.0 },
+
+// ── MARCAS DISPONIBLES EN COLOMBIA ───────────────────────────
+  { id: 445, nombre: "ProScience Complete Whey - 1 scoop (35g)", kcal: 120, proteina: 24.0, lipidos: 2.0, cho: 4.0 },
+  { id: 455, nombre: "Best Protein Whey - 1 scoop (31g)", kcal: 110, proteina: 25.0, lipidos: 0.8, cho: 2.5 },
+  { id: 456, nombre: "Nutritech Whey Pro - 1 scoop (32g)", kcal: 120, proteina: 24.0, lipidos: 2.0, cho: 4.0 },
+  { id: 457, nombre: "ProScience Whey 100 - 1 scoop (35g)", kcal: 120, proteina: 24.0, lipidos: 2.0, cho: 4.5 },
+  { id: 458, nombre: "IMN Nutrition Whey Colombia - 1 scoop (33g)", kcal: 115, proteina: 23.0, lipidos: 1.5, cho: 3.5 },
+
+// ── GAINERS / HIPERCALÓRICOS ──────────────────────────────────
+  { id: 459, nombre: "ON Serious Mass - 2 scoops (334g)", kcal: 1250, proteina: 50.0, lipidos: 4.5, cho: 252.0 },
+  { id: 460, nombre: "MuscleTech Mass Tech - 2 scoops (195g)", kcal: 840, proteina: 63.0, lipidos: 7.0, cho: 132.0 },
+  { id: 461, nombre: "Dymatize Super Mass Gainer - 2 scoops (334g)", kcal: 1280, proteina: 52.0, lipidos: 10.0, cho: 246.0 },  
 ] as const
 export type Alimento = typeof ALIMENTOS[number]
