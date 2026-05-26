@@ -48,7 +48,7 @@ const DISTRIBUCION_RIVS = [
   { dia: "Día 3", label: "Cycling Continuo Z2 + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
   { dia: "Día 4", label: "Tren Superior + Pliometría",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
   { dia: "Día 5", label: "Cycling Z2 + Carrera",        icono: "🚴🏃", tags: ["CYCLING"] },
-  { dia: "Día 6", label: "Bricks — Bici + Carrera",     icono: "🔥",   tags: ["CYCLING","RUNNING"] },
+  { dia: "Día 6", label: "Fondo Z2 - Carrera",     icono: "🔥",   tags: ["RUNNING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
