@@ -165,7 +165,7 @@ export default function CalculadoraRMPage() {
     ? getNivelLabel(ratio, adjStd)
     : null
 
-  const hasInputs = avg !== null && pC > 0 && eC > 0
+  const hasInputs = avg !== null && pC > 0
 
   return (
     <div style={{background:"#050505",minHeight:"100vh",color:"#fff",
@@ -555,7 +555,7 @@ export default function CalculadoraRMPage() {
             border:"1px solid rgba(255,255,255,0.07)",
             color:"rgba(255,255,255,0.35)",fontSize:14,
             animation:"fadeUp 0.3s ease"}}>
-            Completa tu peso corporal y edad para ver el análisis de déficit de fuerza
+            Completa tu peso corporal para ver el análisis de déficit de fuerza
           </div>
         )}
 
