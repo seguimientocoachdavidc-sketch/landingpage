@@ -354,46 +354,6 @@ export default function CalculadoraRMPage() {
           </div>
         </div>
 
-        {/* ── PREVISUALIZACIÓN 1RM (siempre visible) ── */}
-        {avg !== null && (
-          <div style={{animation:"fadeUp 0.3s ease",marginBottom:28}}>
-            <div style={{padding:"24px",border:`1px solid ${R}30`,
-              background:`${R}06`,textAlign:"center",marginBottom:16}}>
-              <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",
-                letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:8}}>
-                Tu 1RM estimado — promedio de 6 fórmulas
-              </div>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",
-                fontSize:68,fontWeight:900,color:"#fff",lineHeight:1}}>
-                {avg.toFixed(1)}
-                <span style={{fontSize:24,color:"rgba(255,255,255,0.4)",
-                  marginLeft:6}}>kg</span>
-              </div>
-              <div style={{fontSize:13,color:"rgba(255,255,255,0.3)",marginTop:8}}>
-                {peso} kg × {reps} reps — {EJERCICIO_LABELS[ejercicio]}
-              </div>
-            </div>
-
-            {/* Fórmulas en miniatura */}
-            <div style={{display:"grid",
-              gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:6}}>
-              {FORMULAS.map(f=>(
-                <div key={f.key} style={{padding:"10px 8px",textAlign:"center",
-                  background:"rgba(255,255,255,0.03)",
-                  border:"1px solid rgba(255,255,255,0.07)"}}>
-                  <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",
-                    letterSpacing:"0.1em",textTransform:"uppercase",
-                    marginBottom:3}}>{f.name}</div>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",
-                    fontSize:18,fontWeight:900}}>
-                    {formulaVals[f.key]?.toFixed(1)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* ── ZONA BLOQUEADA: DÉFICIT + TABLA PCT ── */}
         {hasInputs && !unlocked && (
           <div style={{position:"relative",marginBottom:28,
@@ -503,7 +463,44 @@ export default function CalculadoraRMPage() {
           </div>
         )}
 
-        {/* ── RESULTADOS DESBLOQUEADOS ── */}
+        {/* ── PREVISUALIZACIÓN 1RM + RESULTADOS DESBLOQUEADOS ── */}
+        {avg !== null && (
+          <div style={{animation:"fadeUp 0.3s ease",marginBottom:20}}>
+            <div style={{padding:"22px",border:`1px solid ${R}30`,
+              background:`${R}06`,textAlign:"center",marginBottom:12}}>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",
+                letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:6}}>
+                Tu 1RM estimado — promedio de 6 fórmulas
+              </div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",
+                fontSize:64,fontWeight:900,color:"#fff",lineHeight:1}}>
+                {avg.toFixed(1)}
+                <span style={{fontSize:22,color:"rgba(255,255,255,0.4)",marginLeft:6}}>kg</span>
+              </div>
+              <div style={{fontSize:12,color:"rgba(255,255,255,0.3)",marginTop:6}}>
+                {peso} kg × {reps} reps — {EJERCICIO_LABELS[ejercicio]}
+              </div>
+            </div>
+            <div style={{display:"grid",
+              gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:6,marginBottom:8}}>
+              {FORMULAS.map(f=>(
+                <div key={f.key} style={{padding:"10px 8px",textAlign:"center",
+                  background:"rgba(255,255,255,0.03)",
+                  border:"1px solid rgba(255,255,255,0.07)"}}>
+                  <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",
+                    letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:3}}>
+                    {f.name}
+                  </div>
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",
+                    fontSize:18,fontWeight:900}}>
+                    {formulaVals[f.key]?.toFixed(1)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {hasInputs && unlocked && (
           <div style={{animation:"fadeUp 0.5s ease"}}>
             <DeficitPreview
@@ -713,11 +710,4 @@ function DeficitPreview({rm,pc,ratio,nivelInfo,adjStd,ejercicio,pct,r1,anios}:{
       </div>
     </div>
   )
-}
-
-const EJERCICIO_LABELS: Record<string,string> = {
-  sentadilla:"Sentadilla",
-  banca:"Press de banca",
-  peso_muerto:"Peso muerto",
-  press_hombro:"Press de hombro",
 }
