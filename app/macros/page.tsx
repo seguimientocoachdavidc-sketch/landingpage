@@ -52,8 +52,17 @@ function calcular(alimentoId: number, gramos: number) {
 }
 
 /* ── Fecha hoy ───────────────────────────────────────────────── */
-function hoy() { return new Date().toISOString().split("T")[0] }
-function horaActual() { return new Date().toTimeString().slice(0, 5) }
+/* ── Fecha hoy en zona horaria Colombia (UTC-5) ──────────────── */
+function hoy() {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })
+}
+function horaActual() {
+  return new Date().toLocaleTimeString("en-GB", {
+    timeZone: "America/Bogota",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
 function formatFecha(iso: string) {
   const [y, m, d] = iso.split("-")
   const meses = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"]
