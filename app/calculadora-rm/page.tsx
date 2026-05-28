@@ -93,7 +93,8 @@ export default function CalculadoraRMPage() {
   // ── Step 1: datos del ejercicio
   const [peso,     setPeso]     = useState("")
   const [reps,     setReps]     = useState("")
-  const [ejercicio,setEjercicio]= useState("banca")
+  const [ejercicio,setEjercicio]= useState("")
+  const [ejercicioNombre,setEjercicioNombre]= useState("")
 
   // ── Step 2: datos del usuario (para desbloquear)
   const [pesoCorp, setPesoCorp] = useState("")
@@ -156,7 +157,7 @@ export default function CalculadoraRMPage() {
   /* ── Calcular indicadores de déficit ── */
   const pC   = parseFloat(pesoCorp)
   const eC   = parseInt(edad)
-  const std  = STANDARDS[ejercicio]?.[genero] ?? STANDARDS.banca.M
+  const std  = ejercicio ? (STANDARDS[ejercicio]?.[genero] ?? STANDARDS.banca.M) : STANDARDS.banca.M
   const ageMult = eC>0 ? getAgeMultiplier(eC) : 1
   const adjStd = std.map(s=>r1(s*ageMult))
   const ratio = (avg && pC>0) ? r1(avg/pC) : null
@@ -166,6 +167,7 @@ export default function CalculadoraRMPage() {
     : null
 
   const hasInputs = avg !== null && pC > 0
+  const hasDeficit = hasInputs && ejercicio !== ""
 
   return (
     <div style={{background:"#050505",minHeight:"100vh",color:"#fff",
@@ -259,10 +261,35 @@ export default function CalculadoraRMPage() {
             Datos del ejercicio
           </div>
 
-          {/* Ejercicio */}
+          {/* Ejercicio — texto libre */}
           <div style={{marginBottom:16}}>
-            <span className="label">Ejercicio</span>
+            <span className="label">Nombre del ejercicio</span>
+            <input type="text" className={`inp${ejercicioNombre?" inp-filled":""}`}
+              placeholder="ej. Press de banca, Sentadilla, Curl bíceps..."
+              value={ejercicioNombre}
+              onChange={e=>setEjercicioNombre(e.target.value)}
+              style={{width:"100%",fontSize:15,fontFamily:"'Barlow',sans-serif"}}/>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.25)",marginTop:4}}>
+              Puedes calcular el 1RM para cualquier ejercicio
+            </div>
+          </div>
+
+          {/* Selector opcional para déficit */}
+          <div style={{padding:"12px 14px",
+            background:"rgba(255,255,255,0.02)",
+            border:"1px solid rgba(255,255,255,0.06)"}}>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",
+              letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>
+              ¿Comparar con estándares de fuerza? (opcional)
+            </div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,0.3)",
+              marginBottom:10,lineHeight:1.5}}>
+              Los estándares existen solo para ejercicios compuestos principales.
+              Selecciona el más parecido, o déjalo en "Sin comparar".
+            </div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              <button className={`sel-btn${ejercicio===""?" active":""}`}
+                onClick={()=>setEjercicio("")}>Sin comparar</button>
               {Object.entries(EJERCICIO_LABELS).map(([k,v])=>(
                 <button key={k} className={`sel-btn${ejercicio===k?" active":""}`}
                   onClick={()=>setEjercicio(k)}>{v}</button>
@@ -355,7 +382,7 @@ export default function CalculadoraRMPage() {
         </div>
 
         {/* ── ZONA BLOQUEADA: DÉFICIT + TABLA PCT ── */}
-        {hasInputs && !unlocked && (
+        {hasDeficit && !unlocked && (
           <div style={{position:"relative",marginBottom:28,
             animation:"fadeUp 0.4s ease"}}>
 
@@ -478,7 +505,7 @@ export default function CalculadoraRMPage() {
                 <span style={{fontSize:22,color:"rgba(255,255,255,0.4)",marginLeft:6}}>kg</span>
               </div>
               <div style={{fontSize:12,color:"rgba(255,255,255,0.3)",marginTop:6}}>
-                {peso} kg × {reps} reps — {EJERCICIO_LABELS[ejercicio]}
+                {peso} kg × {reps} reps — {ejercicioNombre || EJERCICIO_LABELS[ejercicio] || "Ejercicio libre"}
               </div>
             </div>
             <div style={{display:"grid",
@@ -501,7 +528,7 @@ export default function CalculadoraRMPage() {
           </div>
         )}
 
-        {hasInputs && unlocked && (
+        {hasDeficit && unlocked && (
           <div style={{animation:"fadeUp 0.5s ease"}}>
             <DeficitPreview
               rm={avg!} pc={pC} ratio={ratio!}
@@ -543,6 +570,27 @@ export default function CalculadoraRMPage() {
                 </a>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Mensaje si falta peso corporal */}
+        {avg !== null && !pC && (
+          <div style={{textAlign:"center",padding:"16px",
+            border:"1px solid rgba(255,255,255,0.07)",
+            color:"rgba(255,255,255,0.35)",fontSize:14,
+            animation:"fadeUp 0.3s ease",marginBottom:16}}>
+            Completa tu peso corporal para ver el análisis de déficit de fuerza
+          </div>
+        )}
+
+        {/* Mensaje si falta seleccionar ejercicio para déficit */}
+        {hasInputs && !hasDeficit && (
+          <div style={{textAlign:"center",padding:"14px 16px",
+            border:"1px solid rgba(255,255,255,0.07)",
+            background:"rgba(255,255,255,0.01)",
+            fontSize:13,color:"rgba(255,255,255,0.3)",
+            animation:"fadeUp 0.3s ease"}}>
+            💡 Para ver tu déficit de fuerza, selecciona un ejercicio equivalente arriba (opcional)
           </div>
         )}
 
@@ -711,3 +759,5 @@ function DeficitPreview({rm,pc,ratio,nivelInfo,adjStd,ejercicio,pct,r1,anios}:{
     </div>
   )
 }
+
+
