@@ -521,5 +521,6 @@ export const ALIMENTOS = [
   { id: 459, nombre: "ON Serious Mass - 2 scoops (334g)", kcal: 1250, proteina: 50.0, lipidos: 4.5, cho: 252.0 },
   { id: 460, nombre: "MuscleTech Mass Tech - 2 scoops (195g)", kcal: 840, proteina: 63.0, lipidos: 7.0, cho: 132.0 },
   { id: 461, nombre: "Dymatize Super Mass Gainer - 2 scoops (334g)", kcal: 1280, proteina: 52.0, lipidos: 10.0, cho: 246.0 },  
+  { id: 464, nombre: "Res - Costilla, cocinada", kcal: 331, proteina: 24.2, lipidos: 26.0, cho: 0.0 },
 ] as const
 export type Alimento = typeof ALIMENTOS[number]
