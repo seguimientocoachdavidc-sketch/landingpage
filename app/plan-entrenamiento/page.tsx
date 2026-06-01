@@ -43,12 +43,12 @@ const P = "#818cf8"
 /* ── Distribución semanal Rivs (solo cuando cycling=true) ── */
 const DISTRIBUCION_RIVS = [
   { dia: "NA",    label: "Descanso",                    icono: "😴", tags: [] },
-  { dia: "Día 1", label: "Tren Superior + Easy Run Z2", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
+  { dia: "Día 1", label: "Tren Superior + Intervalos", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
   { dia: "Día 2", label: "Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
   { dia: "Día 3", label: "Cycling Continuo Z2 + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
-  { dia: "Día 4", label: "Tren Superior + Pliometría",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
-  { dia: "Día 5", label: "Cycling Z2",        icono: "🚴", tags: ["CYCLING"] },
-  { dia: "Día 6", label: "Fondo Z2 - Carrera",     icono: "🔥",   tags: ["RUNNING"] },
+  { dia: "Día 4", label: "Tren Superior (Sin pliometria)",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
+  { dia: "Día 5", label: "Carrera Continua Z2",        icono: "🏃", tags: ["RUNNING"] },
+  { dia: "Día 6", label: "Fondo Z2 - Cycling",     icono: "🚴",   tags: ["CYCLING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
@@ -377,7 +377,7 @@ export default function PlanEntrenamientoPage() {
   // Rivs: 2 sesiones (día 1 easy run, día 6 bricks-carrera)
   const sesionesRunConfig = modulos.cycling
     ? [
-        { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Easy Run", icono: "🏃",
+        { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Intervalos", icono: "🏃",
           getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min,
           campos: [
@@ -386,7 +386,7 @@ export default function PlanEntrenamientoPage() {
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "145", tipo: "number" },
           ], notaBricks: undefined, color: G },
-        { num: 2, titulo: "Sesión 2 · Día 6 — Fondo", subtitulo: "Fondo continuo", icono: "🔥🏃",
+        { num: 2, titulo: "Sesión 2 · Día 5 — Fondo", subtitulo: "Carrera Continua", icono: "🔥🏃",
           getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
           campos: [
