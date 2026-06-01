@@ -910,7 +910,7 @@ export default function MacrosPage() {
             Nota (opcional)
           </label>
           <textarea value={formSeg.nota??""} rows={2}
-            placeholder="¿Cómo te sentiste esta semana? Cambios notables..."
+            placeholder="¿Cómo te sentiste esta semana?"
             onChange={e=>setFormSeg(s=>({...s,nota:e.target.value}))}
             style={{width:"100%",padding:"9px 12px",
               background:"rgba(255,255,255,0.04)",
