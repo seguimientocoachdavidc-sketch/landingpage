@@ -522,5 +522,12 @@ export const ALIMENTOS = [
   { id: 460, nombre: "MuscleTech Mass Tech - 2 scoops (195g)", kcal: 840, proteina: 63.0, lipidos: 7.0, cho: 132.0 },
   { id: 461, nombre: "Dymatize Super Mass Gainer - 2 scoops (334g)", kcal: 1280, proteina: 52.0, lipidos: 10.0, cho: 246.0 },  
   { id: 464, nombre: "Costilla de res, cocinada", kcal: 331, proteina: 24.2, lipidos: 26.0, cho: 0.0 },
+
+  { id: 465, nombre: "Bénet Proteína (bebida láctea)", kcal: 55, proteina: 6.0, lipidos: 3.1, cho: 1.5 },
+
+{ id: 466, nombre: "Queso snack porcionado (tipo Schadelin)", kcal: 305, proteina: 26.0, lipidos: 21.0, cho: 2.9 },
+
+{ id: 467, nombre: "Pietrán Snack Jamón de Cerdo", kcal: 117, proteina: 14.0, lipidos: 2.7, cho: 9.1 },
+  
 ] as const
 export type Alimento = typeof ALIMENTOS[number]
