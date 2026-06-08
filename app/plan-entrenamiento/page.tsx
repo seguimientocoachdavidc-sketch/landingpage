@@ -388,7 +388,7 @@ export default function PlanEntrenamientoPage() {
   // Rivs: 2 sesiones (día 1 easy run, día 6 bricks-carrera)
 const sesionesRunConfig = modulos.cycling
   ? [
-      { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Intervalos", icono: "🏃",
+      { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Sesión Running", icono: "🏃",
         getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
         getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min,
         campos: [
@@ -397,7 +397,7 @@ const sesionesRunConfig = modulos.cycling
           { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
           { k: "pulsaciones_prom", l: "Puls. prom", p: "145", tipo: "number" },
         ], notaBricks: undefined, color: G },
-      { num: 2, titulo: "Sesión 2 · Día 5 — Fondo", subtitulo: "Carrera Continua", icono: "🔥🏃",
+      { num: 2, titulo: "Sesión 2 · Día 5 — Fondo", subtitulo: "Sesión Running", icono: "🔥🏃",
         getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
         getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
         campos: [
@@ -409,7 +409,7 @@ const sesionesRunConfig = modulos.cycling
     ]
   : [
       // Sesiones 1 y 2 siempre visibles
-      { num: 1, titulo: "Sesión 1", subtitulo: "Z2", icono: "🏃",
+      { num: 1, titulo: "Sesión 1", subtitulo: "Running", icono: "🏃",
         getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
         getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min ?? s.sesion_1_objetivo_min,
         campos: [
@@ -418,7 +418,7 @@ const sesionesRunConfig = modulos.cycling
           { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "6:00", tipo: "text" },
           { k: "pulsaciones_prom", l: "Puls. prom", p: "135", tipo: "number" },
         ], notaBricks: undefined, color: G },
-      { num: 2, titulo: "Sesión 2", subtitulo: "Z2", icono: "🏃",
+      { num: 2, titulo: "Sesión 2", subtitulo: "Running", icono: "🏃",
         getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
         getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
         campos: [
