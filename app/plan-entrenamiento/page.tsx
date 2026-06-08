@@ -43,12 +43,12 @@ const P = "#818cf8"
 /* ── Distribución semanal Rivs (solo cuando cycling=true) ── */
 const DISTRIBUCION_RIVS = [
   { dia: "NA",    label: "Descanso",                    icono: "😴", tags: [] },
-  { dia: "Día 1", label: "Tren Superior + Intervalos", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
+  { dia: "Día 1", label: "Tren Superior + Carrera Continua", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
   { dia: "Día 2", label: "Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
   { dia: "Día 3", label: "Cycling Continuo Z2 + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
-  { dia: "Día 4", label: "Tren Superior (Sin pliometria)",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
-  { dia: "Día 5", label: "Carrera Continua Z2",        icono: "🏃", tags: ["RUNNING"] },
-  { dia: "Día 6", label: "Fondo Z2 - Cycling",     icono: "🚴",   tags: ["CYCLING"] },
+  { dia: "Día 4", label: "Tren Superior",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
+  { dia: "Día 5", label: "Cycling Continuo",        icono: "🚴🏃", tags: ["CYCLING"] },
+  { dia: "Día 6", label: "Fondo Running",     icono: "🏃",   tags: ["RUNNING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
