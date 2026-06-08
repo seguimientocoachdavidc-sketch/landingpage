@@ -279,7 +279,7 @@ export default function PlanEntrenamientoPage() {
     }
 
     const { data: ant } = await supabase.from("sesiones").select("id,fecha")
-      .eq("cliente_token", token).eq("dia_id", dia.id).eq("completada", true)
+      .eq("cliente_token", token).eq("dia_id", dia.id)
       .neq("fecha", hoy).order("fecha", { ascending: false }).limit(1)
     if (ant?.length) {
       const { data: rAnt } = await supabase.from("registros")
