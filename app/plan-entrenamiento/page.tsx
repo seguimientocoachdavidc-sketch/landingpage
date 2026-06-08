@@ -375,56 +375,60 @@ export default function PlanEntrenamientoPage() {
   /* ── Definición de sesiones running según cliente ── */
   // David: 3 sesiones (martes, miércoles, domingo)
   // Rivs: 2 sesiones (día 1 easy run, día 6 bricks-carrera)
-  const sesionesRunConfig = modulos.cycling
-    ? [
-        { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Intervalos", icono: "🏃",
-          getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
-          getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min,
-          campos: [
-            { k: "tiempo_min", l: "Tiempo (min)", p: "45", tipo: "number" },
-            { k: "distancia_km", l: "Distancia (km)", p: "8", tipo: "number" },
-            { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
-            { k: "pulsaciones_prom", l: "Puls. prom", p: "145", tipo: "number" },
-          ], notaBricks: undefined, color: G },
-        { num: 2, titulo: "Sesión 2 · Día 5 — Fondo", subtitulo: "Carrera Continua", icono: "🔥🏃",
-          getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
-          getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
-          campos: [
-            { k: "tiempo_min", l: "Tiempo carrera (min)", p: "20", tipo: "number" },
-            { k: "distancia_km", l: "Distancia (km)", p: "4", tipo: "number" },
-            { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
-            { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
-          ], notaBricks: ".", color: O },
-      ]
-    : [
-        { num: 1, titulo: "Sesión 1 · Martes", subtitulo: "Zona 2", icono: "🏃",
-          getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
-          getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min ? `${s.sesion_1_objetivo_min} min` : null,
-          campos: [
-            { k: "tiempo_min", l: "Tiempo (min)", p: "30", tipo: "number" },
-            { k: "distancia_km", l: "Distancia (km)", p: "5", tipo: "number" },
-            { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
-            { k: "pulsaciones_prom", l: "Puls. prom", p: "135", tipo: "number" },
-          ], notaBricks: undefined, color: G },
-        { num: 2, titulo: "Sesión 2 · Miércoles", subtitulo: "Intervalos", icono: "⚡",
-          getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
-          getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
-          campos: [
-            { k: "tiempo_min", l: "Tiempo (min)", p: "45", tipo: "number" },
-            { k: "distancia_km", l: "Distancia (km)", p: "8", tipo: "number" },
-            { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
-            { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
-          ], notaBricks: undefined, color: G },
-        { num: 3, titulo: "Sesión 3 · Domingo", subtitulo: "Fondo largo", icono: "🛤️",
-          getDesc: (s: SemanaRun) => s.sesion_3_descripcion,
-          getObj:  (s: SemanaRun) => s.sesion_3_objetivo_min ? `${s.sesion_3_objetivo_min} min` : null,
-          campos: [
-            { k: "tiempo_min", l: "Tiempo (min)", p: "60", tipo: "number" },
-            { k: "distancia_km", l: "Distancia (km)", p: "12", tipo: "number" },
-            { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
-            { k: "pulsaciones_prom", l: "Puls. prom", p: "140", tipo: "number" },
-          ], notaBricks: undefined, color: G },
-      ]
+const sesionesRunConfig = modulos.cycling
+  ? [
+      { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Intervalos", icono: "🏃",
+        getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
+        getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min,
+        campos: [
+          { k: "tiempo_min", l: "Tiempo (min)", p: "45", tipo: "number" },
+          { k: "distancia_km", l: "Distancia (km)", p: "8", tipo: "number" },
+          { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
+          { k: "pulsaciones_prom", l: "Puls. prom", p: "145", tipo: "number" },
+        ], notaBricks: undefined, color: G },
+      { num: 2, titulo: "Sesión 2 · Día 5 — Fondo", subtitulo: "Carrera Continua", icono: "🔥🏃",
+        getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
+        getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
+        campos: [
+          { k: "tiempo_min", l: "Tiempo carrera (min)", p: "20", tipo: "number" },
+          { k: "distancia_km", l: "Distancia (km)", p: "4", tipo: "number" },
+          { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
+          { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
+        ], notaBricks: undefined, color: O },
+    ]
+  : [
+      // Sesiones 1 y 2 siempre visibles
+      { num: 1, titulo: "Sesión 1", subtitulo: "Z2", icono: "🏃",
+        getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
+        getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min ?? s.sesion_1_objetivo_min,
+        campos: [
+          { k: "tiempo_min", l: "Tiempo (min)", p: "30", tipo: "number" },
+          { k: "distancia_km", l: "Distancia (km)", p: "5", tipo: "number" },
+          { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "6:00", tipo: "text" },
+          { k: "pulsaciones_prom", l: "Puls. prom", p: "135", tipo: "number" },
+        ], notaBricks: undefined, color: G },
+      { num: 2, titulo: "Sesión 2", subtitulo: "Z2", icono: "🏃",
+        getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
+        getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
+        campos: [
+          { k: "tiempo_min", l: "Tiempo (min)", p: "30", tipo: "number" },
+          { k: "distancia_km", l: "Distancia (km)", p: "5", tipo: "number" },
+          { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "6:00", tipo: "text" },
+          { k: "pulsaciones_prom", l: "Puls. prom", p: "135", tipo: "number" },
+        ], notaBricks: undefined, color: G },
+      // Sesión 3 solo si tiene descripción en Supabase
+      ...( semanaRun?.sesion_3_descripcion ? [{
+        num: 3, titulo: "Sesión 3", subtitulo: "Fondo largo", icono: "🛤️",
+        getDesc: (s: SemanaRun) => s.sesion_3_descripcion,
+        getObj:  (s: SemanaRun) => s.sesion_3_objetivo_min ?? null,
+        campos: [
+          { k: "tiempo_min", l: "Tiempo (min)", p: "60", tipo: "number" },
+          { k: "distancia_km", l: "Distancia (km)", p: "12", tipo: "number" },
+          { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
+          { k: "pulsaciones_prom", l: "Puls. prom", p: "140", tipo: "number" },
+        ], notaBricks: undefined, color: G,
+      }] : [] ),
+    ]
 
   /* ── Renders ── */
   if (denegado) return (
