@@ -278,9 +278,20 @@ export default function PlanEntrenamientoPage() {
       }
     }
 
-    const { data: ant } = await supabase.from("sesiones").select("id,fecha")
+    const { data: sesAnt } = await supabase.from("sesiones").select("id,fecha")
       .eq("cliente_token", token).eq("dia_id", dia.id)
-      .neq("fecha", hoy).order("fecha", { ascending: false }).limit(1)
+      .neq("fecha", hoy).order("fecha", { ascending: false })
+    
+    // Tomar la primera que tenga registros reales
+    let ant = null
+    if (sesAnt?.length) {
+      for (const s of sesAnt) {
+        const { count } = await supabase.from("registros")
+          .select("*", { count: "exact", head: true })
+          .eq("sesion_id", s.id)
+        if ((count ?? 0) > 0) { ant = [s]; break }
+      }
+    }
     if (ant?.length) {
       const { data: rAnt } = await supabase.from("registros")
         .select("ejercicio_id,serie_num,kg,reps").eq("sesion_id", ant[0].id)
