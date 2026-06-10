@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { supabase } from "@/lib/supabase"
 
 /* ── Tipos ─────────────────────────────────────────── */
@@ -32,6 +32,21 @@ interface Modulos {
   running: boolean
   cycling: boolean
 }
+interface EjercicioProgreso {
+  id: string
+  nombre: string
+  dia_nombre: string
+}
+interface PuntoProgreso {
+  fecha: string
+  fechaCorta: string
+  kg_max: number
+  kg_s1: number | null
+  kg_s2: number | null
+  kg_s3: number | null
+  volumen: number
+  reps_max: number
+}
 
 /* ── Colores ────────────────────────────────────────── */
 const R = "#E8000D"
@@ -43,12 +58,12 @@ const P = "#818cf8"
 /* ── Distribución semanal Rivs (solo cuando cycling=true) ── */
 const DISTRIBUCION_RIVS = [
   { dia: "NA",    label: "Descanso",                    icono: "😴", tags: [] },
-  { dia: "Día 1", label: "Tren Superior + Carrera Continua", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
+  { dia: "Día 1", label: "Tren Superior + Easy Run Z2", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
   { dia: "Día 2", label: "Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
   { dia: "Día 3", label: "Cycling Continuo Z2 + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
-  { dia: "Día 4", label: "Tren Superior",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
-  { dia: "Día 5", label: "Cycling Continuo",        icono: "🚴🏃", tags: ["CYCLING"] },
-  { dia: "Día 6", label: "Fondo Running",     icono: "🏃",   tags: ["RUNNING"] },
+  { dia: "Día 4", label: "Tren Superior + Pliometría",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
+  { dia: "Día 5", label: "Cycling Z2 + Carrera",        icono: "🚴🏃", tags: ["CYCLING"] },
+  { dia: "Día 6", label: "Bricks — Bici + Carrera",     icono: "🔥",   tags: ["CYCLING","RUNNING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
@@ -157,6 +172,14 @@ export default function PlanEntrenamientoPage() {
 
   // CORE
   const [coreOp, setCoreOp]         = useState<number | null>(null)
+
+  // Progreso
+  const [ejerciciosDisp, setEjerciciosDisp]   = useState<EjercicioProgreso[]>([])
+  const [ejercicioSel, setEjercicioSel]       = useState<EjercicioProgreso | null>(null)
+  const [puntosProgreso, setPuntosProgreso]   = useState<PuntoProgreso[]>([])
+  const [cargandoProg, setCargandoProg]       = useState(false)
+  const [busqEj, setBusqEj]                   = useState("")
+  const [metricaProg, setMetricaProg]         = useState<"kg_max"|"volumen">("kg_max")
 
   // Cronómetro
   const [cronSeg, setCronSeg]       = useState(0)
@@ -278,20 +301,9 @@ export default function PlanEntrenamientoPage() {
       }
     }
 
-    const { data: sesAnt } = await supabase.from("sesiones").select("id,fecha")
-      .eq("cliente_token", token).eq("dia_id", dia.id)
-      .neq("fecha", hoy).order("fecha", { ascending: false })
-    
-    // Tomar la primera que tenga registros reales
-    let ant = null
-    if (sesAnt?.length) {
-      for (const s of sesAnt) {
-        const { count } = await supabase.from("registros")
-          .select("*", { count: "exact", head: true })
-          .eq("sesion_id", s.id)
-        if ((count ?? 0) > 0) { ant = [s]; break }
-      }
-    }
+    const { data: ant } = await supabase.from("sesiones").select("id,fecha")
+      .eq("cliente_token", token).eq("dia_id", dia.id).eq("completada", true)
+      .neq("fecha", hoy).order("fecha", { ascending: false }).limit(1)
     if (ant?.length) {
       const { data: rAnt } = await supabase.from("registros")
         .select("ejercicio_id,serie_num,kg,reps").eq("sesion_id", ant[0].id)
@@ -325,6 +337,78 @@ export default function PlanEntrenamientoPage() {
     setSesionCerrada(true)
     showToast("✓ Sesión enviada al coach")
   }
+
+  /* ── Cargar ejercicios disponibles para progreso ── */
+  const cargarEjerciciosProgreso = useCallback(async () => {
+    if (!token || !dias.length) return
+    const diaIds = dias.map(d => d.id)
+    const { data } = await supabase
+      .from("ejercicios")
+      .select("id, nombre, dia_id")
+      .in("dia_id", diaIds)
+      .order("orden")
+    if (!data) return
+    const ejConDia: EjercicioProgreso[] = data.map(e => ({
+      id: e.id,
+      nombre: e.nombre,
+      dia_nombre: dias.find(d => d.id === e.dia_id)?.nombre ?? "",
+    }))
+    setEjerciciosDisp(ejConDia)
+  }, [token, dias])
+
+  useEffect(() => {
+    if (vista === "progreso" && dias.length > 0) cargarEjerciciosProgreso()
+  }, [vista, dias, cargarEjerciciosProgreso])
+
+  /* ── Cargar datos de progreso para un ejercicio ── */
+  const cargarProgreso = useCallback(async (ejId: string) => {
+    if (!token) return
+    setCargandoProg(true)
+    setPuntosProgreso([])
+
+    // Traer todas las sesiones con registros de este ejercicio
+    const { data: regs } = await supabase
+      .from("registros")
+      .select("kg, reps, serie_num, sesion_id, sesiones(fecha)")
+      .eq("ejercicio_id", ejId)
+      .order("sesion_id")
+
+    if (!regs || !regs.length) { setCargandoProg(false); return }
+
+    // Agrupar por sesión
+    const porSesion: Record<string, { fecha: string; series: {serie_num:number; kg:number; reps:number}[] }> = {}
+    regs.forEach((r: any) => {
+      const fecha = r.sesiones?.fecha ?? ""
+      if (!fecha) return
+      if (!porSesion[r.sesion_id]) porSesion[r.sesion_id] = { fecha, series: [] }
+      if (r.kg) porSesion[r.sesion_id].series.push({ serie_num: r.serie_num, kg: r.kg, reps: r.reps ?? 0 })
+    })
+
+    // Construir puntos de progreso
+    const puntos: PuntoProgreso[] = Object.values(porSesion)
+      .filter(s => s.series.length > 0)
+      .sort((a, b) => a.fecha.localeCompare(b.fecha))
+      .map(s => {
+        const kgs = s.series.map(x => x.kg)
+        const kg_max = Math.max(...kgs)
+        const volumen = Math.round(s.series.reduce((acc, x) => acc + x.kg * x.reps, 0))
+        const [, m, d] = s.fecha.split("-")
+        const meses = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"]
+        return {
+          fecha: s.fecha,
+          fechaCorta: `${d} ${meses[parseInt(m)-1]}`,
+          kg_max,
+          kg_s1: s.series.find(x => x.serie_num === 1)?.kg ?? null,
+          kg_s2: s.series.find(x => x.serie_num === 2)?.kg ?? null,
+          kg_s3: s.series.find(x => x.serie_num === 3)?.kg ?? null,
+          volumen,
+          reps_max: Math.max(...s.series.map(x => x.reps)),
+        }
+      })
+
+    setPuntosProgreso(puntos)
+    setCargandoProg(false)
+  }, [token])
 
   /* ── Guardar running ── */
   const guardarRun = async (numSesion: number, form: any, completar: boolean) => {
@@ -381,65 +465,62 @@ export default function PlanEntrenamientoPage() {
     ...(modulos.running ? [{ k: "running", l: "🏃 Running", c: G }] : []),
     ...(modulos.cycling ? [{ k: "cycling", l: "🚴 Cycling", c: B }] : []),
     { k: "core", l: "🎯 CORE", c: P },
+    ...(modulos.musculacion ? [{ k: "progreso", l: "📈 Progreso", c: "#a78bfa" }] : []),
   ]
 
   /* ── Definición de sesiones running según cliente ── */
   // David: 3 sesiones (martes, miércoles, domingo)
   // Rivs: 2 sesiones (día 1 easy run, día 6 bricks-carrera)
-const sesionesRunConfig = modulos.cycling
-  ? [
-      { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Sesión Running", icono: "🏃",
-        getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
-        getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min,
-        campos: [
-          { k: "tiempo_min", l: "Tiempo (min)", p: "45", tipo: "number" },
-          { k: "distancia_km", l: "Distancia (km)", p: "8", tipo: "number" },
-          { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
-          { k: "pulsaciones_prom", l: "Puls. prom", p: "145", tipo: "number" },
-        ], notaBricks: undefined, color: G },
-      { num: 2, titulo: "Sesión 2 · Día 5 — Fondo", subtitulo: "Sesión Running", icono: "🔥🏃",
-        getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
-        getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
-        campos: [
-          { k: "tiempo_min", l: "Tiempo carrera (min)", p: "20", tipo: "number" },
-          { k: "distancia_km", l: "Distancia (km)", p: "4", tipo: "number" },
-          { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
-          { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
-        ], notaBricks: undefined, color: O },
-    ]
-  : [
-      // Sesiones 1 y 2 siempre visibles
-      { num: 1, titulo: "Sesión 1", subtitulo: "Running", icono: "🏃",
-        getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
-        getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min ?? s.sesion_1_objetivo_min,
-        campos: [
-          { k: "tiempo_min", l: "Tiempo (min)", p: "30", tipo: "number" },
-          { k: "distancia_km", l: "Distancia (km)", p: "5", tipo: "number" },
-          { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "6:00", tipo: "text" },
-          { k: "pulsaciones_prom", l: "Puls. prom", p: "135", tipo: "number" },
-        ], notaBricks: undefined, color: G },
-      { num: 2, titulo: "Sesión 2", subtitulo: "Running", icono: "🏃",
-        getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
-        getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
-        campos: [
-          { k: "tiempo_min", l: "Tiempo (min)", p: "30", tipo: "number" },
-          { k: "distancia_km", l: "Distancia (km)", p: "5", tipo: "number" },
-          { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "6:00", tipo: "text" },
-          { k: "pulsaciones_prom", l: "Puls. prom", p: "135", tipo: "number" },
-        ], notaBricks: undefined, color: G },
-      // Sesión 3 solo si tiene descripción en Supabase
-      ...( semanaRun?.sesion_3_descripcion ? [{
-        num: 3, titulo: "Sesión 3", subtitulo: "Fondo largo", icono: "🛤️",
-        getDesc: (s: SemanaRun) => s.sesion_3_descripcion,
-        getObj:  (s: SemanaRun) => s.sesion_3_objetivo_min ?? null,
-        campos: [
-          { k: "tiempo_min", l: "Tiempo (min)", p: "60", tipo: "number" },
-          { k: "distancia_km", l: "Distancia (km)", p: "12", tipo: "number" },
-          { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
-          { k: "pulsaciones_prom", l: "Puls. prom", p: "140", tipo: "number" },
-        ], notaBricks: undefined, color: G,
-      }] : [] ),
-    ]
+  const sesionesRunConfig = modulos.cycling
+    ? [
+        { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Easy Run / Intervalos", icono: "🏃",
+          getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
+          getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min,
+          campos: [
+            { k: "tiempo_min", l: "Tiempo (min)", p: "45", tipo: "number" },
+            { k: "distancia_km", l: "Distancia (km)", p: "8", tipo: "number" },
+            { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
+            { k: "pulsaciones_prom", l: "Puls. prom", p: "145", tipo: "number" },
+          ], notaBricks: undefined, color: G },
+        { num: 2, titulo: "Sesión 2 · Día 6 — Bricks", subtitulo: "Parte carrera tras bici", icono: "🔥🏃",
+          getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
+          getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
+          campos: [
+            { k: "tiempo_min", l: "Tiempo carrera (min)", p: "20", tipo: "number" },
+            { k: "distancia_km", l: "Distancia (km)", p: "4", tipo: "number" },
+            { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
+            { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
+          ], notaBricks: "Parte de carrera del Día 6. El ciclismo se registra en Cycling.", color: O },
+      ]
+    : [
+        { num: 1, titulo: "Sesión 1 · Martes", subtitulo: "Zona 2", icono: "🏃",
+          getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
+          getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min ? `${s.sesion_1_objetivo_min} min` : null,
+          campos: [
+            { k: "tiempo_min", l: "Tiempo (min)", p: "30", tipo: "number" },
+            { k: "distancia_km", l: "Distancia (km)", p: "5", tipo: "number" },
+            { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
+            { k: "pulsaciones_prom", l: "Puls. prom", p: "135", tipo: "number" },
+          ], notaBricks: undefined, color: G },
+        { num: 2, titulo: "Sesión 2 · Miércoles", subtitulo: "Intervalos", icono: "⚡",
+          getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
+          getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
+          campos: [
+            { k: "tiempo_min", l: "Tiempo (min)", p: "45", tipo: "number" },
+            { k: "distancia_km", l: "Distancia (km)", p: "8", tipo: "number" },
+            { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
+            { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
+          ], notaBricks: undefined, color: G },
+        { num: 3, titulo: "Sesión 3 · Domingo", subtitulo: "Fondo largo", icono: "🛤️",
+          getDesc: (s: SemanaRun) => s.sesion_3_descripcion,
+          getObj:  (s: SemanaRun) => s.sesion_3_objetivo_min ? `${s.sesion_3_objetivo_min} min` : null,
+          campos: [
+            { k: "tiempo_min", l: "Tiempo (min)", p: "60", tipo: "number" },
+            { k: "distancia_km", l: "Distancia (km)", p: "12", tipo: "number" },
+            { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
+            { k: "pulsaciones_prom", l: "Puls. prom", p: "140", tipo: "number" },
+          ], notaBricks: undefined, color: G },
+      ]
 
   /* ── Renders ── */
   if (denegado) return (
@@ -861,8 +942,11 @@ const sesionesRunConfig = modulos.cycling
             {semanaCyc && [
               { num: 1, titulo: "Sesión 1 · Día 3", subtitulo: "Continuo Z2", icono: "🚴", color: B,
                 desc: semanaCyc.sesion_1_descripcion, obj: semanaCyc.sesion_1_objetivo },
-              { num: 2, titulo: "Sesión 2 · Día 5", subtitulo: "Cycling Continuo", icono: "🚴", color: B,
+              { num: 2, titulo: "Sesión 2 · Día 5", subtitulo: "Cycling Z2 + Carrera", icono: "🚴🏃", color: B,
                 desc: semanaCyc.sesion_2_descripcion, obj: semanaCyc.sesion_2_objetivo },
+              { num: 3, titulo: "Sesión 3 · Día 6 — Bricks", subtitulo: "Parte bici antes de correr", icono: "🔥🚴", color: O,
+                desc: semanaCyc.sesion_3_descripcion, obj: semanaCyc.sesion_3_objetivo,
+                notaBricks: "Parte de ciclismo del Día 6. La carrera se registra en Running." },
             ].map(cfg => (
               <SesionCard key={cfg.num}
                 color={cfg.color}
@@ -945,6 +1029,22 @@ const sesionesRunConfig = modulos.cycling
               </div>
             ))}
           </div>
+        )}
+
+
+        {/* ══ PROGRESO ══ */}
+        {vista === "progreso" && modulos.musculacion && (
+          <VistaProgreso
+            ejercicios={ejerciciosDisp}
+            ejercicioSel={ejercicioSel}
+            puntos={puntosProgreso}
+            cargando={cargandoProg}
+            busq={busqEj}
+            metrica={metricaProg}
+            onBusq={setBusqEj}
+            onSelEj={(ej) => { setEjercicioSel(ej); cargarProgreso(ej.id) }}
+            onMetrica={setMetricaProg}
+          />
         )}
 
       </div>
@@ -1100,6 +1200,386 @@ function SesionCard({ color, titulo, subtitulo, icono, descripcion, objetivo,
           {ok && (
             <div style={{ marginTop: 8, padding: "8px", textAlign: "center",
               background: `${color}12`, border: `1px solid ${color}30`, color: color, fontSize: 12 }}>{ok}</div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ══ COMPONENTE VISTA PROGRESO ════════════════════════════════ */
+function VistaProgreso({
+  ejercicios, ejercicioSel, puntos, cargando,
+  busq, metrica, onBusq, onSelEj, onMetrica
+}: {
+  ejercicios: { id:string; nombre:string; dia_nombre:string }[]
+  ejercicioSel: { id:string; nombre:string; dia_nombre:string } | null
+  puntos: {
+    fecha:string; fechaCorta:string; kg_max:number
+    kg_s1:number|null; kg_s2:number|null; kg_s3:number|null
+    volumen:number; reps_max:number
+  }[]
+  cargando: boolean
+  busq: string
+  metrica: "kg_max"|"volumen"
+  onBusq: (v:string) => void
+  onSelEj: (ej:{id:string;nombre:string;dia_nombre:string}) => void
+  onMetrica: (m:"kg_max"|"volumen") => void
+}) {
+  const V = "#a78bfa"
+  const R = "#E8000D"
+  const G = "#22c55e"
+  const O = "#f59e0b"
+  const B = "#3b82f6"
+
+  const ejerciciosFiltrados = ejercicios.filter(e =>
+    e.nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+      .includes(busq.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))
+  )
+
+  // Agrupar por día
+  const porDia = ejerciciosFiltrados.reduce((acc, e) => {
+    const key = e.dia_nombre
+    if (!acc[key]) acc[key] = []
+    acc[key].push(e)
+    return acc
+  }, {} as Record<string, typeof ejerciciosFiltrados>)
+
+  const primerPunto = puntos[0]
+  const ultimoPunto = puntos[puntos.length - 1]
+  const mejora = ultimoPunto && primerPunto
+    ? Math.round((ultimoPunto.kg_max - primerPunto.kg_max) * 10) / 10
+    : null
+
+  // Dimensiones gráfica SVG
+  const W = 680, H = 200, PAD = { t:20, r:20, b:40, l:45 }
+  const innerW = W - PAD.l - PAD.r
+  const innerH = H - PAD.t - PAD.b
+
+  const valores = puntos.map(p => metrica === "kg_max" ? p.kg_max : p.volumen)
+  const minVal = valores.length ? Math.min(...valores) * 0.92 : 0
+  const maxVal = valores.length ? Math.max(...valores) * 1.05 : 100
+
+  const xPos = (i: number) => PAD.l + (i / Math.max(puntos.length - 1, 1)) * innerW
+  const yPos = (v: number) => PAD.t + innerH - ((v - minVal) / (maxVal - minVal || 1)) * innerH
+
+  // Línea S1, S2, S3
+  const coloresSeries = [G, B, O]
+  const clavesSeries: ("kg_s1"|"kg_s2"|"kg_s3")[] = ["kg_s1","kg_s2","kg_s3"]
+
+  return (
+    <div style={{ animation: "fadeUp 0.3s ease" }}>
+      <div style={{ fontSize: 11, color: V, letterSpacing: "0.12em",
+        textTransform: "uppercase", marginBottom: 16 }}>
+        📈 Progreso · Selecciona un ejercicio para ver tu evolución
+      </div>
+
+      {/* Buscador */}
+      <div style={{ marginBottom: 16, position: "relative" }}>
+        <input type="text" value={busq} placeholder="Buscar ejercicio..."
+          onChange={e => onBusq(e.target.value)}
+          style={{ width: "100%", padding: "12px 14px",
+            background: "rgba(255,255,255,0.04)",
+            border: `1px solid ${busq ? V+"60" : "rgba(255,255,255,0.12)"}`,
+            color: "#fff", fontFamily: "'Barlow',sans-serif",
+            fontSize: 15, outline: "none" }} />
+      </div>
+
+      {/* Lista de ejercicios agrupados por día */}
+      {!ejercicioSel || busq ? (
+        <div style={{ marginBottom: 20 }}>
+          {Object.entries(porDia).map(([dia, ejs]) => (
+            <div key={dia} style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)",
+                letterSpacing: "0.15em", textTransform: "uppercase",
+                marginBottom: 8, paddingBottom: 6,
+                borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                {dia}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {ejs.map(ej => (
+                  <button key={ej.id}
+                    onClick={() => { onSelEj(ej); onBusq("") }}
+                    style={{ display: "flex", alignItems: "center",
+                      justifyContent: "space-between", padding: "11px 14px",
+                      background: ejercicioSel?.id === ej.id
+                        ? `${V}15` : "rgba(255,255,255,0.02)",
+                      border: `1px solid ${ejercicioSel?.id === ej.id
+                        ? V+"50" : "rgba(255,255,255,0.07)"}`,
+                      cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = V+"40")}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor =
+                      ejercicioSel?.id === ej.id ? V+"50" : "rgba(255,255,255,0.07)")}>
+                    <span style={{ fontFamily: "'Barlow Condensed',sans-serif",
+                      fontSize: 15, fontWeight: 700, color: "#fff",
+                      textTransform: "uppercase" }}>
+                      {ej.nombre}
+                    </span>
+                    <span style={{ color: V, fontSize: 14 }}>→</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+          {ejerciciosFiltrados.length === 0 && (
+            <div style={{ textAlign: "center", padding: "32px",
+              color: "rgba(255,255,255,0.3)", fontSize: 14 }}>
+              No se encontraron ejercicios
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {/* Gráfica de progreso */}
+      {ejercicioSel && !busq && (
+        <div style={{ animation: "fadeUp 0.3s ease" }}>
+
+          {/* Header ejercicio seleccionado */}
+          <div style={{ display: "flex", alignItems: "center",
+            justifyContent: "space-between", marginBottom: 16,
+            padding: "12px 16px", background: `${V}10`,
+            border: `1px solid ${V}30` }}>
+            <div>
+              <div style={{ fontFamily: "'Barlow Condensed',sans-serif",
+                fontSize: 18, fontWeight: 900, textTransform: "uppercase",
+                color: "#fff", marginBottom: 2 }}>
+                {ejercicioSel.nombre}
+              </div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+                {ejercicioSel.dia_nombre}
+              </div>
+            </div>
+            <button onClick={() => onSelEj(ejercicioSel)}
+              style={{ background: "none", border: "none",
+                color: "rgba(255,255,255,0.4)", cursor: "pointer",
+                fontSize: 12, fontFamily: "'Barlow Condensed',sans-serif",
+                fontWeight: 700, letterSpacing: "0.1em",
+                textTransform: "uppercase", padding: "6px 10px",
+                borderLeft: "1px solid rgba(255,255,255,0.1)" }}
+              onMouseEnter={e => { onBusq(" "); setTimeout(() => onBusq(""), 10) }}>
+              Cambiar
+            </button>
+          </div>
+
+          {/* Selector métrica */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            {([
+              ["kg_max",  "Peso máximo (kg)"],
+              ["volumen", "Volumen total (kg×reps)"],
+            ] as const).map(([k, l]) => (
+              <button key={k} onClick={() => onMetrica(k)}
+                style={{ flex: 1, padding: "9px",
+                  border: `1px solid ${metrica === k ? V : "rgba(255,255,255,0.1)"}`,
+                  background: metrica === k ? `${V}18` : "transparent",
+                  color: metrica === k ? V : "rgba(255,255,255,0.4)",
+                  fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12,
+                  fontWeight: 700, cursor: "pointer",
+                  letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                {l}
+              </button>
+            ))}
+          </div>
+
+          {cargando ? (
+            <div style={{ textAlign: "center", padding: "48px",
+              color: "rgba(255,255,255,0.3)", fontSize: 14 }}>
+              Cargando historial...
+            </div>
+          ) : puntos.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "48px",
+              border: "1px solid rgba(255,255,255,0.07)",
+              color: "rgba(255,255,255,0.3)" }}>
+              <div style={{ fontSize: 32, marginBottom: 10 }}>📊</div>
+              <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 14,
+                fontWeight: 300 }}>
+                Aún no hay registros para este ejercicio.
+                ¡Empieza a entrenar para ver tu progreso!
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Stats resumen */}
+              <div style={{ display: "grid",
+                gridTemplateColumns: "repeat(auto-fit,minmax(100px,1fr))",
+                gap: 8, marginBottom: 20 }}>
+                {[
+                  { label: "Sesiones",       val: `${puntos.length}`,         color: V },
+                  { label: "Mejor peso",     val: `${Math.max(...puntos.map(p=>p.kg_max))} kg`, color: G },
+                  { label: "Inicio",         val: `${primerPunto.kg_max} kg`, color: "rgba(255,255,255,0.6)" },
+                  { label: mejora !== null && mejora >= 0 ? "↑ Mejora" : "↓ Cambio",
+                    val: `${mejora !== null && mejora >= 0 ? "+" : ""}${mejora} kg`,
+                    color: mejora !== null && mejora >= 0 ? G : R },
+                ].map(s => (
+                  <div key={s.label} style={{ padding: "12px 10px",
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    textAlign: "center" }}>
+                    <div style={{ fontFamily: "'Barlow Condensed',sans-serif",
+                      fontSize: 22, fontWeight: 900, color: s.color,
+                      lineHeight: 1 }}>
+                      {s.val}
+                    </div>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)",
+                      textTransform: "uppercase", letterSpacing: "0.1em",
+                      marginTop: 4 }}>
+                      {s.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Gráfica SVG */}
+              <div style={{ marginBottom: 20, padding: "16px",
+                background: "rgba(255,255,255,0.02)",
+                border: "1px solid rgba(255,255,255,0.07)" }}>
+
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)",
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                  marginBottom: 12 }}>
+                  {metrica === "kg_max" ? "Peso máximo por sesión" : "Volumen total por sesión"}
+                </div>
+
+                <svg viewBox={`0 0 ${W} ${H}`}
+                  style={{ width: "100%", height: "auto", display: "block" }}>
+
+                  {/* Grid horizontal */}
+                  {[0,0.25,0.5,0.75,1].map(t => {
+                    const y = PAD.t + innerH * (1-t)
+                    const val = Math.round(minVal + (maxVal-minVal)*t)
+                    return (
+                      <g key={t}>
+                        <line x1={PAD.l} y1={y} x2={W-PAD.r} y2={y}
+                          stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
+                        <text x={PAD.l-6} y={y+4} textAnchor="end"
+                          fill="rgba(255,255,255,0.3)" fontSize="9">
+                          {val}
+                        </text>
+                      </g>
+                    )
+                  })}
+
+                  {/* Área bajo la curva principal */}
+                  {puntos.length > 1 && (
+                    <path
+                      d={`M ${xPos(0)} ${yPos(valores[0])} ` +
+                        puntos.slice(1).map((p,i) =>
+                          `L ${xPos(i+1)} ${yPos(metrica==="kg_max"?p.kg_max:p.volumen)}`
+                        ).join(" ") +
+                        ` L ${xPos(puntos.length-1)} ${H-PAD.b} L ${xPos(0)} ${H-PAD.b} Z`}
+                      fill={`${V}15`} stroke="none"/>
+                  )}
+
+                  {/* Línea principal */}
+                  {puntos.length > 1 && (
+                    <polyline
+                      points={puntos.map((p,i) =>
+                        `${xPos(i)},${yPos(metrica==="kg_max"?p.kg_max:p.volumen)}`
+                      ).join(" ")}
+                      fill="none" stroke={V} strokeWidth="2"
+                      strokeLinecap="round" strokeLinejoin="round"/>
+                  )}
+
+                  {/* Líneas S1 S2 S3 (solo en modo kg_max) */}
+                  {metrica === "kg_max" && clavesSeries.map((k, ci) => {
+                    const pts = puntos.filter(p => p[k] !== null)
+                    if (pts.length < 2) return null
+                    const idxMap = puntos.map((p,i) => p[k] !== null ? i : -1).filter(x => x>=0)
+                    return (
+                      <polyline key={k}
+                        points={idxMap.map(i =>
+                          `${xPos(i)},${yPos(puntos[i][k]!)}`
+                        ).join(" ")}
+                        fill="none" stroke={coloresSeries[ci]}
+                        strokeWidth="1.2" strokeDasharray="4 3"
+                        strokeLinecap="round" strokeLinejoin="round"
+                        opacity="0.6"/>
+                    )
+                  })}
+
+                  {/* Puntos */}
+                  {puntos.map((p, i) => (
+                    <g key={i}>
+                      <circle
+                        cx={xPos(i)}
+                        cy={yPos(metrica==="kg_max"?p.kg_max:p.volumen)}
+                        r="4" fill={V} stroke="#050505" strokeWidth="1.5"/>
+                      <text x={xPos(i)}
+                        y={H - PAD.b + 14}
+                        textAnchor="middle"
+                        fill="rgba(255,255,255,0.35)"
+                        fontSize="8">
+                        {p.fechaCorta}
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+
+                {/* Leyenda series */}
+                {metrica === "kg_max" && (
+                  <div style={{ display: "flex", gap: 16, marginTop: 8,
+                    flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <div style={{ width: 20, height: 2, background: V }}/>
+                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>Máximo</span>
+                    </div>
+                    {["S1","S2","S3"].map((s,i) => (
+                      <div key={s} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <div style={{ width: 20, height: 2,
+                          background: coloresSeries[i], opacity: 0.6,
+                          borderTop: "1px dashed" }}/>
+                        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>{s}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Tabla historial */}
+              <div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)",
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                  marginBottom: 10 }}>
+                  Historial de sesiones
+                </div>
+                <div style={{ display: "grid",
+                  gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
+                  gap: 1, marginBottom: 4 }}>
+                  {["Fecha","S1","S2","S3","Máx"].map(h => (
+                    <div key={h} style={{ padding: "6px 8px",
+                      background: "rgba(255,255,255,0.04)",
+                      fontSize: 9, color: "rgba(255,255,255,0.3)",
+                      textAlign: "center", textTransform: "uppercase",
+                      letterSpacing: "0.08em" }}>
+                      {h}
+                    </div>
+                  ))}
+                </div>
+                {[...puntos].reverse().map((p, i) => (
+                  <div key={i} style={{ display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
+                    gap: 1, marginBottom: 1 }}>
+                    {[
+                      { val: p.fechaCorta, color: "rgba(255,255,255,0.6)" },
+                      { val: p.kg_s1 ? `${p.kg_s1}kg` : "—", color: G },
+                      { val: p.kg_s2 ? `${p.kg_s2}kg` : "—", color: B },
+                      { val: p.kg_s3 ? `${p.kg_s3}kg` : "—", color: O },
+                      { val: `${p.kg_max}kg`, color: V },
+                    ].map((cell, ci) => (
+                      <div key={ci} style={{ padding: "8px 6px",
+                        background: i % 2 === 0
+                          ? "rgba(255,255,255,0.02)"
+                          : "rgba(255,255,255,0.01)",
+                        fontSize: 12,
+                        fontFamily: "'Barlow Condensed',sans-serif",
+                        fontWeight: 700, color: cell.color,
+                        textAlign: "center" }}>
+                        {cell.val}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}
