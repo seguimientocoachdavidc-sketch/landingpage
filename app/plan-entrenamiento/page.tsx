@@ -940,9 +940,9 @@ export default function PlanEntrenamientoPage() {
               ))}
             </div>
             {semanaCyc && [
-              { num: 1, titulo: "Sesión 1 · Día 3", subtitulo: "Continuo Z2", icono: "🚴", color: B,
+              { num: 1, titulo: "Sesión 1 · Día 3", icono: "🚴", color: B,
                 desc: semanaCyc.sesion_1_descripcion, obj: semanaCyc.sesion_1_objetivo },
-              { num: 2, titulo: "Sesión 2 · Día 5", subtitulo: "Cycling Z2 + Carrera", icono: "🚴🏃", color: B,
+              { num: 2, titulo: "Sesión 2 · Día 5", icono: "🚴", color: B,
                 desc: semanaCyc.sesion_2_descripcion, obj: semanaCyc.sesion_2_objetivo }
             ].map(cfg => (
               <SesionCard key={cfg.num}
