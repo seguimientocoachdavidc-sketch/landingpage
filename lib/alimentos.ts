@@ -397,7 +397,7 @@ export const ALIMENTOS = [
   { id: 380, nombre: "Crema de leche Alpina", kcal: 296, proteina: 2.5, lipidos: 30.0, cho: 3.5 },
 
   // ── MARCAS FITNESS Y SUPERMERCADO ────────────────────────────────────────
-  { id: 381, nombre: "Crema de maní Tosh sin azúcar", kcal: 631, proteina: 25.0, lipidos: 52.0, cho: 18.8 },
+  { id: 381, nombre: "Crema de maní Tosh sin azúcar", kcal: 630, proteina: 24.0, lipidos: 50.0, cho: 21.0 },
   { id: 382, nombre: "Maní tostado sin sal Tosh", kcal: 567, proteina: 25.5, lipidos: 46.0, cho: 16.0 },
   { id: 383, nombre: "Granola Tosh original", kcal: 410, proteina: 9.0, lipidos: 11.0, cho: 68.0 },
   { id: 384, nombre: "Galletas integrales Tosh", kcal: 447, proteina: 10.0, lipidos: 16.0, cho: 65.0 },
