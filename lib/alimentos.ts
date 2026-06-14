@@ -528,6 +528,16 @@ export const ALIMENTOS = [
 { id: 466, nombre: "Queso snack porcionado (tipo Schadelin)", kcal: 305, proteina: 26.0, lipidos: 21.0, cho: 2.9 },
 
 { id: 467, nombre: "Pietrán Snack Jamón de Cerdo", kcal: 117, proteina: 14.0, lipidos: 2.7, cho: 9.1 },
+
+{ id: 468, nombre: "Empanada colombiana de pipián", kcal: 230, proteina: 4.5, lipidos: 10.0, cho: 31.0 },
+
+{ id: 469, nombre: "Empanada colombiana de carne", kcal: 245, proteina: 9.5, lipidos: 11.5, cho: 27.5 },
+
+{ id: 470, nombre: "Empanada colombiana de pollo", kcal: 235, proteina: 10.5, lipidos: 10.0, cho: 27.0 },
+
+{ id: 471, nombre: "Empanada colombiana de queso", kcal: 265, proteina: 8.5, lipidos: 13.5, cho: 28.0 },
+
+{ id: 472, nombre: "Empanada colombiana de arroz con pollo", kcal: 225, proteina: 8.0, lipidos: 9.5, cho: 28.5 },
   
 ] as const
 export type Alimento = typeof ALIMENTOS[number]
