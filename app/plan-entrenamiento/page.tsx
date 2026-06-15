@@ -473,7 +473,7 @@ export default function PlanEntrenamientoPage() {
   // Rivs: 2 sesiones (día 1 easy run, día 6 bricks-carrera)
   const sesionesRunConfig = modulos.cycling
     ? [
-        { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Easy Run / Intervalos", icono: "🏃",
+        { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Easy Run", icono: "🏃",
           getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min,
           campos: [
