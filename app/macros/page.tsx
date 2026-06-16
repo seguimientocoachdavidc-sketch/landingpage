@@ -28,6 +28,11 @@ interface Seguimiento {
   brazo_cm: number | null; muslo_cm: number | null
   nota: string | null
 }
+interface MetaMacros {
+  distribucion: string
+  kcal: number; proteina_g: number
+  grasa_g: number; cho_g: number
+}
 
 /* ── Hook responsive ─────────────────────────────────────────── */
 function useBreakpoint() {
@@ -114,6 +119,12 @@ export default function MacrosPage() {
   const [guardandoSeg, setGuardandoSeg]   = useState(false)
   const [segEditando, setSegEditando]     = useState<string|null>(null)
 
+  // Metas de macros
+  const [metas, setMetas]                 = useState<MetaMacros[]>([])
+  const [metaSel, setMetaSel]             = useState<MetaMacros|null>(null)
+  const [tieneCiclado, setTieneCiclado]   = useState(false)
+  const [distribSeleccionada, setDistribSeleccionada] = useState<string|null>(null)
+
   const [toast, setToast] = useState<{tipo:"ok"|"err"; msg:string}|null>(null)
   const showToast = (tipo:"ok"|"err", msg:string) => {
     setToast({tipo,msg}); setTimeout(()=>setToast(null),4000)
@@ -150,6 +161,24 @@ export default function MacrosPage() {
   useEffect(() => {
     if (token && vistaGlobal==="seguimiento") cargarSeguimientos(token)
   }, [token, vistaGlobal, cargarSeguimientos])
+
+  /* ── Cargar metas de macros ── */
+  const cargarMetas = useCallback(async (tok: string) => {
+    const { data } = await supabase
+      .from("metas_macros")
+      .select("distribucion,kcal,proteina_g,grasa_g,cho_g")
+      .eq("cliente_token", tok)
+    if (!data || !data.length) return
+    setMetas(data)
+    const esCiclado = data.length > 1
+    setTieneCiclado(esCiclado)
+    if (!esCiclado) {
+      setMetaSel(data[0])
+      setDistribSeleccionada(data[0].distribucion)
+    }
+  }, [])
+
+  useEffect(() => { if (token) cargarMetas(token) }, [token, cargarMetas])
 
   /* ── Macros: abrir día ── */
   const abrirDia = (tok: string, fecha: string, nombre: string) => {
@@ -296,6 +325,59 @@ export default function MacrosPage() {
         <p className="b" style={{fontSize:14,color:"rgba(255,255,255,0.4)",
           fontWeight:300}}>¿Qué quieres hacer hoy?</p>
       </div>
+
+      {/* Selector distribución para Sofi (ciclado CHO) */}
+      {tieneCiclado && (
+        <div style={{marginBottom:28,padding:"18px",
+          border:"1px solid rgba(245,158,11,0.25)",
+          background:"rgba(245,158,11,0.05)"}}>
+          <div className="bc" style={{fontSize:11,color:O,letterSpacing:"0.2em",
+            textTransform:"uppercase",marginBottom:12,fontWeight:700}}>
+            ¿Qué distribución harás hoy?
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {metas.map(m => {
+              const labels: Record<string,{label:string;desc:string;icono:string}> = {
+                bajos_cho:  {label:"Bajos CHO",   desc:`${m.kcal} kcal · ${m.cho_g}g carbs`,   icono:"🔴"},
+                medios_cho: {label:"Moderados CHO",desc:`${m.kcal} kcal · ${m.cho_g}g carbs`,   icono:"🟡"},
+                altos_cho:  {label:"Altos CHO",    desc:`${m.kcal} kcal · ${m.cho_g}g carbs`,   icono:"🟢"},
+              }
+              const info = labels[m.distribucion] ?? {label:m.distribucion,desc:`${m.kcal} kcal`,icono:"⚪"}
+              const activa = distribSeleccionada === m.distribucion
+              return (
+                <button key={m.distribucion}
+                  onClick={() => { setMetaSel(m); setDistribSeleccionada(m.distribucion) }}
+                  style={{display:"flex",alignItems:"center",gap:14,padding:"13px 16px",
+                    border:`1px solid ${activa?O+"80":"rgba(255,255,255,0.08)"}`,
+                    background:activa?"rgba(245,158,11,0.1)":"rgba(255,255,255,0.02)",
+                    cursor:"pointer",textAlign:"left",transition:"all 0.15s"}}>
+                  <span style={{fontSize:20}}>{info.icono}</span>
+                  <div style={{flex:1}}>
+                    <div className="bc" style={{fontSize:16,fontWeight:900,
+                      textTransform:"uppercase",color:activa?"#fff":"rgba(255,255,255,0.6)",
+                      marginBottom:2}}>
+                      {info.label}
+                    </div>
+                    <div className="b" style={{fontSize:12,
+                      color:"rgba(255,255,255,0.4)"}}>
+                      {info.desc} · P:{m.proteina_g}g · G:{m.grasa_g}g
+                    </div>
+                  </div>
+                  {activa && (
+                    <span style={{color:O,fontSize:16,flexShrink:0}}>✓</span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+          {!distribSeleccionada && (
+            <div style={{marginTop:10,fontSize:12,color:"rgba(245,158,11,0.7)",
+              textAlign:"center"}}>
+              Selecciona una distribución para ver tus barras de progreso
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Módulos */}
       <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:32}}>
@@ -572,7 +654,7 @@ export default function MacrosPage() {
               )}
             </div>
 
-            <TotalesBar totales={totales} isMobile={isMobile}/>
+            <TotalesBar totales={totales} isMobile={isMobile} meta={metaSel}/>
 
             {/* Vista agregar */}
             {vistaTab==="agregar" && (
@@ -910,7 +992,7 @@ export default function MacrosPage() {
             Nota (opcional)
           </label>
           <textarea value={formSeg.nota??""} rows={2}
-            placeholder="¿Cómo te sentiste esta semana?"
+            placeholder="¿Cómo te sentiste esta semana? Cambios notables..."
             onChange={e=>setFormSeg(s=>({...s,nota:e.target.value}))}
             style={{width:"100%",padding:"9px 12px",
               background:"rgba(255,255,255,0.04)",
@@ -1152,32 +1234,111 @@ function MiniGraficaPeso({datos}:{datos:Seguimiento[]}) {
   )
 }
 
-function TotalesBar({totales,isMobile}:{
+function TotalesBar({totales,isMobile,meta}:{
   totales:{kcal:number;proteina:number;lipidos:number;cho:number}
   isMobile:boolean
+  meta:{kcal:number;proteina_g:number;grasa_g:number;cho_g:number}|null
 }) {
+  const items = [
+    {label:"Calorías", val:totales.kcal,     unit:"kcal", color:"#fff",   meta:meta?.kcal},
+    {label:"Proteína", val:totales.proteina,  unit:"g",    color:G,        meta:meta?.proteina_g},
+    {label:"Grasas",   val:totales.lipidos,   unit:"g",    color:O,        meta:meta?.grasa_g},
+    {label:"Carbos",   val:totales.cho,       unit:"g",    color:B,        meta:meta?.cho_g},
+  ]
   return (
-    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",
-      gap:2,marginBottom:28}}>
-      {[
-        {label:"Calorías",val:totales.kcal,    unit:"kcal",color:"#fff"},
-        {label:"Proteína",val:totales.proteina,unit:"g",   color:G},
-        {label:"Lípidos", val:totales.lipidos, unit:"g",   color:O},
-        {label:"Carbos",  val:totales.cho,     unit:"g",   color:B},
-      ].map(item=>(
-        <div key={item.label} style={{background:"#0a0a0a",
-          border:"1px solid rgba(255,255,255,0.07)",
-          padding:isMobile?"14px 10px":"18px 20px",textAlign:"center"}}>
-          <div className="bc" style={{fontSize:isMobile?24:32,fontWeight:900,
-            color:item.color,lineHeight:1}}>
-            {item.val}<span style={{fontSize:isMobile?12:14}}>{item.unit}</span>
+    <div style={{marginBottom:24}}>
+      {/* Números */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:2,marginBottom:10}}>
+        {items.map(item=>(
+          <div key={item.label} style={{background:"#0a0a0a",
+            border:"1px solid rgba(255,255,255,0.07)",
+            padding:isMobile?"10px 8px":"14px 16px",textAlign:"center"}}>
+            <div className="bc" style={{fontSize:isMobile?20:28,fontWeight:900,
+              color:item.color,lineHeight:1}}>
+              {item.val}<span style={{fontSize:isMobile?10:12}}>{item.unit}</span>
+            </div>
+            {item.meta && (
+              <div className="b" style={{fontSize:9,color:"rgba(255,255,255,0.25)",
+                marginTop:2}}>
+                / {item.meta}{item.unit}
+              </div>
+            )}
+            <div className="b" style={{fontSize:9,color:"rgba(255,255,255,0.3)",
+              textTransform:"uppercase",letterSpacing:"0.1em",marginTop:3}}>
+              {item.label}
+            </div>
           </div>
-          <div className="b" style={{fontSize:10,color:"rgba(255,255,255,0.3)",
-            textTransform:"uppercase",letterSpacing:"0.1em",marginTop:4}}>
-            {item.label}
-          </div>
+        ))}
+      </div>
+
+      {/* Barras de progreso */}
+      {meta && (
+        <div style={{display:"flex",flexDirection:"column",gap:6,
+          padding:"14px 16px",background:"rgba(255,255,255,0.02)",
+          border:"1px solid rgba(255,255,255,0.06)"}}>
+          {items.map(item => {
+            if (!item.meta) return null
+            const pct = Math.min(Math.round((item.val/item.meta)*100), 100)
+            const excede = item.val > item.meta
+            const barColor = excede ? R : item.color
+            return (
+              <div key={item.label}>
+                <div style={{display:"flex",justifyContent:"space-between",
+                  marginBottom:4}}>
+                  <span className="bc" style={{fontSize:11,fontWeight:700,
+                    letterSpacing:"0.08em",textTransform:"uppercase",
+                    color:excede?R:"rgba(255,255,255,0.5)"}}>
+                    {item.label}
+                  </span>
+                  <span className="bc" style={{fontSize:11,fontWeight:700,
+                    color:excede?R:item.color}}>
+                    {item.val}{item.unit}
+                    <span style={{color:"rgba(255,255,255,0.3)",fontWeight:400}}>
+                      {" "}/ {item.meta}{item.unit}
+                    </span>
+                    <span style={{marginLeft:6,
+                      color:excede?R:pct>=80?G:"rgba(255,255,255,0.4)"}}>
+                      {pct}%
+                    </span>
+                  </span>
+                </div>
+                {/* Barra */}
+                <div style={{height:6,background:"rgba(255,255,255,0.08)",
+                  borderRadius:3,overflow:"hidden"}}>
+                  <div style={{
+                    height:"100%",
+                    width:`${pct}%`,
+                    background:excede
+                      ? R
+                      : pct >= 90
+                        ? G
+                        : pct >= 60
+                          ? barColor
+                          : `${barColor}80`,
+                    borderRadius:3,
+                    transition:"width 0.5s ease",
+                    boxShadow:pct>0?`0 0 8px ${barColor}60`:"none"
+                  }}/>
+                </div>
+                {excede && (
+                  <div style={{fontSize:10,color:R,marginTop:2}}>
+                    +{Math.round((item.val-item.meta)*10)/10}{item.unit} sobre el objetivo
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
-      ))}
+      )}
+
+      {/* Hint si no hay meta seleccionada */}
+      {!meta && (
+        <div style={{padding:"10px 14px",background:"rgba(255,255,255,0.02)",
+          border:"1px solid rgba(255,255,255,0.06)",fontSize:12,
+          color:"rgba(255,255,255,0.3)",textAlign:"center"}}>
+          Selecciona tu distribución del día en inicio para ver tus metas
+        </div>
+      )}
     </div>
   )
 }
