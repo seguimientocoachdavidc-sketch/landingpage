@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef, useCallback } from "react"
-import { ALIMENTOS } from "@/lib/alimentos"
+import { ALIMENTOS, UNIDADES_ALIMENTOS } from "@/lib/alimentos"
 import { supabase } from "@/lib/supabase"
 
 const R = "#E8000D"
@@ -106,6 +106,8 @@ export default function MacrosPage() {
   const [resultados, setResultados] = useState<typeof ALIMENTOS[number][]>([])
   const [alimentoSel, setAlimentoSel] = useState<typeof ALIMENTOS[number]|null>(null)
   const [gramos, setGramos]         = useState("100")
+  const [modoIngreso, setModoIngreso] = useState<"gramos"|"unidades">("gramos")
+  const [unidades, setUnidades]     = useState("1")
   const [comidaNum, setComidaNum]   = useState(1)
   const [enviando, setEnviando]     = useState(false)
   const [vistaTab, setVistaTab]     = useState<"agregar"|"resumen">("agregar")
@@ -213,8 +215,11 @@ export default function MacrosPage() {
   /* ── Agregar entrada ── */
   const agregarEntrada = () => {
     if (!alimentoSel||!diaData||!token) return
-    const g = parseFloat(gramos)
-    if (isNaN(g)||g<=0) { showToast("err","Ingresa un peso válido."); return }
+    const uInfo = UNIDADES_ALIMENTOS[alimentoSel.id]
+    const g = modoIngreso === "unidades" && uInfo
+      ? (parseFloat(unidades) || 0) * uInfo.gramos
+      : parseFloat(gramos)
+    if (isNaN(g)||g<=0) { showToast("err","Ingresa una cantidad válida."); return }
     const macros = calcular(alimentoSel.id, g)
     const entrada: EntradaComida = {
       id:`${Date.now()}`, alimentoId:alimentoSel.id,
@@ -223,7 +228,7 @@ export default function MacrosPage() {
     }
     const nuevaData = { ...diaData, entradas:[...diaData.entradas, entrada] }
     setDiaData(nuevaData); guardarLocal(nuevaData)
-    setBusqueda(""); setAlimentoSel(null); setGramos("100"); setResultados([])
+    setBusqueda(""); setAlimentoSel(null); setGramos("100"); setUnidades("1"); setModoIngreso("gramos"); setResultados([])
     showToast("ok",`${alimentoSel.nombre} agregado a Comida ${comidaNum}`)
     busquedaRef.current?.focus()
   }
@@ -307,7 +312,11 @@ export default function MacrosPage() {
     window.scrollTo({top:0, behavior:"smooth"})
   }
 
-  const macrosPreview = alimentoSel ? calcular(alimentoSel.id, parseFloat(gramos)||0) : null
+  const unidadInfo = alimentoSel ? UNIDADES_ALIMENTOS[alimentoSel.id] : undefined
+  const gramosEfectivos = modoIngreso === "unidades" && unidadInfo
+    ? (parseFloat(unidades) || 0) * unidadInfo.gramos
+    : (parseFloat(gramos) || 0)
+  const macrosPreview = alimentoSel ? calcular(alimentoSel.id, gramosEfectivos) : null
 
   if (accesoDenegado) return <AccesoDenegado/>
   if (!token) return <Loading/>
@@ -738,7 +747,12 @@ export default function MacrosPage() {
                           animation:"slideIn 0.15s ease"}}>
                           {resultados.map(a=>(
                             <button key={a.id}
-                              onClick={()=>{setAlimentoSel(a);setBusqueda(a.nombre);setResultados([])}}
+                              onClick={()=>{
+                                setAlimentoSel(a);setBusqueda(a.nombre);setResultados([])
+                                const uInfo = UNIDADES_ALIMENTOS[a.id]
+                                if(uInfo){ setModoIngreso("unidades"); setUnidades("1") }
+                                else { setModoIngreso("gramos"); setGramos("100") }
+                              }}
                               style={{display:"flex",alignItems:"center",
                                 justifyContent:"space-between",width:"100%",
                                 padding:"11px 16px",background:"none",border:"none",
@@ -768,34 +782,88 @@ export default function MacrosPage() {
                     {/* Gramos */}
                     {alimentoSel&&(
                       <div style={{animation:"slideIn 0.2s ease",marginBottom:16}}>
-                        <label className="bc" style={{display:"block",fontSize:11,
-                          fontWeight:700,letterSpacing:"0.25em",textTransform:"uppercase",
-                          color:"rgba(255,255,255,0.38)",marginBottom:8}}>
-                          Cantidad (gramos) <span style={{color:R}}>*</span>
-                        </label>
-                        <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:8}}>
-                          <input type="number" value={gramos} min="1" max="2000"
-                            onChange={e=>setGramos(e.target.value)}
-                            style={{padding:"13px 16px",
-                              background:"rgba(255,255,255,0.04)",
-                              border:`1px solid ${R}`,color:"#fff",
-                              fontFamily:"'Barlow Condensed',Impact,sans-serif",
-                              fontSize:22,fontWeight:700,outline:"none"}}/>
-                          <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                            {[50,100,150,200].map(g=>(
-                              <button key={g} onClick={()=>setGramos(String(g))}
+
+                        {/* Toggle gramos / unidades — solo si el alimento tiene unidad definida */}
+                        {unidadInfo&&(
+                          <div style={{display:"flex",gap:6,marginBottom:10}}>
+                            {(["unidades","gramos"] as const).map(modo=>(
+                              <button key={modo} onClick={()=>setModoIngreso(modo)}
                                 className="bc"
-                                style={{padding:"4px 12px",
-                                  background:gramos===String(g)?R:"rgba(255,255,255,0.06)",
-                                  border:`1px solid ${gramos===String(g)?R:"rgba(255,255,255,0.1)"}`,
-                                  color:gramos===String(g)?"#fff":"rgba(255,255,255,0.4)",
-                                  fontSize:12,fontWeight:700,cursor:"pointer"}}>
-                                {g}g
+                                style={{flex:1,padding:"8px",
+                                  border:`1px solid ${modoIngreso===modo?R:"rgba(255,255,255,0.1)"}`,
+                                  background:modoIngreso===modo?`${R}18`:"transparent",
+                                  color:modoIngreso===modo?"#fff":"rgba(255,255,255,0.4)",
+                                  fontSize:12,fontWeight:700,letterSpacing:"0.08em",
+                                  textTransform:"uppercase",cursor:"pointer",
+                                  transition:"all 0.15s"}}>
+                                {modo==="unidades"?`Por ${unidadInfo.unidad}`:"Por gramos"}
                               </button>
                             ))}
                           </div>
-                        </div>
-                        {macrosPreview&&parseFloat(gramos)>0&&(
+                        )}
+
+                        <label className="bc" style={{display:"block",fontSize:11,
+                          fontWeight:700,letterSpacing:"0.25em",textTransform:"uppercase",
+                          color:"rgba(255,255,255,0.38)",marginBottom:8}}>
+                          {modoIngreso==="unidades"&&unidadInfo
+                            ? `Cantidad (${unidadInfo.unidad}s)`
+                            : "Cantidad (gramos)"} <span style={{color:R}}>*</span>
+                        </label>
+
+                        {modoIngreso==="unidades"&&unidadInfo?(
+                          <>
+                            <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:8}}>
+                              <input type="number" value={unidades} min="0.25" max="20" step="0.25"
+                                onChange={e=>setUnidades(e.target.value)}
+                                style={{padding:"13px 16px",
+                                  background:"rgba(255,255,255,0.04)",
+                                  border:`1px solid ${R}`,color:"#fff",
+                                  fontFamily:"'Barlow Condensed',Impact,sans-serif",
+                                  fontSize:22,fontWeight:700,outline:"none"}}/>
+                              <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                                {[1,2,3].map(u=>(
+                                  <button key={u} onClick={()=>setUnidades(String(u))}
+                                    className="bc"
+                                    style={{padding:"4px 12px",
+                                      background:unidades===String(u)?R:"rgba(255,255,255,0.06)",
+                                      border:`1px solid ${unidades===String(u)?R:"rgba(255,255,255,0.1)"}`,
+                                      color:unidades===String(u)?"#fff":"rgba(255,255,255,0.4)",
+                                      fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                                    {u}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div style={{fontSize:11,color:"rgba(255,255,255,0.25)",marginTop:6}}>
+                              ≈ {Math.round(gramosEfectivos)}g · 1 {unidadInfo.unidad} ≈ {unidadInfo.gramos}g
+                            </div>
+                          </>
+                        ):(
+                          <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:8}}>
+                            <input type="number" value={gramos} min="1" max="2000"
+                              onChange={e=>setGramos(e.target.value)}
+                              style={{padding:"13px 16px",
+                                background:"rgba(255,255,255,0.04)",
+                                border:`1px solid ${R}`,color:"#fff",
+                                fontFamily:"'Barlow Condensed',Impact,sans-serif",
+                                fontSize:22,fontWeight:700,outline:"none"}}/>
+                            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                              {[50,100,150,200].map(g=>(
+                                <button key={g} onClick={()=>setGramos(String(g))}
+                                  className="bc"
+                                  style={{padding:"4px 12px",
+                                    background:gramos===String(g)?R:"rgba(255,255,255,0.06)",
+                                    border:`1px solid ${gramos===String(g)?R:"rgba(255,255,255,0.1)"}`,
+                                    color:gramos===String(g)?"#fff":"rgba(255,255,255,0.4)",
+                                    fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                                  {g}g
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {macrosPreview&&gramosEfectivos>0&&(
                           <div style={{marginTop:12,padding:"14px 16px",
                             background:`${R}08`,border:`1px solid ${R}25`,
                             display:"grid",gridTemplateColumns:"repeat(4,1fr)",
@@ -819,7 +887,7 @@ export default function MacrosPage() {
                       </div>
                     )}
 
-                    <AgregarBtn onClick={agregarEntrada} disabled={!alimentoSel||!gramos}/>
+                    <AgregarBtn onClick={agregarEntrada} disabled={!alimentoSel||gramosEfectivos<=0}/>
 
                     {diaData.entradas.filter(e=>e.comida===comidaNum).length>0&&(
                       <div style={{marginTop:28}}>
