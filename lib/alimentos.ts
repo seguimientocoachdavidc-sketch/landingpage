@@ -541,3 +541,60 @@ export const ALIMENTOS = [
   
 ] as const
 export type Alimento = typeof ALIMENTOS[number]
+
+// ════════════════════════════════════════════════════════════════
+// MAPEO DE UNIDADES NATURALES POR ALIMENTO
+// Permite registrar alimentos en unidades intuitivas en vez de gramos
+// gramos = peso promedio de 1 unidad de parte comestible
+// ════════════════════════════════════════════════════════════════
+export const UNIDADES_ALIMENTOS: Record<number, { unidad: string; gramos: number }> = {
+  // Huevos — peso de parte comestible (sin cáscara)
+  4:   { unidad: "huevo",        gramos: 50 },   // Huevo de gallina completo
+  69:  { unidad: "huevo frito",  gramos: 48 },   // Huevo de gallina frito
+  70:  { unidad: "huevo",        gramos: 50 },   // Huevo de gallina tibio
+  72:  { unidad: "huevo",        gramos: 50 },   // Huevo de gallina revuelto
+  330: { unidad: "clara",        gramos: 33 },   // Huevo de gallina, clara, cruda
+  331: { unidad: "huevo",        gramos: 50 },   // Huevo de gallina, entero, crudo
+  238: { unidad: "clara",        gramos: 33 },   // Clara de Huevo (100 ml) ≈ 1 clara
+
+  // Frutas — peso promedio de la fruta entera sin cáscara/sin pepa cuando aplica
+  9:   { unidad: "banano",       gramos: 120 },  // Banano
+  283: { unidad: "banano",       gramos: 70 },   // Banano bocadillo
+  15:  { unidad: "manzana",      gramos: 150 },  // Manzana
+  6:   { unidad: "naranja",      gramos: 180 },  // Naranja
+  93:  { unidad: "mandarina",    gramos: 90 },   // Mandarina cruda
+  37:  { unidad: "durazno",      gramos: 100 },  // Durazno
+  165: { unidad: "pera",         gramos: 160 },  // Pera
+  194: { unidad: "pera",         gramos: 160 },  // Pera, cruda
+
+  // Panes y tostadas — por tajada/rodaja
+  137: { unidad: "tajada",       gramos: 33 },   // Pan Tajado
+  192: { unidad: "tajada",       gramos: 15 },   // Pan tostado Bimbo
+  222: { unidad: "tajada",       gramos: 33 },   // Pan Bimbo Vital
+
+  // Arepas y panes colombianos
+  3:   { unidad: "arepa",        gramos: 80 },   // Arepa de Maiz con Sal
+  119: { unidad: "arepa",        gramos: 90 },   // Arepa Chocló
+  199: { unidad: "arepa",        gramos: 70 },   // Arepa de Maíz El Carriel
+  212: { unidad: "arepa",        gramos: 90 },   // Arepa Boyacense
+  221: { unidad: "arepa",        gramos: 80 },   // Arepa de maíz Blanco Paola
+  20:  { unidad: "pandebono",    gramos: 60 },   // Pandebono
+  129: { unidad: "arepa",        gramos: 80 },   // Arepa pandebono
+  17:  { unidad: "arepa",        gramos: 90 },   // Arepa con Queso
+
+  // Empanadas
+  468: { unidad: "empanada",     gramos: 90 },   // Empanada de pipián
+  469: { unidad: "empanada",     gramos: 90 },   // Empanada de carne
+  470: { unidad: "empanada",     gramos: 90 },   // Empanada de pollo
+  471: { unidad: "empanada",     gramos: 90 },   // Empanada de queso
+  472: { unidad: "empanada",     gramos: 90 },   // Empanada de arroz con pollo
+
+  // Productos por paquete/botella/unidad ya etiquetados
+  465: { unidad: "botella",      gramos: 250 },  // Bénet Proteína (250ml)
+  467: { unidad: "paquete",      gramos: 35 },   // Pietrán Snack Jamón
+  466: { unidad: "unidad",       gramos: 40 },   // Queso snack Schadelin
+  387: { unidad: "unidad",       gramos: 33 },   // Cocosette Nestlé
+}
+
+
+
