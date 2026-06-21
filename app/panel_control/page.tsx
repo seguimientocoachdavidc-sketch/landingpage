@@ -15,6 +15,7 @@ interface Modulos {
   running: boolean
   cycling: boolean
   macros: boolean
+  planAlimentacion: boolean
 }
 
 export default function PanelControlPage() {
@@ -23,7 +24,7 @@ export default function PanelControlPage() {
   const [denegado, setDenegado]   = useState(false)
   const [cargando, setCargando]   = useState(true)
   const [modulos, setModulos]     = useState<Modulos>({
-    musculacion:false, running:false, cycling:false, macros:false,
+    musculacion:false, running:false, cycling:false, macros:false, planAlimentacion:false,
   })
 
   useEffect(() => {
@@ -34,26 +35,44 @@ export default function PanelControlPage() {
   }, [])
 
   const verificarYcargar = async (tok: string) => {
-    const { data: cliente, error } = await supabase
+    // Fuente 1: Supabase — clientes y programas de entrenamiento
+    const { data: cliente } = await supabase
       .from("clientes").select("token,nombre")
-      .eq("token", tok).eq("activo", true).single()
+      .eq("token", tok).eq("activo", true).maybeSingle()
 
-    if (error || !cliente) { setDenegado(true); setCargando(false); return }
-    setNombre(cliente.nombre)
+    // Fuente 2: endpoint hardcodeado — macros y plan de alimentación
+    const verifRes = await fetch(`/api/macros/verificar?token=${tok}`)
+    const verifData = await verifRes.json()
 
-    const m: Modulos = { musculacion:false, running:false, cycling:false, macros:false }
+    // Si no existe en ninguna de las dos fuentes, acceso denegado
+    if (!cliente && !verifData.valido) {
+      setDenegado(true); setCargando(false); return
+    }
 
-    const [{ data: prog }, { data: pRun }, { data: pCyc }, { data: metas }] = await Promise.all([
-      supabase.from("programas").select("id").eq("cliente_token", tok).eq("activo", true).maybeSingle(),
-      supabase.from("programas_running").select("id").eq("cliente_token", tok).eq("activo", true).maybeSingle(),
-      supabase.from("programas_cycling").select("id").eq("cliente_token", tok).eq("activo", true).maybeSingle(),
-      supabase.from("metas_macros").select("id").eq("cliente_token", tok).limit(1),
-    ])
+    setNombre(cliente?.nombre || verifData.nombre || "")
 
-    if (prog)  m.musculacion = true
-    if (pRun)  m.running = true
-    if (pCyc)  m.cycling = true
-    if (metas?.length) m.macros = true
+    const m: Modulos = {
+      musculacion:false, running:false, cycling:false,
+      macros:false, planAlimentacion:false,
+    }
+
+    // Módulos de entrenamiento — solo si existe en tabla clientes
+    if (cliente) {
+      const [{ data: prog }, { data: pRun }, { data: pCyc }] = await Promise.all([
+        supabase.from("programas").select("id").eq("cliente_token", tok).eq("activo", true).maybeSingle(),
+        supabase.from("programas_running").select("id").eq("cliente_token", tok).eq("activo", true).maybeSingle(),
+        supabase.from("programas_cycling").select("id").eq("cliente_token", tok).eq("activo", true).maybeSingle(),
+      ])
+      if (prog) m.musculacion = true
+      if (pRun) m.running = true
+      if (pCyc) m.cycling = true
+    }
+
+    // Macros y plan de alimentación — vienen del endpoint hardcodeado
+    if (verifData.valido) {
+      m.macros = true // cualquier usuario válido en USUARIOS tiene acceso a macros
+      if (verifData.plan) m.planAlimentacion = true
+    }
 
     setModulos(m)
     setCargando(false)
@@ -77,12 +96,20 @@ export default function PanelControlPage() {
       ].filter(Boolean).join(" · "),
       color: R,
     }] : []),
+    ...(modulos.planAlimentacion ? [{
+      key: "plan_alimentacion",
+      href: `/plan-alimentacion?token=${token}`,
+      icono: "📋",
+      titulo: "Plan de Alimentación",
+      desc: "Menús diseñados por Coach David con gramajes exactos",
+      color: O,
+    }] : []),
     ...(modulos.macros ? [{
       key: "macros",
       href: `/macros?token=${token}`,
       icono: "🍽️",
       titulo: "Registro de Macros",
-      desc: "Comidas, seguimiento de medidas y progreso",
+      desc: "Calculadora con +500 alimentos, medidas y progreso",
       color: B,
     }] : []),
     {
@@ -197,7 +224,7 @@ export default function PanelControlPage() {
         </div>
 
         {/* Mensaje si no tiene módulos activos (caso borde) */}
-        {!tieneEntrenamiento && !modulos.macros && (
+        {!tieneEntrenamiento && !modulos.macros && !modulos.planAlimentacion && (
           <div style={{ marginTop:8, padding:"20px",
             border:"1px solid rgba(255,255,255,0.08)",
             background:"rgba(255,255,255,0.02)", textAlign:"center" }}>
