@@ -126,6 +126,7 @@ export default function MacrosPage() {
   const [metaSel, setMetaSel]             = useState<MetaMacros|null>(null)
   const [tieneCiclado, setTieneCiclado]   = useState(false)
   const [distribSeleccionada, setDistribSeleccionada] = useState<string|null>(null)
+  const [metasLogradas, setMetasLogradas] = useState<Set<string>>(new Set())
 
   const [toast, setToast] = useState<{tipo:"ok"|"err"; msg:string}|null>(null)
   const showToast = (tipo:"ok"|"err", msg:string) => {
@@ -194,6 +195,7 @@ export default function MacrosPage() {
     }
     setDiaData(data); setVistaGlobal("macros")
     setVistaTab("agregar"); setDiasGuardados(listarDiasGuardados(tok))
+    setMetasLogradas(new Set())
   }
 
   const guardarLocal = (data: DiaData) => {
@@ -245,6 +247,55 @@ export default function MacrosPage() {
     lipidos:  Math.round((acc.lipidos+e.lipidos)*10)/10,
     cho:      Math.round((acc.cho+e.cho)*10)/10,
   }), {kcal:0,proteina:0,lipidos:0,cho:0}) ?? {kcal:0,proteina:0,lipidos:0,cho:0}
+
+  /* ── Detectar logros de metas en tiempo real ── */
+  useEffect(() => {
+    if (!metaSel || !diaData || diaData.cerrado) return
+
+    const checks: { key: string; cumplida: boolean; msg: string }[] = [
+      {
+        key: "proteina",
+        cumplida: totales.proteina >= metaSel.proteina_g,
+        msg: `✅ ¡Meta de proteína cumplida! ${totales.proteina}g de ${metaSel.proteina_g}g 💪`,
+      },
+      {
+        key: "kcal_rango",
+        cumplida: totales.kcal >= metaSel.kcal * 0.95 && totales.kcal <= metaSel.kcal * 1.05,
+        msg: `🎯 Calorías perfectamente ajustadas — ${totales.kcal} kcal`,
+      },
+      {
+        key: "cho",
+        cumplida: totales.cho >= metaSel.cho_g * 0.95 && totales.cho <= metaSel.cho_g * 1.05,
+        msg: `🎯 Carbohidratos en el rango ideal — ${totales.cho}g`,
+      },
+      {
+        key: "grasa",
+        cumplida: totales.lipidos >= metaSel.grasa_g * 0.9 && totales.lipidos <= metaSel.grasa_g * 1.1,
+        msg: `🎯 Grasas dentro del objetivo — ${totales.lipidos}g`,
+      },
+      {
+        key: "kcal_exceso",
+        cumplida: totales.kcal > metaSel.kcal * 1.15,
+        msg: `⚠️ Hoy te pasaste de tu meta calórica — ajusta un poco mañana`,
+      },
+    ]
+
+    checks.forEach(check => {
+      const yaCelebrada = metasLogradas.has(check.key)
+      if (check.cumplida && !yaCelebrada) {
+        showToast("ok", check.msg)
+        setMetasLogradas(prev => new Set(prev).add(check.key))
+      }
+      // Si deja de cumplirse (ej. elimina un alimento), permite re-celebrar después
+      if (!check.cumplida && yaCelebrada && check.key !== "kcal_exceso") {
+        setMetasLogradas(prev => {
+          const next = new Set(prev)
+          next.delete(check.key)
+          return next
+        })
+      }
+    })
+  }, [totales.kcal, totales.proteina, totales.lipidos, totales.cho, metaSel, diaData?.cerrado])
 
   const cerrarDia = async () => {
     if (!diaData||!token||enviando) return
