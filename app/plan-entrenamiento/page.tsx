@@ -60,10 +60,10 @@ const DISTRIBUCION_RIVS = [
   { dia: "NA",    label: "Descanso",                    icono: "😴", tags: [] },
   { dia: "Día 1", label: "Tren Superior + Easy Run Z2", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
   { dia: "Día 2", label: "Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
-  { dia: "Día 3", label: "CORE",  icono: "🎯", tags: ["CYCLING","CORE"] },
+  { dia: "Día 3", label: "Cycling Continuo Z2 + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
   { dia: "Día 4", label: "Tren Superior + Pliometría",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
-  { dia: "Día 5", label: "Cycling Z2",        icono: "-", tags: ["CYCLING"] },
-  { dia: "Día 6", label: "Bricks 70-30",     icono: "🏃⚡",   tags: ["RUNNING"] },
+  { dia: "Día 5", label: "Cycling Z2 + Carrera",        icono: "🚴🏃", tags: ["CYCLING"] },
+  { dia: "Día 6", label: "Bricks — Bici + Carrera",     icono: "🔥",   tags: ["CYCLING","RUNNING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
@@ -322,20 +322,57 @@ export default function PlanEntrenamientoPage() {
     if (!sesionId || sesionCerrada) return
     const val = regs[ejId]?.[serie]
     if (!val?.kg && !val?.reps) return
+    const kgNum = parseFloat(val.kg) || null
     await supabase.from("registros").upsert(
       { sesion_id: sesionId, ejercicio_id: ejId, serie_num: serie,
-        kg: parseFloat(val.kg) || null, reps: parseInt(val.reps) || null },
+        kg: kgNum, reps: parseInt(val.reps) || null },
       { onConflict: "sesion_id,ejercicio_id,serie_num" }
     )
-    showToast("✓ Serie guardada")
+
+    // Comparar con la sesión anterior — detectar mejora de carga
+    const ant = ants[ejId]
+    const kgAnt = ant?.data.find(r => r.serie_num === serie)?.kg
+    if (kgNum && kgAnt && kgNum > kgAnt) {
+      const diff = Math.round((kgNum - kgAnt) * 10) / 10
+      const ej = ejercicios.find(e => e.id === ejId)
+      showToast(`🔥 +${diff}kg en ${ej?.nombre ?? "este ejercicio"} vs. la semana pasada`)
+    } else {
+      showToast("✓ Serie guardada")
+    }
   }
 
   const cerrarSesion = async () => {
-    if (!sesionId) return
+    if (!sesionId || !diaActivo || !token) return
     await supabase.from("sesiones")
       .update({ completada: true, completada_en: new Date().toISOString() }).eq("id", sesionId)
     setSesionCerrada(true)
-    showToast("✓ Sesión enviada al coach")
+
+    // Calcular racha: sesiones completadas consecutivas de este mismo día (semana a semana)
+    const { data: historico } = await supabase
+      .from("sesiones")
+      .select("id, fecha, completada")
+      .eq("cliente_token", token)
+      .eq("dia_id", diaActivo.id)
+      .order("fecha", { ascending: false })
+
+    let racha = 0
+    if (historico) {
+      for (const s of historico) {
+        if (!s.completada) break
+        const { count } = await supabase
+          .from("registros")
+          .select("*", { count: "exact", head: true })
+          .eq("sesion_id", s.id)
+        if ((count ?? 0) > 0) racha++
+        else break
+      }
+    }
+
+    if (racha >= 2) {
+      showToast(`🔥 ¡Racha de ${racha} semanas seguidas en ${diaActivo.nombre}!`)
+    } else {
+      showToast("✓ Sesión enviada al coach")
+    }
   }
 
   /* ── Cargar ejercicios disponibles para progreso ── */
@@ -473,7 +510,7 @@ export default function PlanEntrenamientoPage() {
   // Rivs: 2 sesiones (día 1 easy run, día 6 bricks-carrera)
   const sesionesRunConfig = modulos.cycling
     ? [
-        { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Easy Run", icono: "🏃",
+        { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Easy Run / Intervalos", icono: "🏃",
           getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min,
           campos: [
@@ -482,7 +519,7 @@ export default function PlanEntrenamientoPage() {
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "145", tipo: "number" },
           ], notaBricks: undefined, color: G },
-        { num: 2, titulo: "Sesión 2 · Día 5",icono: "🏃",
+        { num: 2, titulo: "Sesión 2 · Día 6 — Bricks", subtitulo: "Parte carrera tras bici", icono: "🔥🏃",
           getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
           campos: [
@@ -490,10 +527,10 @@ export default function PlanEntrenamientoPage() {
             { k: "distancia_km", l: "Distancia (km)", p: "4", tipo: "number" },
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
-          ], notaBricks: "", color: O },
+          ], notaBricks: "Parte de carrera del Día 6. El ciclismo se registra en Cycling.", color: O },
       ]
     : [
-        { num: 1, titulo: "Sesión 1 · Martes", subtitulo: "", icono: "🏃",
+        { num: 1, titulo: "Sesión 1 · Martes", subtitulo: "Zona 2", icono: "🏃",
           getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min ? `${s.sesion_1_objetivo_min} min` : null,
           campos: [
@@ -502,7 +539,7 @@ export default function PlanEntrenamientoPage() {
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "135", tipo: "number" },
           ], notaBricks: undefined, color: G },
-        { num: 2, titulo: "Sesión 2 · Miércoles", subtitulo: "", icono: "⚡",
+        { num: 2, titulo: "Sesión 2 · Miércoles", subtitulo: "Intervalos", icono: "⚡",
           getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
           campos: [
@@ -511,7 +548,7 @@ export default function PlanEntrenamientoPage() {
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
           ], notaBricks: undefined, color: G },
-        { num: 3, titulo: "Sesión 3 · Domingo", subtitulo: "", icono: "🛤️",
+        { num: 3, titulo: "Sesión 3 · Domingo", subtitulo: "Fondo largo", icono: "🛤️",
           getDesc: (s: SemanaRun) => s.sesion_3_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_3_objetivo_min ? `${s.sesion_3_objetivo_min} min` : null,
           campos: [
@@ -940,10 +977,13 @@ export default function PlanEntrenamientoPage() {
               ))}
             </div>
             {semanaCyc && [
-              { num: 1, titulo: "Sesión 1 · Día 3", icono: "🚴", color: B,
+              { num: 1, titulo: "Sesión 1 · Día 3", subtitulo: "Continuo Z2", icono: "🚴", color: B,
                 desc: semanaCyc.sesion_1_descripcion, obj: semanaCyc.sesion_1_objetivo },
-              { num: 2, titulo: "Sesión 2 · Día 5", icono: "🚴", color: B,
-                desc: semanaCyc.sesion_2_descripcion, obj: semanaCyc.sesion_2_objetivo }
+              { num: 2, titulo: "Sesión 2 · Día 5", subtitulo: "Cycling Z2 + Carrera", icono: "🚴🏃", color: B,
+                desc: semanaCyc.sesion_2_descripcion, obj: semanaCyc.sesion_2_objetivo },
+              { num: 3, titulo: "Sesión 3 · Día 6 — Bricks", subtitulo: "Parte bici antes de correr", icono: "🔥🚴", color: O,
+                desc: semanaCyc.sesion_3_descripcion, obj: semanaCyc.sesion_3_objetivo,
+                notaBricks: "Parte de ciclismo del Día 6. La carrera se registra en Running." },
             ].map(cfg => (
               <SesionCard key={cfg.num}
                 color={cfg.color}
@@ -1051,7 +1091,7 @@ export default function PlanEntrenamientoPage() {
         <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
           padding: "12px 20px", background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.4)",
           color: "#86efac", fontSize: 14, zIndex: 200, backdropFilter: "blur(8px)",
-          animation: "fadeUp 0.3s ease", whiteSpace: "nowrap" }}>
+          animation: "fadeUp 0.3s ease", maxWidth: "90vw", textAlign: "center" }}>
           {toast}
         </div>
       )}
