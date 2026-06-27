@@ -53,12 +53,11 @@ const PRUEBAS = [
 
 /* ── Calentamiento previo: activación + movilidad ────────────── */
 const CALENTAMIENTO = [
-  { nombre: "Trote suave en el sitio o jumping jacks", duracion: "2 min", tipo: "Activación aeróbica" },
-  { nombre: "Círculos de brazos (adelante y atrás)", duracion: "30 seg c/dirección", tipo: "Movilidad de hombro" },
-  { nombre: "Rotación de cadera (círculos amplios)", duracion: "30 seg c/dirección", tipo: "Movilidad de cadera" },
-  { nombre: "Sentadillas sin peso, ritmo controlado", duracion: "10 reps", tipo: "Activación de tren inferior" },
-  { nombre: "Gato-camello (movilidad de columna)", duracion: "8 reps", tipo: "Movilidad de columna" },
-  { nombre: "Zancadas alternas caminando", duracion: "8 reps c/lado", tipo: "Activación dinámica" },
+  { nombre: "Trote suave en el sitio o jumping jacks", duracion: "2 min, repites 2 veces", tipo: "Activación aeróbica" },
+  { nombre: "Círculos de brazos (adelante y atrás) de forma controlada", duracion: "30 seg c/dirección", tipo: "Movilidad de hombro" },
+  { nombre: "Rotación de cadera (círculos amplios) de forma controlada", duracion: "30 seg c/dirección", tipo: "Movilidad de cadera" },
+  { nombre: "Rotaciones de tronco (muy controladas)", duracion: "8 reps para cada lado", tipo: "Movilidad de columna" },
+  { nombre: "Flexión de Rodilla (subes bien la rodilla a intentar tocar el pecho, como en una marcha militar pero controlada)", duracion: "10 reps c/lado", tipo: "Activación dinámica" },
 ]
 
 
@@ -216,8 +215,8 @@ export default function ValoracionFisicaPage() {
             </div>
             <p className="b" style={{ fontSize:13.5, color:"rgba(255,255,255,0.45)",
               lineHeight:1.6, fontWeight:300, marginTop:8 }}>
-              Realiza esta breve rutina antes de las pruebas. Te ayuda a sentirte
-              más cómoda y hace que el resultado refleje mejor tu capacidad real.
+              Realiza esta secuencia de calentamientos antes de las pruebas. Te ayuda a sentirte
+              más cómoda y evitar posibles molestias y dolores al momento de la ejecución. Ante cualquier duda me puedes escribir 
             </p>
           </div>
 
@@ -262,8 +261,8 @@ export default function ValoracionFisicaPage() {
               <p className="b" style={{ fontSize:13.5, color:"rgba(255,255,255,0.55)",
                 lineHeight:1.65, fontWeight:300, marginBottom:14 }}>
                 Necesito ver tu técnica para calibrar bien tu programa. Grábate
-                de perfil o tres cuartos durante cada prueba y envíame los
-                3 videos por WhatsApp — junto con el formulario de abajo.
+                de perfil (osea de lado) cada prueba y envíame los
+                3 videos por WhatsApp — junto con el formulario de abajo (donde solo le das enviar al final).
               </p>
               <a href={`https://wa.me/573243747367?text=${encodeURIComponent(
                 `Hola Coach David, aquí están mis videos de la valoración física${nombreCliente ? ` (${nombreCliente})` : ""}`
