@@ -51,7 +51,17 @@ const PRUEBAS = [
   },
 ]
 
-/* ══ PÁGINA ══════════════════════════════════════════════════════ */
+/* ── Calentamiento previo: activación + movilidad ────────────── */
+const CALENTAMIENTO = [
+  { nombre: "Trote suave en el sitio o jumping jacks", duracion: "2 min", tipo: "Activación aeróbica" },
+  { nombre: "Círculos de brazos (adelante y atrás)", duracion: "30 seg c/dirección", tipo: "Movilidad de hombro" },
+  { nombre: "Rotación de cadera (círculos amplios)", duracion: "30 seg c/dirección", tipo: "Movilidad de cadera" },
+  { nombre: "Sentadillas sin peso, ritmo controlado", duracion: "10 reps", tipo: "Activación de tren inferior" },
+  { nombre: "Gato-camello (movilidad de columna)", duracion: "8 reps", tipo: "Movilidad de columna" },
+  { nombre: "Zancadas alternas caminando", duracion: "8 reps c/lado", tipo: "Activación dinámica" },
+]
+
+
 export default function ValoracionFisicaPage() {
   const [nombreCliente, setNombreCliente] = useState("")
   const [token, setToken] = useState<string|null>(null)
@@ -189,7 +199,88 @@ export default function ValoracionFisicaPage() {
           </div>
         </div>
 
-        {/* Pruebas */}
+        {/* Calentamiento previo */}
+        <div style={{ marginBottom:40, animation:"fadeUp 0.45s ease",
+          border:"1px solid rgba(255,255,255,0.08)",
+          background:"rgba(255,255,255,0.02)" }}>
+
+          <div style={{ padding:"18px 22px",
+            borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
+            <div className="mono" style={{ fontSize:10, color:"rgba(255,255,255,0.35)",
+              letterSpacing:"0.15em", textTransform:"uppercase", marginBottom:6 }}>
+              Antes de empezar
+            </div>
+            <div className="bc" style={{ fontSize:20, fontWeight:900,
+              textTransform:"uppercase", color:"#fff" }}>
+              Activación y movilidad — 4 a 5 minutos
+            </div>
+            <p className="b" style={{ fontSize:13.5, color:"rgba(255,255,255,0.45)",
+              lineHeight:1.6, fontWeight:300, marginTop:8 }}>
+              Realiza esta breve rutina antes de las pruebas. Te ayuda a sentirte
+              más cómoda y hace que el resultado refleje mejor tu capacidad real.
+            </p>
+          </div>
+
+          <div style={{ padding:"16px 22px" }}>
+            {CALENTAMIENTO.map((c, i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:14,
+                padding:"10px 0",
+                borderBottom: i < CALENTAMIENTO.length-1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                <span className="mono" style={{ fontSize:11, color:"rgba(255,255,255,0.25)",
+                  flexShrink:0, minWidth:18 }}>
+                  {String(i+1).padStart(2,"0")}
+                </span>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div className="b" style={{ fontSize:14, color:"rgba(255,255,255,0.85)",
+                    fontWeight:400 }}>
+                    {c.nombre}
+                  </div>
+                  <div className="b" style={{ fontSize:11.5, color:"rgba(255,255,255,0.3)",
+                    marginTop:1 }}>
+                    {c.tipo}
+                  </div>
+                </div>
+                <span className="bc" style={{ fontSize:13, fontWeight:700, color:G,
+                  flexShrink:0, whiteSpace:"nowrap" }}>
+                  {c.duracion}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Mensaje de grabación + WhatsApp */}
+        <div style={{ marginBottom:32, animation:"fadeUp 0.5s ease",
+          padding:"20px 22px", background:`${R}06`, border:`1px solid ${R}25` }}>
+          <div style={{ display:"flex", alignItems:"flex-start", gap:14 }}>
+            <span style={{ fontSize:22, flexShrink:0 }}>🎥</span>
+            <div style={{ flex:1 }}>
+              <div className="bc" style={{ fontSize:15, fontWeight:900,
+                textTransform:"uppercase", color:"#fff", marginBottom:6 }}>
+                Grábate haciendo cada prueba
+              </div>
+              <p className="b" style={{ fontSize:13.5, color:"rgba(255,255,255,0.55)",
+                lineHeight:1.65, fontWeight:300, marginBottom:14 }}>
+                Necesito ver tu técnica para calibrar bien tu programa. Grábate
+                de perfil o tres cuartos durante cada prueba y envíame los
+                3 videos por WhatsApp — junto con el formulario de abajo.
+              </p>
+              <a href={`https://wa.me/573243747367?text=${encodeURIComponent(
+                `Hola Coach David, aquí están mis videos de la valoración física${nombreCliente ? ` (${nombreCliente})` : ""}`
+              )}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{ display:"inline-flex", alignItems:"center", gap:10,
+                  padding:"12px 22px", background:"#22c55e", color:"#fff",
+                  textDecoration:"none", fontFamily:"'Barlow Condensed',sans-serif",
+                  fontSize:13, fontWeight:900, letterSpacing:"0.15em",
+                  textTransform:"uppercase" }}>
+                Enviar videos por WhatsApp →
+              </a>
+            </div>
+          </div>
+        </div>
+
+
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
           {PRUEBAS.map((p, i) => {
             const completa = !!resultados[p.id]?.trim()
@@ -344,6 +435,7 @@ export default function ValoracionFisicaPage() {
         <p className="b" style={{ marginTop:14, fontSize:12,
           color:"rgba(255,255,255,0.25)", textAlign:"center", lineHeight:1.6 }}>
           Coach David revisará tus resultados para calibrar tu programa de entrenamiento.
+          <br/>No olvides enviar también los 3 videos por WhatsApp ↑
         </p>
       </div>
     </div>
@@ -370,11 +462,17 @@ function Confirmacion({ nombre }: { nombre: string }) {
           {nombre ? `Listo, ${nombre.split(" ")[0]}` : "Valoración enviada"}
         </h1>
         <p style={{ fontSize:15, color:"rgba(255,255,255,0.45)", lineHeight:1.7,
-          fontWeight:300 }}>
+          fontWeight:300, marginBottom:24 }}>
           Tus resultados fueron enviados a Coach David. Con esta información
-          se calibrará tu programa de entrenamiento — pronto recibirás noticias
-          sobre los siguientes pasos.
+          se calibrará tu programa de entrenamiento.
         </p>
+        <div style={{ padding:"14px 18px", background:"rgba(232,0,13,0.06)",
+          border:"1px solid rgba(232,0,13,0.25)", textAlign:"left" }}>
+          <span style={{ fontSize:13, color:"rgba(255,255,255,0.6)", lineHeight:1.6 }}>
+            🎥 <strong style={{ color:"#fff" }}>Recuerda:</strong> si aún no lo has
+            hecho, envía tus 3 videos por WhatsApp para que pueda revisar tu técnica.
+          </span>
+        </div>
       </div>
     </div>
   )
