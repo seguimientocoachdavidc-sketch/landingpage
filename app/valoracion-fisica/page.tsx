@@ -40,13 +40,13 @@ const PRUEBAS = [
     id: "pushups",
     nombre: "Push ups (rodillas apoyadas)",
     objetivo: "Fuerza de tren superior",
-    youtubeId: "jWxvty2KROs",
+    youtubeId: "KFxW5amBbsw",
     descripcion: "Realiza la mayor cantidad de repeticiones posibles en 1 minuto, con rodillas apoyadas en el piso.",
     indicaciones: [
       "Rodillas, cadera y hombros alineados — sin quebrar la cadera",
       "Desciende hasta que el pecho casi toque el piso",
       "Codos a 45° del torso, no completamente abiertos",
-      "Extiende completamente los brazos en cada repetición",
+      "Ante cualquier molestia o dolor detener el ejercicio",
     ],
   },
 ]
@@ -179,10 +179,10 @@ export default function ValoracionFisicaPage() {
 
           <p className="b" style={{ fontSize:16, color:"rgba(255,255,255,0.5)",
             lineHeight:1.75, fontWeight:300, maxWidth:560 }}>
-            Antes de diseñar tu programa, necesito datos objetivos sobre tu nivel actual
+            Antes de diseñar tu programa, estas pruebas nos ayudan a conocer tu nivel actual
             de fuerza y técnica. Vas a realizar <strong style={{ color:"#fff" }}>3 pruebas
-            de 1 minuto cada una</strong> — esto me permite calibrar tu punto de partida
-            con precisión, no a ojo.
+            de 1 minuto cada una</strong> — para calibrar tu punto de partida
+            de mejor forma. 
           </p>
 
           {/* Progreso */}
