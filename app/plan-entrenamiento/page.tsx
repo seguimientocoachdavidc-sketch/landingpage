@@ -773,15 +773,46 @@ export default function PlanEntrenamientoPage() {
               const ant = ants[ej.id]
               return (
                 <div key={ej.id} style={{ marginBottom: 18, border: "1px solid rgba(255,255,255,0.08)", background: "#0a0a0a" }}>
-                  {ej.video_url && !imgErr[ej.id] && (
-                    <div style={{ height: 160, overflow: "hidden", borderBottom: "1px solid rgba(255,255,255,0.06)", position: "relative" }}>
-                      <img src={ej.video_url} alt={ej.nombre}
-                        onError={() => setImgErr(e => ({ ...e, [ej.id]: true }))}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 40,
-                        background: "linear-gradient(to top,#0a0a0a,transparent)" }} />
-                    </div>
-                  )}
+                  {ej.video_url && !imgErr[ej.id] && (() => {
+                    // Extraer ID de YouTube si es un link de YouTube
+                    const ytMatch = ej.video_url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+                    const ytId = ytMatch?.[1]
+                    const thumbUrl = ytId
+                      ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
+                      : ej.video_url
+                    const videoLink = ytId
+                      ? `https://www.youtube.com/watch?v=${ytId}`
+                      : null
+                    return (
+                      <div style={{ height: 160, overflow: "hidden",
+                        borderBottom: "1px solid rgba(255,255,255,0.06)",
+                        position: "relative" }}>
+                        <img src={thumbUrl} alt={ej.nombre}
+                          onError={() => setImgErr(e => ({ ...e, [ej.id]: true }))}
+                          style={{ width: "100%", height: "100%",
+                            objectFit: "cover", display: "block" }}/>
+                        <div style={{ position: "absolute", bottom: 0, left: 0,
+                          right: 0, height: 40,
+                          background: "linear-gradient(to top,#0a0a0a,transparent)" }}/>
+                        {/* Botón de play clicable */}
+                        {videoLink && (
+                          <a href={videoLink} target="_blank" rel="noopener noreferrer"
+                            style={{ position: "absolute", inset: 0, display: "flex",
+                              alignItems: "center", justifyContent: "center",
+                              textDecoration: "none" }}>
+                            <div style={{ width: 48, height: 48, borderRadius: "50%",
+                              background: "rgba(232,0,13,0.9)",
+                              display: "flex", alignItems: "center",
+                              justifyContent: "center",
+                              boxShadow: "0 0 20px rgba(0,0,0,0.5)" }}>
+                              <span style={{ color: "#fff", fontSize: 18,
+                                marginLeft: 4 }}>▶</span>
+                            </div>
+                          </a>
+                        )}
+                      </div>
+                    )
+                  })()}
                   {/* Cabecera */}
                   <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                     <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 900,
