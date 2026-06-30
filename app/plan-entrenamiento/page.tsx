@@ -700,10 +700,19 @@ export default function PlanEntrenamientoPage() {
                 <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(245,158,11,0.1)",
                   fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 900,
                   textTransform: "uppercase", color: O }}>
-                  Calentamiento · Tren {diaActivo.nombre.includes("Inferior") ? "Inferior" : "Superior"}
+                  Calentamiento · {
+                    diaActivo.nombre.includes("Inferior") ? "Tren Inferior" :
+                    diaActivo.nombre.includes("Full Body") ? "Full Body — Superior + Inferior" :
+                    "Tren Superior"
+                  }
                 </div>
                 <div style={{ padding: "10px 16px" }}>
-                  {(diaActivo.nombre.includes("Inferior") ? CAL_INF : CAL_SUP).map((e, i) => (
+                  {(
+                    diaActivo.nombre.includes("Inferior") ? CAL_INF :
+                    diaActivo.nombre.includes("Full Body")
+                      ? [...CAL_SUP.slice(0,3), ...CAL_INF.slice(0,3)]
+                      : CAL_SUP
+                  ).map((e, i) => (
                     <a key={i} href={e.link} target="_blank" rel="noopener noreferrer"
                       style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
                         padding: "9px 12px", marginBottom: 5, background: "rgba(255,255,255,0.03)",
