@@ -69,6 +69,17 @@ const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
 }
 
+/* ── Distribución semanal Lina (acondicionamiento) ── */
+const DISTRIBUCION_LINA = [
+  { dia: "Lunes",    label: "Full Body",             icono: "🏋️",  tags: ["MUSCULACIÓN"],        descanso: false },
+  { dia: "Martes",   label: "Tren Inferior",         icono: "🦵",  tags: ["MUSCULACIÓN"],        descanso: false },
+  { dia: "Miércoles",label: "CORE",                  icono: "🎯",  tags: ["CORE"],               descanso: false },
+  { dia: "Jueves",   label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },
+  { dia: "Viernes",  label: "Full Body",             icono: "🏋️",  tags: ["MUSCULACIÓN"],        descanso: false },
+  { dia: "Sábado",   label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },
+  { dia: "Domingo",  label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },
+]
+
 /* ── Calentamientos ─────────────────────────────────── */
 const CAL_SUP = [
   { nombre: "Circunducción de hombro",    series: "2 × 15 reps",         link: "https://www.youtube.com/watch?v=aXR9dM8TZvc" },
@@ -498,6 +509,7 @@ export default function PlanEntrenamientoPage() {
   /* ── Tabs disponibles según módulos ── */
   const tabs = [
     ...(modulos.cycling ? [{ k: "semana", l: "📅 Semana", c: "rgba(255,255,255,0.8)" }] : []),
+    ...(modulos.musculacion && !modulos.running && !modulos.cycling ? [{ k: "distribucion", l: "📅 Distribución", c: "rgba(255,255,255,0.8)" }] : []),
     ...(modulos.musculacion ? [{ k: "muscu", l: "🏋️ Muscu", c: R }] : []),
     ...(modulos.running ? [{ k: "running", l: "🏃 Running", c: G }] : []),
     ...(modulos.cycling ? [{ k: "cycling", l: "🚴 Cycling", c: B }] : []),
@@ -686,6 +698,82 @@ export default function PlanEntrenamientoPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══ DISTRIBUCIÓN LINA ══ */}
+        {vista === "distribucion" && modulos.musculacion && !modulos.running && !modulos.cycling && (
+          <div style={{ animation: "fadeUp 0.3s ease" }}>
+            {/* Aviso fase acondicionamiento */}
+            <div style={{ marginBottom: 20, padding: "14px 18px",
+              background: `${O}08`, border: `1px solid ${O}30` }}>
+              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13,
+                fontWeight: 900, textTransform: "uppercase", color: O,
+                marginBottom: 6, letterSpacing: "0.1em" }}>
+                ⚡ Fase de acondicionamiento
+              </div>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)",
+                lineHeight: 1.65, fontWeight: 300 }}>
+                Esta es tu distribución actual de las primeras semanas. El objetivo
+                es revisar técnica, adaptar el cuerpo y construir una base sólida.
+                <strong style={{ color: "#fff" }}> Próximamente se incrementará
+                el volumen, la intensidad y se añadirá un cuarto día de entrenamiento.</strong>
+              </p>
+            </div>
+
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)",
+              letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>
+              Distribución semanal
+            </div>
+
+            {DISTRIBUCION_LINA.map((d, i) => (
+              <div key={i} style={{ marginBottom: 8, padding: "14px 16px",
+                border: `1px solid ${d.descanso ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.1)"}`,
+                background: d.descanso ? "rgba(255,255,255,0.01)" : "rgba(255,255,255,0.03)",
+                display: "flex", alignItems: "center", gap: 14,
+                opacity: d.descanso ? 0.5 : 1 }}>
+                <span style={{ fontSize: 22, flexShrink: 0 }}>{d.icono}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center",
+                    gap: 8, marginBottom: d.tags.length ? 6 : 0 }}>
+                    <span style={{ fontFamily: "'Barlow Condensed',sans-serif",
+                      fontSize: 11, color: "rgba(255,255,255,0.4)",
+                      letterSpacing: "0.08em", textTransform: "uppercase",
+                      minWidth: 72 }}>{d.dia}</span>
+                    <span style={{ fontSize: 14, color: d.descanso
+                      ? "rgba(255,255,255,0.4)" : "#fff",
+                      fontWeight: 500 }}>{d.label}</span>
+                  </div>
+                  {d.tags.length > 0 && (
+                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                      {d.tags.map(tag => (
+                        <span key={tag} style={{ fontSize: 10, padding: "2px 8px",
+                          background: `${TAG_COLORS[tag]}20`, color: TAG_COLORS[tag],
+                          fontFamily: "'Barlow Condensed',sans-serif",
+                          fontWeight: 700, letterSpacing: "0.08em" }}>{tag}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Nota CORE */}
+            <div style={{ marginTop: 16, padding: "14px 18px",
+              background: `${P}08`, border: `1px solid ${P}25` }}>
+              <div style={{ fontFamily: "'Barlow Condensed',sans-serif",
+                fontSize: 11, color: P, letterSpacing: "0.12em",
+                textTransform: "uppercase", marginBottom: 8 }}>
+                🎯 Sobre el día de CORE
+              </div>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)",
+                lineHeight: 1.65, fontWeight: 300 }}>
+                El miércoles está dedicado exclusivamente al trabajo de core —
+                sesión corta y recuperativa después de dos días de entrenamiento.
+                Fortalece la estabilidad que necesitarás cuando aumentemos
+                la intensidad en las semanas siguientes.
+              </p>
             </div>
           </div>
         )}
