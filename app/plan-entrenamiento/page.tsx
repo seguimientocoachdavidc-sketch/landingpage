@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react"
 import { supabase } from "@/lib/supabase"
+import ResumenSesionModal, { ResumenSesionData } from "@/components/ResumenSesionModal"
 
 /* ── Tipos ─────────────────────────────────────────── */
 interface Cliente { token: string; nombre: string }
@@ -168,6 +169,7 @@ export default function PlanEntrenamientoPage() {
   const [regs, setRegs]             = useState<Record<string, Record<number, { kg: string; reps: string }>>>({})
   const [ants, setAnts]             = useState<Record<string, { fecha: string; data: RegAnterior[] }>>({})
   const [imgErr, setImgErr]         = useState<Record<string, boolean>>({})
+  const [resumenSesion, setResumenSesion] = useState<ResumenSesionData | null>(null)
 
   // Running
   const [semanasRun, setSemanasRun]   = useState<SemanaRun[]>([])
@@ -295,7 +297,7 @@ export default function PlanEntrenamientoPage() {
       .eq("cliente_token", token).eq("dia_id", dia.id).eq("fecha", hoy).single()
     if (!ses) {
       const { data: n } = await supabase.from("sesiones")
-        .insert({ cliente_token: token, dia_id: dia.id, fecha: hoy })
+        .insert({ cliente_token: token, dia_id: dia.id, fecha: hoy, iniciada_en: new Date().toISOString() })
         .select("id,completada").single()
       ses = n
     }
@@ -352,6 +354,109 @@ export default function PlanEntrenamientoPage() {
     }
   }
 
+  /* ── Resumen de sesión + detección de PRs (solo al cerrar) ── */
+  const calcularResumenSesion = async (
+    sesId: string, dia: Dia, ejs: Ejercicio[], tok: string
+  ): Promise<Omit<ResumenSesionData, "racha">> => {
+
+    // 1. Registros de hoy
+    const { data: regsHoy } = await supabase
+      .from("registros")
+      .select("ejercicio_id, kg, reps")
+      .eq("sesion_id", sesId)
+
+    const porEjercicio: Record<string, { kg: number; reps: number }[]> = {}
+    regsHoy?.forEach(r => {
+      if (r.kg == null || r.reps == null) return
+      if (!porEjercicio[r.ejercicio_id]) porEjercicio[r.ejercicio_id] = []
+      porEjercicio[r.ejercicio_id].push({ kg: r.kg, reps: r.reps })
+    })
+
+    const totalSeries = regsHoy?.filter(r => r.kg != null && r.reps != null).length ?? 0
+    const volumenTotal = Math.round(
+      Object.values(porEjercicio).flat().reduce((acc, s) => acc + s.kg * s.reps, 0)
+    )
+
+    // 2. PRs — comparar la mejor serie de hoy vs. el histórico completo
+    //    (todas las sesiones completadas del cliente para ese ejercicio, excluyendo la de hoy)
+    const prs: ResumenSesionData["prs"] = []
+    for (const ejId of Object.keys(porEjercicio)) {
+      const ej = ejs.find(e => e.id === ejId)
+      if (!ej) continue
+
+      const seriesHoy = porEjercicio[ejId]
+      const mejorHoy = seriesHoy.reduce((best, s) =>
+        s.kg > best.kg || (s.kg === best.kg && s.reps > best.reps) ? s : best, seriesHoy[0])
+
+      const { data: hist } = await supabase
+        .from("registros")
+        .select("kg, reps, sesiones!inner(cliente_token, completada)")
+        .eq("ejercicio_id", ejId)
+        .eq("sesiones.cliente_token", tok)
+        .eq("sesiones.completada", true)
+        .neq("sesion_id", sesId)
+
+      const histValidos = (hist ?? []).filter((r: any) => r.kg != null && r.reps != null)
+      if (histValidos.length === 0) continue // sin base histórica todavía, no aplica PR
+
+      const maxKgHist = Math.max(...histValidos.map((r: any) => r.kg))
+      if (mejorHoy.kg > maxKgHist) {
+        prs.push({ ejercicio: ej.nombre, tipo: "peso", kg: mejorHoy.kg, reps: mejorHoy.reps })
+      } else if (mejorHoy.kg === maxKgHist) {
+        const maxRepsAlPeso = Math.max(
+          ...histValidos.filter((r: any) => r.kg === maxKgHist).map((r: any) => r.reps)
+        )
+        if (mejorHoy.reps > maxRepsAlPeso) {
+          prs.push({ ejercicio: ej.nombre, tipo: "reps", kg: mejorHoy.kg, reps: mejorHoy.reps })
+        }
+      }
+    }
+
+    // 3. Volumen de la sesión anterior (mismo día, completada) para comparar
+    const hoy = new Date().toISOString().split("T")[0]
+    const { data: anteriores } = await supabase
+      .from("sesiones")
+      .select("id")
+      .eq("cliente_token", tok)
+      .eq("dia_id", dia.id)
+      .eq("completada", true)
+      .neq("fecha", hoy)
+      .order("fecha", { ascending: false })
+      .limit(1)
+
+    let volumenAnterior: number | null = null
+    if (anteriores?.length) {
+      const { data: regsAnt } = await supabase
+        .from("registros").select("kg, reps").eq("sesion_id", anteriores[0].id)
+      volumenAnterior = Math.round(
+        (regsAnt ?? [])
+          .filter(r => r.kg != null && r.reps != null)
+          .reduce((acc, r) => acc + (r.kg as number) * (r.reps as number), 0)
+      )
+    }
+
+    // 4. Duración real de la sesión
+    const { data: sesionRow } = await supabase
+      .from("sesiones").select("iniciada_en, completada_en").eq("id", sesId).single()
+
+    let duracionMin: number | null = null
+    if (sesionRow?.iniciada_en && sesionRow?.completada_en) {
+      const ini = new Date(sesionRow.iniciada_en).getTime()
+      const fin = new Date(sesionRow.completada_en).getTime()
+      duracionMin = Math.max(1, Math.round((fin - ini) / 60000))
+    }
+
+    return {
+      diaNombre: dia.nombre,
+      duracionMin,
+      totalEjercicios: Object.keys(porEjercicio).length,
+      totalSeries,
+      volumenTotal,
+      volumenAnterior,
+      prs,
+    }
+  }
+
   const cerrarSesion = async () => {
     if (!sesionId || !diaActivo || !token) return
     await supabase.from("sesiones")
@@ -379,11 +484,9 @@ export default function PlanEntrenamientoPage() {
       }
     }
 
-    if (racha >= 2) {
-      showToast(`🔥 ¡Racha de ${racha} semanas seguidas en ${diaActivo.nombre}!`)
-    } else {
-      showToast("✓ Sesión enviada al coach")
-    }
+    // Resumen completo + PRs, calculados ahora que la sesión ya quedó cerrada en la BD
+    const resumen = await calcularResumenSesion(sesionId, diaActivo, ejercicios, token)
+    setResumenSesion({ ...resumen, racha })
   }
 
   /* ── Cargar ejercicios disponibles para progreso ── */
@@ -1222,6 +1325,14 @@ export default function PlanEntrenamientoPage() {
           animation: "fadeUp 0.3s ease", maxWidth: "90vw", textAlign: "center" }}>
           {toast}
         </div>
+      )}
+
+      {/* Resumen de sesión + PRs */}
+      {resumenSesion && (
+        <ResumenSesionModal
+          data={resumenSesion}
+          onClose={() => setResumenSesion(null)}
+        />
       )}
     </div>
   )
