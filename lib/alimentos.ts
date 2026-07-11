@@ -548,6 +548,8 @@ export const ALIMENTOS = [
 { id: 476, nombre: "Vita Latti Yogurt Griego Natural", kcal: 94, proteina: 6.0, lipidos: 6.0, cho: 5.0 },
 
   { id: 477, nombre: "Sin Culpa - Brownie sin azúcar (Vitad)", kcal: 353, proteina: 4.1, lipidos: 11.0, cho: 80.0 },
+
+  { id: 478, nombre: "Arequipe sin azúcar Natri", kcal: 236, proteina: 7.5, lipidos: 6.7, cho: 57.0 },
   
 ] as const
 export type Alimento = typeof ALIMENTOS[number]
