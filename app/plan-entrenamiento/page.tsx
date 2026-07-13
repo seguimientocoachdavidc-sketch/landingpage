@@ -63,8 +63,8 @@ const DISTRIBUCION_RIVS = [
   { dia: "Día 2", label: "Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
   { dia: "Día 3", label: "Cycling Continuo Z2 + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
   { dia: "Día 4", label: "Tren Superior + Pliometría",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
-  { dia: "Día 5", label: "Cycling Z2 + Carrera",        icono: "🚴🏃", tags: ["CYCLING"] },
-  { dia: "Día 6", label: "Bricks — Bici + Carrera",     icono: "🔥",   tags: ["CYCLING","RUNNING"] },
+  { dia: "Día 5", label: "Intervalos 400 mts",        icono: "🚴🏃", tags: ["RUNNING"] },
+  { dia: "Día 6", label: "Fondo Cycling ",     icono: "🔥",   tags: ["CYCLING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
@@ -77,7 +77,7 @@ const DISTRIBUCION_LINA = [
   { dia: "Miércoles",label: "CORE",                  icono: "🎯",  tags: ["CORE"],               descanso: false },
   { dia: "Jueves",   label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },
   { dia: "Viernes",  label: "Full Body",             icono: "🏋️",  tags: ["MUSCULACIÓN"],        descanso: false },
-  { dia: "Sábado",   label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },
+  { dia: "Sábado",   label: "CORE",                  icono: "🎯",  tags: [],                     descanso: false  },
   { dia: "Domingo",  label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },
 ]
 
