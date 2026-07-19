@@ -489,39 +489,88 @@ export default function PlanEntrenamientoPage() {
     setResumenSesion({ ...resumen, racha })
   }
 
-  /* ── Cargar ejercicios disponibles para progreso ── */
+  /* ── Cargar ejercicios disponibles para progreso ──
+     Trae TODOS los ejercicios de TODOS los programas (activos e
+     inactivos) del cliente, agrupados por nombre único — así el
+     historial completo aparece disponible sin importar cuántas
+     veces haya cambiado la distribución. */
   const cargarEjerciciosProgreso = useCallback(async () => {
-    if (!token || !dias.length) return
-    const diaIds = dias.map(d => d.id)
+    if (!token) return
+
+    // 1. Todos los programas del cliente (sin filtrar por activo)
+    const { data: programas } = await supabase
+      .from("programas")
+      .select("id")
+      .eq("cliente_token", token)
+    if (!programas?.length) return
+    const programaIds = programas.map(p => p.id)
+
+    // 2. Todos los días de esos programas
+    const { data: diasTodos } = await supabase
+      .from("dias")
+      .select("id")
+      .in("programa_id", programaIds)
+    if (!diasTodos?.length) return
+    const diaIds = diasTodos.map(d => d.id)
+
+    // 3. Todos los ejercicios de esos días
     const { data } = await supabase
       .from("ejercicios")
-      .select("id, nombre, dia_id")
+      .select("nombre")
       .in("dia_id", diaIds)
-      .order("orden")
     if (!data) return
-    const ejConDia: EjercicioProgreso[] = data.map(e => ({
-      id: e.id,
-      nombre: e.nombre,
-      dia_nombre: dias.find(d => d.id === e.dia_id)?.nombre ?? "",
-    }))
-    setEjerciciosDisp(ejConDia)
-  }, [token, dias])
+
+    // 4. Nombres únicos, ordenados alfabéticamente
+    const nombresUnicos = Array.from(new Set(data.map(e => e.nombre))).sort()
+    setEjerciciosDisp(
+      nombresUnicos.map(n => ({ id: n, nombre: n, dia_nombre: "Historial completo" }))
+    )
+  }, [token])
 
   useEffect(() => {
     if (vista === "progreso" && dias.length > 0) cargarEjerciciosProgreso()
   }, [vista, dias, cargarEjerciciosProgreso])
 
-  /* ── Cargar datos de progreso para un ejercicio ── */
-  const cargarProgreso = useCallback(async (ejId: string) => {
+  /* ── Cargar datos de progreso para un ejercicio ──
+     Recibe el NOMBRE del ejercicio (no un ejercicio_id puntual),
+     encuentra todos los ejercicio_id históricos que coincidan en
+     cualquier programa del cliente (activo o no) y trae los
+     registros de todos ellos juntos, unificando el historial. */
+  const cargarProgreso = useCallback(async (ejNombre: string) => {
     if (!token) return
     setCargandoProg(true)
     setPuntosProgreso([])
 
-    // Traer todas las sesiones con registros de este ejercicio
+    // 1. Todos los programas del cliente
+    const { data: programas } = await supabase
+      .from("programas")
+      .select("id")
+      .eq("cliente_token", token)
+    const programaIds = (programas ?? []).map(p => p.id)
+    if (!programaIds.length) { setCargandoProg(false); return }
+
+    // 2. Todos los días de esos programas
+    const { data: diasTodos } = await supabase
+      .from("dias")
+      .select("id")
+      .in("programa_id", programaIds)
+    const diaIds = (diasTodos ?? []).map(d => d.id)
+    if (!diaIds.length) { setCargandoProg(false); return }
+
+    // 3. Todos los ejercicio_id que tengan este nombre, en cualquier programa
+    const { data: ejsMismoNombre } = await supabase
+      .from("ejercicios")
+      .select("id")
+      .in("dia_id", diaIds)
+      .eq("nombre", ejNombre)
+    const ejIds = (ejsMismoNombre ?? []).map(e => e.id)
+    if (!ejIds.length) { setCargandoProg(false); return }
+
+    // 4. Registros de TODOS esos ejercicio_id juntos
     const { data: regs } = await supabase
       .from("registros")
       .select("kg, reps, serie_num, sesion_id, sesiones(fecha)")
-      .eq("ejercicio_id", ejId)
+      .in("ejercicio_id", ejIds)
       .order("sesion_id")
 
     if (!regs || !regs.length) { setCargandoProg(false); return }
