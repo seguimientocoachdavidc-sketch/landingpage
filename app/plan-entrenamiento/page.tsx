@@ -706,7 +706,7 @@ export default function PlanEntrenamientoPage() {
             { k: "distancia_km", l: "Distancia (km)", p: "4", tipo: "number" },
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
-          ], notaBricks: undefined", color: O },
+          ], notaBricks: undefined, color: O },
       ]
     : [
         { num: 1, titulo: "Sesión 1", subtitulo: "...", icono: "🏃",
