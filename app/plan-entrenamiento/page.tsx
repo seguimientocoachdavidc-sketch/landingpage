@@ -78,7 +78,7 @@ const DISTRIBUCION_LINA = [
   { dia: "Jueves",   label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },
   { dia: "Viernes",  label: "Tren Superior",         icono: "🏋️",  tags: ["MUSCULACIÓN"],        descanso: false },
   { dia: "Sábado",   label: "Tren Inferior",         icono: "🦵",  tags: [],                     descanso: false  },
-  { dia: "Domingo",  label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },
+  { dia: "Domingo",  label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },                 descanso: true  },
 ]
 
 /* ── Calentamientos ─────────────────────────────────── */
@@ -119,6 +119,14 @@ const CORE_OPS = [
     { nombre: "Plancha Estática",              protocolo: "4 × 40 seg",               descanso: "60 seg", link: null },
     { nombre: "Crunch Abdominal",              protocolo: "3 × RIR 2",                descanso: "60 seg", link: null },
   ]},
+]
+
+/* ── Flexibilidad (solo Lina — 4ta opción de CORE) ──── */
+const FLEXIBILIDAD_LINA = [
+  { nombre: "Dorsiflexión de tobillo",              protocolo: "2 × 10 reps unilaterales", descanso: "30 seg", link: "https://www.youtube.com/watch?v=ykS__niktzg" },
+  { nombre: "Estiramiento de tobillo en sentadilla", protocolo: "2 × 20 seg",               descanso: "30 seg", link: "https://www.youtube.com/shorts/vIXctvReEVQ" },
+  { nombre: "Estiramiento de cadera",                protocolo: "2 × 10 reps unilaterales", descanso: "30 seg", link: "https://www.youtube.com/watch?v=8xZlzcMAtVQ" },
+  { nombre: "Estiramiento de cadera II",             protocolo: "2 × 10 reps",              descanso: "30 seg", link: "https://www.youtube.com/shorts/ixHHbN5xbgE" },
 ]
 
 /* ── Helpers ────────────────────────────────────────── */
@@ -668,6 +676,13 @@ export default function PlanEntrenamientoPage() {
     { k: "core", l: "🎯 CORE", c: P },
     ...(modulos.musculacion ? [{ k: "progreso", l: "📈 Progreso", c: "#a78bfa" }] : []),
   ]
+
+  /* ── Opciones de CORE según cliente ──
+     Todos los clientes ven las 3 opciones normales.
+     Lina además ve una 4ta opción: Flexibilidad. ── */
+  const coreOpsCliente = token === "LinaBeltran"
+    ? [...CORE_OPS, { num: 4, label: "Flexibilidad", ejercicios: FLEXIBILIDAD_LINA }]
+    : CORE_OPS.map(op => ({ ...op, label: undefined as string | undefined }))
 
   /* ── Definición de sesiones running según cliente ── */
   // David: 3 sesiones (martes, miércoles, domingo)
@@ -1294,8 +1309,8 @@ export default function PlanEntrenamientoPage() {
             <div style={{ fontSize: 11, color: P, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>
               CORE · 3 opciones · Disponible cualquier día
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
-              {CORE_OPS.map(op => (
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${coreOpsCliente.length},1fr)`, gap: 8, marginBottom: 20 }}>
+              {coreOpsCliente.map(op => (
                 <button key={op.num} onClick={() => setCoreOp(coreOp === op.num ? null : op.num)}
                   style={{ padding: "12px 8px", textAlign: "center",
                     border: `1px solid ${coreOp === op.num ? P : "rgba(255,255,255,0.1)"}`,
@@ -1304,12 +1319,12 @@ export default function PlanEntrenamientoPage() {
                     fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 700,
                     cursor: "pointer", transition: "all 0.2s" }}>
                   <div style={{ fontSize: 10, color: coreOp === op.num ? P : "rgba(255,255,255,0.25)",
-                    marginBottom: 2, letterSpacing: "0.1em" }}>OPCIÓN</div>
-                  {op.num}
+                    marginBottom: 2, letterSpacing: "0.1em" }}>{op.label ? "" : "OPCIÓN"}</div>
+                  {op.label ?? op.num}
                 </button>
               ))}
             </div>
-            {coreOp !== null && CORE_OPS.find(o => o.num === coreOp)?.ejercicios.map((ej, i) => (
+            {coreOp !== null && coreOpsCliente.find(o => o.num === coreOp)?.ejercicios.map((ej, i) => (
               <div key={i} style={{ marginBottom: 10, padding: "12px 14px",
                 background: "rgba(99,102,241,0.04)", border: "1px solid rgba(99,102,241,0.15)" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
