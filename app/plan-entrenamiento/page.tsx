@@ -709,7 +709,7 @@ export default function PlanEntrenamientoPage() {
           ], notaBricks: .", color: O },
       ]
     : [
-        { num: 1, titulo: "Sesión 1 · Martes", subtitulo: "Zona 2", icono: "🏃",
+        { num: 1, titulo: "Sesión 1", subtitulo: "...", icono: "🏃",
           getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min ? `${s.sesion_1_objetivo_min} min` : null,
           campos: [
@@ -718,7 +718,7 @@ export default function PlanEntrenamientoPage() {
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "135", tipo: "number" },
           ], notaBricks: undefined, color: G },
-        { num: 2, titulo: "Sesión 2 · Miércoles", subtitulo: "Intervalos", icono: "⚡",
+        { num: 2, titulo: "Sesión 2", subtitulo: "...", icono: "⚡",
           getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
           campos: [
@@ -727,7 +727,7 @@ export default function PlanEntrenamientoPage() {
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
           ], notaBricks: undefined, color: G },
-        { num: 3, titulo: "Sesión 3 · Domingo", subtitulo: "Fondo largo", icono: "🛤️",
+        { num: 3, titulo: "Sesión 3", subtitulo: "...", icono: "🛤️",
           getDesc: (s: SemanaRun) => s.sesion_3_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_3_objetivo_min ? `${s.sesion_3_objetivo_min} min` : null,
           campos: [
