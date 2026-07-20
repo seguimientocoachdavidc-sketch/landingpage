@@ -878,14 +878,12 @@ export default function PlanEntrenamientoPage() {
               <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13,
                 fontWeight: 900, textTransform: "uppercase", color: O,
                 marginBottom: 6, letterSpacing: "0.1em" }}>
-                ⚡ Fase de acondicionamiento
+                ⚡ Fase de pregresión
               </div>
               <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)",
                 lineHeight: 1.65, fontWeight: 300 }}>
-                Esta es tu distribución actual de las primeras semanas. El objetivo
-                es revisar técnica, adaptar el cuerpo y construir una base sólida.
-                <strong style={{ color: "#fff" }}> Próximamente se incrementará
-                el volumen, la intensidad y se añadirá un cuarto día de entrenamiento.</strong>
+                El objetivo actual es incrementar el estimulo hacia los músculos por medio de mayor 
+                intensidad e incrementos de series y ejercicios. 
               </p>
             </div>
 
