@@ -78,7 +78,7 @@ const DISTRIBUCION_LINA = [
   { dia: "Jueves",   label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },
   { dia: "Viernes",  label: "Tren Superior",         icono: "🏋️",  tags: ["MUSCULACIÓN"],        descanso: false },
   { dia: "Sábado",   label: "Tren Inferior",         icono: "🦵",  tags: [],                     descanso: false  },
-  { dia: "Domingo",  label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },                 descanso: true  },
+  { dia: "Domingo",  label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },           
 ]
 
 /* ── Calentamientos ─────────────────────────────────── */
