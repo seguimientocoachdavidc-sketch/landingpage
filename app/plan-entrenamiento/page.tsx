@@ -689,7 +689,7 @@ export default function PlanEntrenamientoPage() {
   // Rivs: 2 sesiones (día 1 easy run, día 6 bricks-carrera)
   const sesionesRunConfig = modulos.cycling
     ? [
-        { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Easy Run / Intervalos", icono: "🏃",
+        { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Easy Run", icono: "🏃",
           getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min,
           campos: [
@@ -698,7 +698,7 @@ export default function PlanEntrenamientoPage() {
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "145", tipo: "number" },
           ], notaBricks: undefined, color: G },
-        { num: 2, titulo: "Sesión 2 · Día 6 — Bricks", subtitulo: "Parte carrera tras bici", icono: "🔥🏃",
+        { num: 2, titulo: "Sesión 2 · Día 6 — MMB Bogotá", subtitulo: "", icono: "🔥🏃",
           getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
           campos: [
@@ -706,7 +706,7 @@ export default function PlanEntrenamientoPage() {
             { k: "distancia_km", l: "Distancia (km)", p: "4", tipo: "number" },
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
-          ], notaBricks: "Parte de carrera del Día 6. El ciclismo se registra en Cycling.", color: O },
+          ], notaBricks: .", color: O },
       ]
     : [
         { num: 1, titulo: "Sesión 1 · Martes", subtitulo: "Zona 2", icono: "🏃",
