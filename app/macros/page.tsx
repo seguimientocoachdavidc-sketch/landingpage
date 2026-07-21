@@ -11,11 +11,14 @@ const O = "#f59e0b"
 const P = "#818cf8"
 const WA = "#25D366"
 
-/* ── Tipos ───────────────────────────────────────────────────── */
+/* ── Tipos ─────────────────────────────────────────── */
+interface Cliente { token: string; nombre: string }
 interface EntradaComida {
   id: string; alimentoId: number; nombreAlimento: string
   gramos: number; kcal: number; proteina: number
   lipidos: number; cho: number; comida: number; hora: string
+  fibra: number; sodio: number; hierro: number; grasaSat: number
+  azucares: number; calcio: number; potasio: number
 }
 interface DiaData {
   fecha: string; nombre: string
@@ -32,6 +35,8 @@ interface MetaMacros {
   distribucion: string
   kcal: number; proteina_g: number
   grasa_g: number; cho_g: number
+  fibra_g: number; sodio_mg_max: number; azucares_g_max: number
+  grasa_sat_g_max: number; calcio_mg: number; potasio_mg: number; hierro_mg: number
 }
 
 /* ── Hook responsive ─────────────────────────────────────────── */
@@ -48,13 +53,23 @@ function useBreakpoint() {
 /* ── Helpers ─────────────────────────────────────────────────── */
 function calcular(alimentoId: number, gramos: number) {
   const a = ALIMENTOS.find(x => x.id === alimentoId)
-  if (!a) return { kcal: 0, proteina: 0, lipidos: 0, cho: 0 }
+  if (!a) return {
+    kcal: 0, proteina: 0, lipidos: 0, cho: 0,
+    fibra: 0, sodio: 0, hierro: 0, grasaSat: 0, azucares: 0, calcio: 0, potasio: 0
+  }
   const f = gramos / 100
   return {
     kcal:     Math.round(a.kcal * f),
     proteina: Math.round(a.proteina * f * 10) / 10,
     lipidos:  Math.round(a.lipidos * f * 10) / 10,
     cho:      Math.round(a.cho * f * 10) / 10,
+    fibra:    Math.round((a.fibra ?? 0) * f * 10) / 10,
+    sodio:    Math.round((a.sodio ?? 0) * f),
+    hierro:   Math.round((a.hierro ?? 0) * f * 10) / 10,
+    grasaSat: Math.round((a.grasaSat ?? 0) * f * 10) / 10,
+    azucares: Math.round((a.azucares ?? 0) * f * 10) / 10,
+    calcio:   Math.round((a.calcio ?? 0) * f),
+    potasio:  Math.round((a.potasio ?? 0) * f),
   }
 }
 function horaActual() {
@@ -95,10 +110,8 @@ export default function MacrosPage() {
   const [nombreUsuario, setNombreUsuario] = useState("")
   const [accesoDenegado, setAccesoDenegado] = useState(false)
 
-  // Navegación principal
   const [vistaGlobal, setVistaGlobal] = useState<"inicio"|"macros"|"seguimiento">("inicio")
 
-  // Macros
   const [fechaSel, setFechaSel]     = useState("")
   const [diasGuardados, setDiasGuardados] = useState<string[]>([])
   const [diaData, setDiaData]       = useState<DiaData|null>(null)
@@ -113,7 +126,6 @@ export default function MacrosPage() {
   const [vistaTab, setVistaTab]     = useState<"agregar"|"resumen">("agregar")
   const busquedaRef = useRef<HTMLInputElement>(null)
 
-  // Seguimiento medidas
   const [seguimientos, setSeguimientos]   = useState<Seguimiento[]>([])
   const [cargandoSegs, setCargandoSegs]   = useState(false)
   const [formSeg, setFormSeg]             = useState<Partial<Seguimiento>>({})
@@ -121,7 +133,6 @@ export default function MacrosPage() {
   const [guardandoSeg, setGuardandoSeg]   = useState(false)
   const [segEditando, setSegEditando]     = useState<string|null>(null)
 
-  // Metas de macros
   const [metas, setMetas]                 = useState<MetaMacros[]>([])
   const [metaSel, setMetaSel]             = useState<MetaMacros|null>(null)
   const [tieneCiclado, setTieneCiclado]   = useState(false)
@@ -133,7 +144,6 @@ export default function MacrosPage() {
     setToast({tipo,msg}); setTimeout(()=>setToast(null),4000)
   }
 
-  /* ── Auth ── */
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("token")
     if (!t) { setAccesoDenegado(true); return }
@@ -148,7 +158,6 @@ export default function MacrosPage() {
       .catch(()=>setAccesoDenegado(true))
   }, [])
 
-  /* ── Cargar seguimientos ── */
   const cargarSeguimientos = useCallback(async (tok: string) => {
     setCargandoSegs(true)
     const { data } = await supabase
@@ -165,11 +174,10 @@ export default function MacrosPage() {
     if (token && vistaGlobal==="seguimiento") cargarSeguimientos(token)
   }, [token, vistaGlobal, cargarSeguimientos])
 
-  /* ── Cargar metas de macros ── */
   const cargarMetas = useCallback(async (tok: string) => {
     const { data } = await supabase
       .from("metas_macros")
-      .select("distribucion,kcal,proteina_g,grasa_g,cho_g")
+      .select("distribucion,kcal,proteina_g,grasa_g,cho_g,fibra_g,sodio_mg_max,azucares_g_max,grasa_sat_g_max,calcio_mg,potasio_mg,hierro_mg")
       .eq("cliente_token", tok)
     if (!data || !data.length) return
     setMetas(data)
@@ -183,7 +191,6 @@ export default function MacrosPage() {
 
   useEffect(() => { if (token) cargarMetas(token) }, [token, cargarMetas])
 
-  /* ── Macros: abrir día ── */
   const abrirDia = (tok: string, fecha: string, nombre: string) => {
     const key = getStorageKey(tok, fecha)
     const guardado = localStorage.getItem(key)
@@ -203,7 +210,6 @@ export default function MacrosPage() {
     localStorage.setItem(getStorageKey(token, data.fecha), JSON.stringify(data))
   }
 
-  /* ── Búsqueda alimentos ── */
   useEffect(() => {
     if (busqueda.trim().length < 2) { setResultados([]); return }
     const q = busqueda.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
@@ -214,7 +220,6 @@ export default function MacrosPage() {
     )
   }, [busqueda])
 
-  /* ── Agregar entrada ── */
   const agregarEntrada = () => {
     if (!alimentoSel||!diaData||!token) return
     const uInfo = UNIDADES_ALIMENTOS[alimentoSel.id]
@@ -246,9 +251,16 @@ export default function MacrosPage() {
     proteina: Math.round((acc.proteina+e.proteina)*10)/10,
     lipidos:  Math.round((acc.lipidos+e.lipidos)*10)/10,
     cho:      Math.round((acc.cho+e.cho)*10)/10,
-  }), {kcal:0,proteina:0,lipidos:0,cho:0}) ?? {kcal:0,proteina:0,lipidos:0,cho:0}
+    fibra:    Math.round((acc.fibra+(e.fibra??0))*10)/10,
+    sodio:    Math.round(acc.sodio+(e.sodio??0)),
+    hierro:   Math.round((acc.hierro+(e.hierro??0))*10)/10,
+    grasaSat: Math.round((acc.grasaSat+(e.grasaSat??0))*10)/10,
+    azucares: Math.round((acc.azucares+(e.azucares??0))*10)/10,
+    calcio:   Math.round(acc.calcio+(e.calcio??0)),
+    potasio:  Math.round(acc.potasio+(e.potasio??0)),
+  }), {kcal:0,proteina:0,lipidos:0,cho:0,fibra:0,sodio:0,hierro:0,grasaSat:0,azucares:0,calcio:0,potasio:0})
+    ?? {kcal:0,proteina:0,lipidos:0,cho:0,fibra:0,sodio:0,hierro:0,grasaSat:0,azucares:0,calcio:0,potasio:0}
 
-  /* ── Detectar logros de metas en tiempo real ── */
   useEffect(() => {
     if (!metaSel || !diaData || diaData.cerrado) return
 
@@ -286,7 +298,6 @@ export default function MacrosPage() {
         showToast("ok", check.msg)
         setMetasLogradas(prev => new Set(prev).add(check.key))
       }
-      // Si deja de cumplirse (ej. elimina un alimento), permite re-celebrar después
       if (!check.cumplida && yaCelebrada && check.key !== "kcal_exceso") {
         setMetasLogradas(prev => {
           const next = new Set(prev)
@@ -314,7 +325,6 @@ export default function MacrosPage() {
     setEnviando(false)
   }
 
-  /* ── Guardar seguimiento ── */
   const guardarSeguimiento = async () => {
     if (!token||!fechaSeg) { showToast("err","Selecciona la fecha del registro."); return }
     const tieneDato = Object.entries(formSeg).some(([k,v]) =>
@@ -372,7 +382,6 @@ export default function MacrosPage() {
   if (accesoDenegado) return <AccesoDenegado/>
   if (!token) return <Loading/>
 
-  /* ══ PANTALLA INICIO ═════════════════════════════════════════ */
   if (vistaGlobal==="inicio") return (
     <Pantalla>
       <div style={{marginBottom:48}}>
@@ -386,7 +395,6 @@ export default function MacrosPage() {
           fontWeight:300}}>¿Qué quieres hacer hoy?</p>
       </div>
 
-      {/* Selector distribución para Sofi (ciclado CHO) */}
       {tieneCiclado && (
         <div style={{marginBottom:28,padding:"18px",
           border:"1px solid rgba(245,158,11,0.25)",
@@ -439,10 +447,8 @@ export default function MacrosPage() {
         </div>
       )}
 
-      {/* Módulos */}
       <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:32}}>
 
-        {/* Macros */}
         <button onClick={()=>setVistaGlobal("macros")}
           style={{padding:"20px",background:"rgba(232,0,13,0.06)",
             border:`1px solid ${R}30`,cursor:"pointer",textAlign:"left",
@@ -464,7 +470,6 @@ export default function MacrosPage() {
           </div>
         </button>
 
-        {/* Seguimiento */}
         <button onClick={()=>setVistaGlobal("seguimiento")}
           style={{padding:"20px",background:"rgba(59,130,246,0.06)",
             border:`1px solid ${B}30`,cursor:"pointer",textAlign:"left",
@@ -486,7 +491,6 @@ export default function MacrosPage() {
           </div>
         </button>
 
-        {/* WhatsApp Coach */}
         <a href="https://wa.me/573243747367"
           target="_blank" rel="noopener noreferrer"
           style={{padding:"20px",background:"rgba(37,211,102,0.06)",
@@ -510,7 +514,6 @@ export default function MacrosPage() {
         </a>
       </div>
 
-      {/* Días recientes */}
       {diasGuardados.length > 0 && (
         <div>
           <div className="bc" style={{fontSize:11,color:"rgba(255,255,255,0.3)",
@@ -554,7 +557,6 @@ export default function MacrosPage() {
     </Pantalla>
   )
 
-  /* ══ PANTALLA MACROS ═════════════════════════════════════════ */
   if (vistaGlobal==="macros") return (
     <div style={{background:"#000",color:"#fff",fontFamily:"'Barlow',sans-serif",
       minHeight:"100vh",overflowX:"hidden"}}>
@@ -562,7 +564,6 @@ export default function MacrosPage() {
 
       <div style={{position:"fixed",top:0,left:0,right:0,height:2,background:R,zIndex:200}}/>
 
-      {/* Header macros */}
       <header style={{position:"fixed",top:2,left:0,right:0,zIndex:100,
         background:"rgba(0,0,0,0.95)",backdropFilter:"blur(12px)",
         borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
@@ -594,7 +595,6 @@ export default function MacrosPage() {
         </div>
       </header>
 
-      {/* Selector fecha si no hay día abierto */}
       {!diaData ? (
         <div style={{maxWidth:560,margin:"0 auto",padding:"80px 20px 40px"}}>
           <div className="bc" style={{fontSize:11,color:R,letterSpacing:"0.3em",
@@ -662,9 +662,7 @@ export default function MacrosPage() {
           )}
         </div>
       ) : (
-        /* ── Día abierto ── */
         <>
-          {/* Tabs */}
           <div style={{position:"fixed",top:56,left:0,right:0,zIndex:99,
             background:"rgba(0,0,0,0.92)",backdropFilter:"blur(8px)",
             borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
@@ -689,7 +687,6 @@ export default function MacrosPage() {
           <div style={{maxWidth:960,margin:"0 auto",
             padding:isMobile?"108px 16px 80px":"108px 32px 80px"}}>
 
-            {/* Fecha + estado */}
             <div style={{marginBottom:24,display:"flex",alignItems:"flex-start",
               justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
               <div>
@@ -716,7 +713,6 @@ export default function MacrosPage() {
 
             <TotalesBar totales={totales} isMobile={isMobile} meta={metaSel}/>
 
-            {/* Vista agregar */}
             {vistaTab==="agregar" && (
               <div style={{animation:"fadeUp 0.3s ease"}}>
                 {diaData.cerrado ? (
@@ -743,7 +739,6 @@ export default function MacrosPage() {
                   </div>
                 ) : (
                   <>
-                    {/* Selector comida */}
                     <div style={{marginBottom:20}}>
                       <label className="bc" style={{display:"block",fontSize:11,
                         fontWeight:700,letterSpacing:"0.25em",textTransform:"uppercase",
@@ -772,7 +767,6 @@ export default function MacrosPage() {
                       </div>
                     </div>
 
-                    {/* Buscador */}
                     <div style={{marginBottom:16,position:"relative"}}>
                       <label className="bc" style={{display:"block",fontSize:11,
                         fontWeight:700,letterSpacing:"0.25em",textTransform:"uppercase",
@@ -830,11 +824,9 @@ export default function MacrosPage() {
                       )}
                     </div>
 
-                    {/* Gramos */}
                     {alimentoSel&&(
                       <div style={{animation:"slideIn 0.2s ease",marginBottom:16}}>
 
-                        {/* Toggle gramos / unidades — solo si el alimento tiene unidad definida */}
                         {unidadInfo&&(
                           <div style={{display:"flex",gap:6,marginBottom:10}}>
                             {(["unidades","gramos"] as const).map(modo=>(
@@ -959,7 +951,6 @@ export default function MacrosPage() {
               </div>
             )}
 
-            {/* Vista resumen */}
             {vistaTab==="resumen"&&(
               <div style={{animation:"fadeUp 0.3s ease"}}>
                 {diaData.entradas.length===0?(
@@ -1039,11 +1030,9 @@ export default function MacrosPage() {
     </div>
   )
 
-  /* ══ PANTALLA SEGUIMIENTO ════════════════════════════════════ */
   return (
     <Pantalla onBack={()=>setVistaGlobal("inicio")} titulo="Seguimiento de Medidas"
       accentColor={B}>
-      {/* Formulario nuevo registro */}
       <div style={{marginBottom:28,padding:"20px",
         border:`1px solid ${segEditando?"rgba(245,158,11,0.3)":B+"30"}`,
         background:segEditando?"rgba(245,158,11,0.04)":`${B}06`}}>
@@ -1055,7 +1044,6 @@ export default function MacrosPage() {
           {segEditando?"✏️ Editando registro":"+ Nuevo registro semanal"}
         </div>
 
-        {/* Fecha */}
         <div style={{marginBottom:14}}>
           <label className="bc" style={{display:"block",fontSize:11,fontWeight:700,
             letterSpacing:"0.2em",textTransform:"uppercase",
@@ -1072,7 +1060,6 @@ export default function MacrosPage() {
               fontSize:15,outline:"none",colorScheme:"dark"}}/>
         </div>
 
-        {/* Grid de medidas */}
         <div style={{display:"grid",
           gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",
           gap:12,marginBottom:14}}>
@@ -1103,7 +1090,6 @@ export default function MacrosPage() {
           ))}
         </div>
 
-        {/* Nota */}
         <div style={{marginBottom:14}}>
           <label className="bc" style={{display:"block",fontSize:10,fontWeight:700,
             letterSpacing:"0.15em",textTransform:"uppercase",
@@ -1149,7 +1135,6 @@ export default function MacrosPage() {
         </div>
       </div>
 
-      {/* Historial */}
       {cargandoSegs?(
         <div style={{textAlign:"center",padding:"32px",
           color:"rgba(255,255,255,0.3)",fontSize:14}}>
@@ -1171,13 +1156,11 @@ export default function MacrosPage() {
             Historial de medidas — {seguimientos.length} registros
           </div>
 
-          {/* Mini gráfica de peso */}
           {seguimientos.filter(s=>s.peso_kg).length>=2&&(
             <MiniGraficaPeso
               datos={seguimientos.filter(s=>s.peso_kg).slice(0,8).reverse()}/>
           )}
 
-          {/* Cards de registros */}
           {seguimientos.map(seg=>(
             <div key={seg.id} style={{marginBottom:10,padding:"14px 16px",
               background:"rgba(255,255,255,0.02)",
@@ -1248,7 +1231,6 @@ export default function MacrosPage() {
 
 /* ══ COMPONENTES REUTILIZABLES ════════════════════════════════ */
 
-/* Pantalla wrapper con header consistente */
 function Pantalla({children, onBack, titulo, accentColor}:{
   children: React.ReactNode
   onBack?: ()=>void
@@ -1294,7 +1276,6 @@ function Pantalla({children, onBack, titulo, accentColor}:{
   )
 }
 
-/* Mini gráfica de peso con SVG */
 function MiniGraficaPeso({datos}:{datos:Seguimiento[]}) {
   const W=340, H=80, PAD=8
   const pesos = datos.map(d=>d.peso_kg!)
@@ -1354,9 +1335,13 @@ function MiniGraficaPeso({datos}:{datos:Seguimiento[]}) {
 }
 
 function TotalesBar({totales,isMobile,meta}:{
-  totales:{kcal:number;proteina:number;lipidos:number;cho:number}
+  totales:{
+    kcal:number;proteina:number;lipidos:number;cho:number
+    fibra:number;sodio:number;hierro:number;grasaSat:number
+    azucares:number;calcio:number;potasio:number
+  }
   isMobile:boolean
-  meta:{kcal:number;proteina_g:number;grasa_g:number;cho_g:number}|null
+  meta:MetaMacros|null
 }) {
   const items = [
     {label:"Calorías", val:totales.kcal,     unit:"kcal", color:"#fff",   meta:meta?.kcal},
@@ -1364,9 +1349,19 @@ function TotalesBar({totales,isMobile,meta}:{
     {label:"Grasas",   val:totales.lipidos,   unit:"g",    color:O,        meta:meta?.grasa_g},
     {label:"Carbos",   val:totales.cho,       unit:"g",    color:B,        meta:meta?.cho_g},
   ]
+
+  const micronutrientes = [
+    { label: "Fibra",          val: totales.fibra,    unit: "g",  meta: meta?.fibra_g,         color: "#22c55e" },
+    { label: "Sodio",          val: totales.sodio,    unit: "mg", meta: meta?.sodio_mg_max,    color: "#f59e0b" },
+    { label: "Azúcares",       val: totales.azucares, unit: "g",  meta: meta?.azucares_g_max,  color: "#f59e0b" },
+    { label: "Grasa saturada", val: totales.grasaSat, unit: "g",  meta: meta?.grasa_sat_g_max, color: "#f59e0b" },
+    { label: "Hierro",         val: totales.hierro,   unit: "mg", meta: meta?.hierro_mg,       color: "#818cf8" },
+    { label: "Calcio",         val: totales.calcio,   unit: "mg", meta: meta?.calcio_mg,       color: "#3b82f6" },
+    { label: "Potasio",        val: totales.potasio,  unit: "mg", meta: meta?.potasio_mg,      color: "#3b82f6" },
+  ]
+
   return (
     <div style={{marginBottom:24}}>
-      {/* Números */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:2,marginBottom:10}}>
         {items.map(item=>(
           <div key={item.label} style={{background:"#0a0a0a",
@@ -1390,7 +1385,6 @@ function TotalesBar({totales,isMobile,meta}:{
         ))}
       </div>
 
-      {/* Barras de progreso */}
       {meta && (
         <div style={{display:"flex",flexDirection:"column",gap:6,
           padding:"14px 16px",background:"rgba(255,255,255,0.02)",
@@ -1421,7 +1415,6 @@ function TotalesBar({totales,isMobile,meta}:{
                     </span>
                   </span>
                 </div>
-                {/* Barra */}
                 <div style={{height:6,background:"rgba(255,255,255,0.08)",
                   borderRadius:3,overflow:"hidden"}}>
                   <div style={{
@@ -1450,7 +1443,57 @@ function TotalesBar({totales,isMobile,meta}:{
         </div>
       )}
 
-      {/* Hint si no hay meta seleccionada */}
+      {meta && (
+        <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:6,
+          padding:"14px 16px",background:"rgba(255,255,255,0.02)",
+          border:"1px solid rgba(255,255,255,0.06)"}}>
+          <div className="bc" style={{fontSize:10,color:"rgba(255,255,255,0.3)",
+            letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:4}}>
+            Micronutrientes
+          </div>
+          {micronutrientes.map(item => {
+            if (!item.meta) return null
+            const pct = Math.min(Math.round((item.val/item.meta)*100), 100)
+            const excede = item.val > item.meta
+            return (
+              <div key={item.label}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                  <span className="bc" style={{fontSize:11,fontWeight:700,
+                    letterSpacing:"0.08em",textTransform:"uppercase",
+                    color:excede?R:"rgba(255,255,255,0.5)"}}>
+                    {item.label}
+                  </span>
+                  <span className="bc" style={{fontSize:11,fontWeight:700,
+                    color:excede?R:item.color}}>
+                    {item.val}{item.unit}
+                    <span style={{color:"rgba(255,255,255,0.3)",fontWeight:400}}>
+                      {" "}/ {item.meta}{item.unit}
+                    </span>
+                    <span style={{marginLeft:6,
+                      color:excede?R:pct>=80?G:"rgba(255,255,255,0.4)"}}>
+                      {pct}%
+                    </span>
+                  </span>
+                </div>
+                <div style={{height:6,background:"rgba(255,255,255,0.08)",
+                  borderRadius:3,overflow:"hidden"}}>
+                  <div style={{
+                    height:"100%", width:`${pct}%`,
+                    background: excede ? R : pct >= 90 ? G : `${item.color}80`,
+                    borderRadius:3, transition:"width 0.5s ease"
+                  }}/>
+                </div>
+                {excede && (
+                  <div style={{fontSize:10,color:R,marginTop:2}}>
+                    +{Math.round((item.val-item.meta)*10)/10}{item.unit} sobre el objetivo
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       {!meta && (
         <div style={{padding:"10px 14px",background:"rgba(255,255,255,0.02)",
           border:"1px solid rgba(255,255,255,0.06)",fontSize:12,
