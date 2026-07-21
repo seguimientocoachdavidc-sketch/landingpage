@@ -38,6 +38,9 @@ interface MetaMacros {
   fibra_g: number; sodio_mg_max: number; azucares_g_max: number
   grasa_sat_g_max: number; calcio_mg: number; potasio_mg: number; hierro_mg: number
 }
+interface RegistroDiario {
+  fecha: string; kcal_total: number
+}
 
 /* ── Hook responsive ─────────────────────────────────────────── */
 function useBreakpoint() {
@@ -139,6 +142,11 @@ export default function MacrosPage() {
   const [distribSeleccionada, setDistribSeleccionada] = useState<string|null>(null)
   const [metasLogradas, setMetasLogradas] = useState<Set<string>>(new Set())
 
+  // Déficit semanal real
+  const [kcalMantenimiento, setKcalMantenimiento] = useState<number|null>(null)
+  const [registrosSemana, setRegistrosSemana] = useState<RegistroDiario[]>([])
+  const [cargandoDeficit, setCargandoDeficit] = useState(false)
+
   const [toast, setToast] = useState<{tipo:"ok"|"err"; msg:string}|null>(null)
   const showToast = (tipo:"ok"|"err", msg:string) => {
     setToast({tipo,msg}); setTimeout(()=>setToast(null),4000)
@@ -190,6 +198,44 @@ export default function MacrosPage() {
   }, [])
 
   useEffect(() => { if (token) cargarMetas(token) }, [token, cargarMetas])
+
+  /* ── Cargar déficit semanal real ── */
+  const cargarDeficitSemanal = useCallback(async (tok: string) => {
+    setCargandoDeficit(true)
+    const { data: cliente } = await supabase
+      .from("clientes")
+      .select("kcal_mantenimiento")
+      .eq("token", tok)
+      .single()
+
+    if (!cliente?.kcal_mantenimiento) {
+      setKcalMantenimiento(null)
+      setCargandoDeficit(false)
+      return
+    }
+    setKcalMantenimiento(cliente.kcal_mantenimiento)
+
+    // Lunes de esta semana como inicio (semana ISO)
+    const hoy = new Date()
+    const diaSemana = hoy.getDay() === 0 ? 7 : hoy.getDay() // domingo=0 -> 7
+    const lunes = new Date(hoy)
+    lunes.setDate(hoy.getDate() - (diaSemana - 1))
+    const lunesStr = lunes.toISOString().split("T")[0]
+
+    const { data: registros } = await supabase
+      .from("registros_diarios_macros")
+      .select("fecha, kcal_total")
+      .eq("cliente_token", tok)
+      .gte("fecha", lunesStr)
+      .order("fecha", { ascending: true })
+
+    setRegistrosSemana(registros ?? [])
+    setCargandoDeficit(false)
+  }, [])
+
+  useEffect(() => {
+    if (token && vistaGlobal === "seguimiento") cargarDeficitSemanal(token)
+  }, [token, vistaGlobal, cargarDeficitSemanal])
 
   const abrirDia = (tok: string, fecha: string, nombre: string) => {
     const key = getStorageKey(tok, fecha)
@@ -1135,6 +1181,16 @@ export default function MacrosPage() {
         </div>
       </div>
 
+      {/* Déficit semanal real */}
+      {(kcalMantenimiento || cargandoDeficit) && (
+        <DeficitSemanal
+          kcalMantenimiento={kcalMantenimiento}
+          registros={registrosSemana}
+          cargando={cargandoDeficit}
+          metaKcal={metaSel?.kcal ?? null}
+        />
+      )}
+
       {cargandoSegs?(
         <div style={{textAlign:"center",padding:"32px",
           color:"rgba(255,255,255,0.3)",fontSize:14}}>
@@ -1272,6 +1328,93 @@ function Pantalla({children, onBack, titulo, accentColor}:{
       <div style={{maxWidth:680,margin:"0 auto",padding:"32px 20px 80px"}}>
         {children}
       </div>
+    </div>
+  )
+}
+
+function DeficitSemanal({kcalMantenimiento, registros, cargando, metaKcal}:{
+  kcalMantenimiento: number|null
+  registros: {fecha:string; kcal_total:number}[]
+  cargando: boolean
+  metaKcal: number|null
+}) {
+  const GD = "#22c55e"
+  const OD = "#f59e0b"
+
+  if (cargando) {
+    return (
+      <div style={{marginBottom:20,padding:"16px",textAlign:"center",
+        color:"rgba(255,255,255,0.3)",fontSize:13,
+        border:"1px solid rgba(255,255,255,0.06)"}}>
+        Calculando déficit semanal...
+      </div>
+    )
+  }
+  if (!kcalMantenimiento) return null
+
+  const diasRegistrados = registros.length
+  const deficitReal = registros.reduce(
+    (acc, r) => acc + (kcalMantenimiento - r.kcal_total), 0
+  )
+  const kgEquivalente = Math.round((deficitReal / 7700) * 100) / 100
+  const vaGanando = deficitReal < 0 // comió más de lo que gasta -> superávit
+
+  const deficitEsperadoSemana = metaKcal
+    ? Math.round((kcalMantenimiento - metaKcal) * 7)
+    : null
+
+  return (
+    <div style={{marginBottom:20,padding:"16px 18px",
+      background:"rgba(255,255,255,0.02)",
+      border:"1px solid rgba(255,255,255,0.07)"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+        marginBottom:12}}>
+        <span className="bc" style={{fontSize:11,color:"rgba(255,255,255,0.35)",
+          letterSpacing:"0.15em",textTransform:"uppercase"}}>
+          Déficit real — esta semana
+        </span>
+        <span className="b" style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>
+          {diasRegistrados} {diasRegistrados===1?"día registrado":"días registrados"}
+        </span>
+      </div>
+
+      {diasRegistrados === 0 ? (
+        <p className="b" style={{fontSize:13,color:"rgba(255,255,255,0.35)",
+          fontWeight:300,lineHeight:1.5}}>
+          Aún no hay días cerrados esta semana. En cuanto registres y cierres
+          un día de macros, aquí verás tu déficit real acumulado.
+        </p>
+      ) : (
+        <>
+          <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:6}}>
+            <span className="bc" style={{fontSize:32,fontWeight:900,
+              color:vaGanando?OD:GD}}>
+              {deficitReal>0?"-":"+"}{Math.abs(Math.round(deficitReal))}
+            </span>
+            <span className="b" style={{fontSize:13,color:"rgba(255,255,255,0.4)"}}>
+              kcal acumuladas · ≈ {vaGanando?"+":"-"}{Math.abs(kgEquivalente)} kg
+            </span>
+          </div>
+          <p className="b" style={{fontSize:12,color:"rgba(255,255,255,0.35)",
+            lineHeight:1.6,fontWeight:300,marginBottom:10}}>
+            {vaGanando
+              ? "Esta semana has comido por encima de tu gasto — en superávit, no en déficit."
+              : "Déficit calórico real acumulado con base en lo que has registrado."}
+          </p>
+
+          {deficitEsperadoSemana !== null && (
+            <div style={{paddingTop:10,borderTop:"1px solid rgba(255,255,255,0.06)",
+              display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span className="b" style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>
+                Tu objetivo asume (semana completa)
+              </span>
+              <span className="bc" style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.5)"}}>
+                -{deficitEsperadoSemana} kcal
+              </span>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
