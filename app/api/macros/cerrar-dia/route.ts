@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { Resend } from "resend"
+import { supabase } from "@/lib/supabase"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -18,6 +19,24 @@ export async function POST(req: Request) {
       "julio","agosto","septiembre","octubre","noviembre","diciembre",
     ]
     const fechaLegible = `${d} de ${meses[parseInt(m) - 1]} de ${y}`
+
+    // ── Guardar el registro diario en Supabase (para calcular déficit
+    //    semanal real después). Si falla, no bloquea el envío del email.
+    const { error: errorRegistro } = await supabase
+      .from("registros_diarios_macros")
+      .upsert({
+        cliente_token: token,
+        fecha: fecha,
+        kcal_total: totales.kcal,
+        proteina_total: totales.proteina,
+        lipidos_total: totales.lipidos,
+        cho_total: totales.cho,
+      }, { onConflict: "cliente_token,fecha" })
+
+    if (errorRegistro) {
+      console.error("Error guardando registro diario:", errorRegistro)
+      // No se detiene el flujo — el email sigue enviándose normalmente
+    }
 
     // Agrupar por comida
     const porComida = [1,2,3,4,5,6]
