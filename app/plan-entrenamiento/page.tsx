@@ -62,9 +62,9 @@ const DISTRIBUCION_RIVS = [
   { dia: "Día 1", label: "Tren Superior + Easy Run Z2", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
   { dia: "Día 2", label: "Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
   { dia: "Día 3", label: "Cycling Continuo Z2 + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
-  { dia: "Día 4", label: "Tren Superior",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
-  { dia: "Día 5", label: "Descanso",        icono: "😴", tags: ["RUNNING"] },
-  { dia: "Día 6", label: "MMB ",     icono: "🏃",   tags: ["RUNNING"] },
+  { dia: "Día 4", label: "Tren Superior + Pliometría",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
+  { dia: "Día 5", label: "Intervalos 400 mts",        icono: "🚴🏃", tags: ["RUNNING"] },
+  { dia: "Día 6", label: "Fondo Cycling ",     icono: "🔥",   tags: ["CYCLING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
@@ -74,11 +74,11 @@ const TAG_COLORS: Record<string, string> = {
 const DISTRIBUCION_LINA = [
   { dia: "Lunes",    label: "Full Body",             icono: "🏋️",  tags: ["MUSCULACIÓN"],        descanso: false },
   { dia: "Martes",   label: "Tren Inferior",         icono: "🦵",  tags: ["MUSCULACIÓN"],        descanso: false },
-  { dia: "Miércoles",label: "CORE + Flexibilidad",   icono: "🎯",  tags: ["CORE"],               descanso: false },
+  { dia: "Miércoles",label: "CORE",                  icono: "🎯",  tags: ["CORE"],               descanso: false },
   { dia: "Jueves",   label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },
-  { dia: "Viernes",  label: "Tren Superior",         icono: "🏋️",  tags: ["MUSCULACIÓN"],        descanso: false },
-  { dia: "Sábado",   label: "Tren Inferior",         icono: "🦵",  tags: [],                     descanso: false  },
-  { dia: "Domingo",  label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },           
+  { dia: "Viernes",  label: "Full Body",             icono: "🏋️",  tags: ["MUSCULACIÓN"],        descanso: false },
+  { dia: "Sábado",   label: "CORE",                  icono: "🎯",  tags: [],                     descanso: false  },
+  { dia: "Domingo",  label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },
 ]
 
 /* ── Calentamientos ─────────────────────────────────── */
@@ -178,6 +178,7 @@ export default function PlanEntrenamientoPage() {
   const [ants, setAnts]             = useState<Record<string, { fecha: string; data: RegAnterior[] }>>({})
   const [imgErr, setImgErr]         = useState<Record<string, boolean>>({})
   const [resumenSesion, setResumenSesion] = useState<ResumenSesionData | null>(null)
+  const [insightSesion, setInsightSesion] = useState<{tipo:string; mensaje:string} | null>(null)
 
   // Running
   const [semanasRun, setSemanasRun]   = useState<SemanaRun[]>([])
@@ -287,6 +288,7 @@ export default function PlanEntrenamientoPage() {
     if (!token) return
     setDiaActivo(dia); setEjers([]); setRegs({}); setAnts({})
     setSesionId(null); setSesionCerrada(false); setImgErr({})
+    setInsightSesion(null)
 
     const { data: ejs } = await supabase.from("ejercicios").select("*")
       .eq("dia_id", dia.id).order("orden")
@@ -337,7 +339,82 @@ export default function PlanEntrenamientoPage() {
         setAnts(ma)
       }
     }
+
+    // Generar el mensaje pre-sesión con la fecha de la última sesión (o null)
+    const insight = await generarInsightPreSesion(token, dia, ant?.length ? ant[0].fecha : null)
+    setInsightSesion(insight)
   }, [token])
+
+  /* ── Generar mensaje pre-sesión ──
+     Prioridad: primera vez en este día -> reenganche tras pausa larga
+     -> racha activa -> frase motivacional rotativa por defecto */
+  const FRASES_MOTIVACIONALES = [
+    "La consistencia le gana a la intensidad. Vamos con lo de hoy.",
+    "No necesitas sentirte listo para empezar. Solo empieza.",
+    "Cada serie de hoy es una inversión que no ves de inmediato.",
+    "Aparecer hoy, aunque no sea tu mejor día, ya es ganar.",
+    "El progreso no siempre se siente — pero se acumula.",
+    "Hoy no compites con nadie más que con tu última sesión.",
+  ]
+
+  const generarInsightPreSesion = async (
+    tok: string, dia: Dia, ultimaFecha: string | null
+  ): Promise<{tipo:string; mensaje:string}> => {
+    // 1. Primera vez en este día
+    if (!ultimaFecha) {
+      return {
+        tipo: "primera-vez",
+        mensaje: `Primera vez en ${dia.nombre.replace(/Día \d+ — /, "")}. Hoy marcas tu punto de partida.`
+      }
+    }
+
+    // 2. Calcular días desde la última vez que se entrenó este día
+    const hoy = new Date().toISOString().split("T")[0]
+    const msPorDia = 1000 * 60 * 60 * 24
+    const diasDesde = Math.round(
+      (new Date(hoy).getTime() - new Date(ultimaFecha).getTime()) / msPorDia
+    )
+
+    if (diasDesde > 10) {
+      return {
+        tipo: "reenganche",
+        mensaje: "Volviste. Eso es lo que cuenta — retomemos desde aquí, sin culpa por la pausa."
+      }
+    }
+
+    // 3. Calcular racha: sesiones completadas consecutivas de este día (antes de hoy)
+    const { data: historico } = await supabase
+      .from("sesiones")
+      .select("id, fecha, completada")
+      .eq("cliente_token", tok)
+      .eq("dia_id", dia.id)
+      .neq("fecha", hoy)
+      .order("fecha", { ascending: false })
+
+    let racha = 0
+    if (historico) {
+      for (const s of historico) {
+        if (!s.completada) break
+        const { count } = await supabase
+          .from("registros")
+          .select("*", { count: "exact", head: true })
+          .eq("sesion_id", s.id)
+        if ((count ?? 0) > 0) racha++
+        else break
+      }
+    }
+
+    if (racha >= 3) {
+      return {
+        tipo: "racha",
+        mensaje: `Llevas ${racha} semanas seguidas completando este día. No la rompas hoy.`
+      }
+    }
+
+    // 4. Fallback — frase rotativa (determinística por fecha, no aleatoria en cada render)
+    const indice = new Date(hoy).getDate() % FRASES_MOTIVACIONALES.length
+    return { tipo: "motivacional", mensaje: FRASES_MOTIVACIONALES[indice] }
+  }
 
   const guardarSerie = async (ejId: string, serie: number) => {
     if (!sesionId || sesionCerrada) return
@@ -689,7 +766,7 @@ export default function PlanEntrenamientoPage() {
   // Rivs: 2 sesiones (día 1 easy run, día 6 bricks-carrera)
   const sesionesRunConfig = modulos.cycling
     ? [
-        { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Easy Run", icono: "🏃",
+        { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Easy Run / Intervalos", icono: "🏃",
           getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min,
           campos: [
@@ -698,7 +775,7 @@ export default function PlanEntrenamientoPage() {
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "145", tipo: "number" },
           ], notaBricks: undefined, color: G },
-        { num: 2, titulo: "Sesión 2 · Día 6 — MMB Bogotá", subtitulo: "", icono: "🔥🏃",
+        { num: 2, titulo: "Sesión 2 · Día 6 — Bricks", subtitulo: "Parte carrera tras bici", icono: "🔥🏃",
           getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
           campos: [
@@ -706,10 +783,10 @@ export default function PlanEntrenamientoPage() {
             { k: "distancia_km", l: "Distancia (km)", p: "4", tipo: "number" },
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
-          ], notaBricks: undefined, color: O },
+          ], notaBricks: "Parte de carrera del Día 6. El ciclismo se registra en Cycling.", color: O },
       ]
     : [
-        { num: 1, titulo: "Sesión 1", subtitulo: "...", icono: "🏃",
+        { num: 1, titulo: "Sesión 1 · Martes", subtitulo: "Zona 2", icono: "🏃",
           getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min ? `${s.sesion_1_objetivo_min} min` : null,
           campos: [
@@ -718,7 +795,7 @@ export default function PlanEntrenamientoPage() {
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "135", tipo: "number" },
           ], notaBricks: undefined, color: G },
-        { num: 2, titulo: "Sesión 2", subtitulo: "...", icono: "⚡",
+        { num: 2, titulo: "Sesión 2 · Miércoles", subtitulo: "Intervalos", icono: "⚡",
           getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
           campos: [
@@ -727,7 +804,7 @@ export default function PlanEntrenamientoPage() {
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
           ], notaBricks: undefined, color: G },
-        { num: 3, titulo: "Sesión 3", subtitulo: "...", icono: "🛤️",
+        { num: 3, titulo: "Sesión 3 · Domingo", subtitulo: "Fondo largo", icono: "🛤️",
           getDesc: (s: SemanaRun) => s.sesion_3_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_3_objetivo_min ? `${s.sesion_3_objetivo_min} min` : null,
           campos: [
@@ -878,12 +955,14 @@ export default function PlanEntrenamientoPage() {
               <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13,
                 fontWeight: 900, textTransform: "uppercase", color: O,
                 marginBottom: 6, letterSpacing: "0.1em" }}>
-                ⚡ Fase de pregresión
+                ⚡ Fase de acondicionamiento
               </div>
               <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)",
                 lineHeight: 1.65, fontWeight: 300 }}>
-                El objetivo actual es incrementar el estimulo hacia los músculos por medio de mayor 
-                intensidad e incrementos de series y ejercicios. 
+                Esta es tu distribución actual de las primeras semanas. El objetivo
+                es revisar técnica, adaptar el cuerpo y construir una base sólida.
+                <strong style={{ color: "#fff" }}> Próximamente se incrementará
+                el volumen, la intensidad y se añadirá un cuarto día de entrenamiento.</strong>
               </p>
             </div>
 
@@ -946,6 +1025,12 @@ export default function PlanEntrenamientoPage() {
         {/* ══ MUSCULACIÓN ══ */}
         {vista === "muscu" && (
           <div style={{ animation: "fadeUp 0.3s ease" }}>
+
+            {/* Insight pre-sesión */}
+            {diaActivo && insightSesion && !sesionCerrada && (
+              <InsightPreSesion insight={insightSesion} onClose={() => setInsightSesion(null)} />
+            )}
+
             {/* Calentamiento */}
             {diaActivo && (
               <div style={{ marginBottom: 16, border: "1px solid rgba(245,158,11,0.2)",
@@ -1270,13 +1355,13 @@ export default function PlanEntrenamientoPage() {
               ))}
             </div>
             {semanaCyc && [
-              { num: 1, titulo: "Sesión 1 · Día 3", subtitulo: "Continuo Z2 con progresivos", icono: "🚴", color: B,
+              { num: 1, titulo: "Sesión 1 · Día 3", subtitulo: "Continuo Z2", icono: "🚴", color: B,
                 desc: semanaCyc.sesion_1_descripcion, obj: semanaCyc.sesion_1_objetivo },
-              { num: 2, titulo: "Sesión 2 · Día 5", subtitulo: "", icono: "🚴🏃", color: B,
+              { num: 2, titulo: "Sesión 2 · Día 5", subtitulo: "Cycling Z2 + Carrera", icono: "🚴🏃", color: B,
                 desc: semanaCyc.sesion_2_descripcion, obj: semanaCyc.sesion_2_objetivo },
-              { num: 3, titulo: "Sesión 3 · Día 6", subtitulo: "", icono: "🔥🚴", color: O,
+              { num: 3, titulo: "Sesión 3 · Día 6 — Bricks", subtitulo: "Parte bici antes de correr", icono: "🔥🚴", color: O,
                 desc: semanaCyc.sesion_3_descripcion, obj: semanaCyc.sesion_3_objetivo,
-                notaBricks: "" },
+                notaBricks: "Parte de ciclismo del Día 6. La carrera se registra en Running." },
             ].map(cfg => (
               <SesionCard key={cfg.num}
                 color={cfg.color}
@@ -1396,6 +1481,39 @@ export default function PlanEntrenamientoPage() {
           onClose={() => setResumenSesion(null)}
         />
       )}
+    </div>
+  )
+}
+
+/* ══ COMPONENTE: Insight pre-sesión ════════════════════ */
+function InsightPreSesion({insight, onClose}:{
+  insight: {tipo:string; mensaje:string}
+  onClose: () => void
+}) {
+  const R = "#E8000D"
+  const config: Record<string, {icono:string; color:string}> = {
+    "primera-vez":   { icono: "🚀", color: "#818cf8" },
+    "reenganche":    { icono: "👋", color: "#f59e0b" },
+    "racha":         { icono: "🔥", color: R },
+    "motivacional":  { icono: "💬", color: "rgba(255,255,255,0.5)" },
+  }
+  const c = config[insight.tipo] ?? config["motivacional"]
+
+  return (
+    <div style={{ marginBottom: 16, padding: "14px 16px",
+      background: `${c.color}0d`, border: `1px solid ${c.color}30`,
+      display: "flex", alignItems: "flex-start", gap: 12,
+      animation: "fadeUp 0.3s ease" }}>
+      <span style={{ fontSize: 20, flexShrink: 0, lineHeight: 1.3 }}>{c.icono}</span>
+      <p style={{ flex: 1, fontSize: 13, color: "rgba(255,255,255,0.8)",
+        lineHeight: 1.55, fontWeight: 400, margin: 0 }}>
+        {insight.mensaje}
+      </p>
+      <button onClick={onClose}
+        style={{ background: "none", border: "none", color: "rgba(255,255,255,0.25)",
+          cursor: "pointer", fontSize: 14, flexShrink: 0, padding: "2px 4px" }}>
+        ✕
+      </button>
     </div>
   )
 }
