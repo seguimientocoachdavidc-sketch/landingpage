@@ -38,6 +38,10 @@ interface EjercicioProgreso {
   nombre: string
   dia_nombre: string
 }
+interface NotaCoach {
+  mensaje: string
+  actualizado_en: string
+}
 interface PuntoProgreso {
   fecha: string
   fechaCorta: string
@@ -179,6 +183,7 @@ export default function PlanEntrenamientoPage() {
   const [imgErr, setImgErr]         = useState<Record<string, boolean>>({})
   const [resumenSesion, setResumenSesion] = useState<ResumenSesionData | null>(null)
   const [insightSesion, setInsightSesion] = useState<{tipo:string; mensaje:string} | null>(null)
+  const [notaCoach, setNotaCoach] = useState<NotaCoach | null>(null)
 
   // Running
   const [semanasRun, setSemanasRun]   = useState<SemanaRun[]>([])
@@ -221,8 +226,19 @@ export default function PlanEntrenamientoPage() {
         if (error || !data) { setDenegado(true); setCargando(false); return }
         setCliente(data)
         cargarModulos(t)
+        cargarNotaCoach(t)
       })
   }, [])
+
+  /* ── Cargar nota semanal del coach ── */
+  const cargarNotaCoach = async (tok: string) => {
+    const { data } = await supabase
+      .from("notas_coach")
+      .select("mensaje, actualizado_en")
+      .eq("cliente_token", tok)
+      .single()
+    if (data) setNotaCoach(data)
+  }
 
   const cargarModulos = async (tok: string) => {
     const m: Modulos = { musculacion: false, running: false, cycling: false }
@@ -1026,6 +1042,9 @@ export default function PlanEntrenamientoPage() {
         {vista === "muscu" && (
           <div style={{ animation: "fadeUp 0.3s ease" }}>
 
+            {/* Nota semanal del coach — siempre visible, no descartable */}
+            {notaCoach && <NotaCoachBanner nota={notaCoach} />}
+
             {/* Insight pre-sesión */}
             {diaActivo && insightSesion && !sesionCerrada && (
               <InsightPreSesion insight={insightSesion} onClose={() => setInsightSesion(null)} />
@@ -1481,6 +1500,41 @@ export default function PlanEntrenamientoPage() {
           onClose={() => setResumenSesion(null)}
         />
       )}
+    </div>
+  )
+}
+
+/* ══ COMPONENTE: Nota semanal del coach ═════════════════ */
+function NotaCoachBanner({nota}:{nota: {mensaje:string; actualizado_en:string}}) {
+  const R = "#E8000D"
+
+  const dias = Math.floor(
+    (Date.now() - new Date(nota.actualizado_en).getTime()) / (1000 * 60 * 60 * 24)
+  )
+  const textoTiempo =
+    dias <= 0 ? "Actualizado hoy" :
+    dias === 1 ? "Actualizado ayer" :
+    `Actualizado hace ${dias} días`
+
+  return (
+    <div style={{ marginBottom: 16, padding: "16px 18px",
+      background: `${R}0a`, border: `1px solid ${R}35`,
+      borderLeft: `3px solid ${R}` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <span style={{ fontSize: 16 }}>📌</span>
+        <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12,
+          fontWeight: 900, letterSpacing: "0.2em", textTransform: "uppercase", color: R }}>
+          Nota de Coach David
+        </span>
+      </div>
+      <p style={{ fontSize: 14, color: "rgba(255,255,255,0.85)",
+        lineHeight: 1.6, fontWeight: 400, margin: 0, marginBottom: 8 }}>
+        {nota.mensaje}
+      </p>
+      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)",
+        fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: "0.05em" }}>
+        {textoTiempo}
+      </span>
     </div>
   )
 }
