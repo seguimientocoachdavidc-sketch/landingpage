@@ -76,12 +76,12 @@ const TAG_COLORS: Record<string, string> = {
 
 /* ── Distribución semanal Lina (acondicionamiento) ── */
 const DISTRIBUCION_LINA = [
-  { dia: "Lunes",    label: "Full Body",             icono: "🏋️",  tags: ["MUSCULACIÓN"],        descanso: false },
-  { dia: "Martes",   label: "Tren Inferior",         icono: "🦵",  tags: ["MUSCULACIÓN"],        descanso: false },
-  { dia: "Miércoles",label: "CORE",                  icono: "🎯",  tags: ["CORE"],               descanso: false },
+  { dia: "Lunes",    label: "Tren Inferior",             icono: "🏋️",  tags: ["MUSCULACIÓN"],        descanso: false },
+  { dia: "Martes",   label: "Tren Superior",         icono: "🦵",  tags: ["MUSCULACIÓN"],        descanso: false },
+  { dia: "Miércoles",label: "CORE + Flex",                  icono: "🎯",  tags: ["CORE"],               descanso: false },
   { dia: "Jueves",   label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },
-  { dia: "Viernes",  label: "Full Body",             icono: "🏋️",  tags: ["MUSCULACIÓN"],        descanso: false },
-  { dia: "Sábado",   label: "CORE",                  icono: "🎯",  tags: [],                     descanso: false  },
+  { dia: "Viernes",  label: "Tren Inferior",             icono: "🏋️",  tags: ["MUSCULACIÓN"],        descanso: false },
+  { dia: "Sábado",   label: "Full Body",                  icono: "🏋️",  tags: ["MUSCULACIÓN"],       descanso: false  },
   { dia: "Domingo",  label: "Descanso",              icono: "😴",  tags: [],                     descanso: true  },
 ]
 
