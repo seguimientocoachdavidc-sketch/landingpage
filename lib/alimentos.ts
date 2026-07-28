@@ -488,6 +488,9 @@ export const ALIMENTOS = [
   { id: 476, nombre: "Vita Latti Yogurt Griego Natural", kcal: 94, proteina: 6.0, lipidos: 6.0, cho: 5.0, fibra: 0.0, sodio: 45, hierro: 0.1, grasaSat: 3.5, azucares: 4.5, calcio: 105, potasio: 140 },
   { id: 477, nombre: "Sin Culpa - Brownie sin azúcar (Vitad)", kcal: 353, proteina: 4.1, lipidos: 11.0, cho: 80.0, fibra: 6.0, sodio: 150, hierro: 2.0, grasaSat: 5.0, azucares: 5.0, calcio: 50, potasio: 200 },
   { id: 478, nombre: "Arequipe sin azúcar Natri", kcal: 236, proteina: 7.5, lipidos: 6.7, cho: 57.0, fibra: 0.0, sodio: 90, hierro: 0.2, grasaSat: 4.0, azucares: 50.0, calcio: 180, potasio: 220 },
+  { id: 479, nombre: "Cottage Cheese Breakstone's 4% Milkfat Small Curd", kcal: 95, proteina: 11, lipidos: 3.4, cho: 5.0, fibra: 0.0, sodio: 239, hierro: 1.2, grasaSat: 2.4, azucares: 0.0, calcio: 108, potasio: 90 },
+  { id: 480, nombre: "Yoghurt Griego Pasco Descremado Sin Azúcares Añadidas", kcal: 58, proteina: 10, lipidos: 0.0, cho: 4.4, fibra: 0.0, sodio: 42, hierro: 0.0, grasaSat: 0.0, azucares: 3.1, calcio: 107, potasio: 140 },
+  { id: 481, nombre: "Whey Protein Isolate Farmatodo Vainilla - 1 scoop (26g)", kcal: 100, proteina: 20.0, lipidos: 0.5, cho: 1.5, fibra: 0.0, sodio: 130, hierro: 0.2, grasaSat: 0.2, azucares: 0.5, calcio: 120, potasio: 170 },
 ] as const
 export type Alimento = typeof ALIMENTOS[number]
 
