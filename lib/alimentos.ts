@@ -491,6 +491,7 @@ export const ALIMENTOS = [
   { id: 479, nombre: "Cottage Cheese Breakstone's 4% Milkfat Small Curd", kcal: 95, proteina: 11, lipidos: 3.4, cho: 5.0, fibra: 0.0, sodio: 239, hierro: 1.2, grasaSat: 2.4, azucares: 0.0, calcio: 108, potasio: 90 },
   { id: 480, nombre: "Yoghurt Griego Pasco Descremado Sin Azúcares Añadidas", kcal: 58, proteina: 10, lipidos: 0.0, cho: 4.4, fibra: 0.0, sodio: 42, hierro: 0.0, grasaSat: 0.0, azucares: 3.1, calcio: 107, potasio: 140 },
   { id: 481, nombre: "Whey Protein Isolate Farmatodo Vainilla - 1 scoop (26g)", kcal: 100, proteina: 20.0, lipidos: 0.5, cho: 1.5, fibra: 0.0, sodio: 130, hierro: 0.2, grasaSat: 0.2, azucares: 0.5, calcio: 120, potasio: 170 },
+  { id: 482, nombre: "Vitanas Pro Beef Isolate & Hydrolyzed Vainilla - 1 scoop (30g)", kcal: 115, proteina: 25.0, lipidos: 0.5, cho: 1.5, fibra: 0.0, sodio: 180, hierro: 1.0, grasaSat: 0.2, azucares: 0.0, calcio: 20, potasio: 100 },
 ] as const
 export type Alimento = typeof ALIMENTOS[number]
 
