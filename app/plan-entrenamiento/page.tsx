@@ -42,6 +42,12 @@ interface NotaCoach {
   mensaje: string
   actualizado_en: string
 }
+interface EjercicioBiblioteca {
+  id: string
+  nombre: string
+  grupo_muscular: string
+  video_url: string | null
+}
 interface PuntoProgreso {
   fecha: string
   fechaCorta: string
@@ -207,6 +213,11 @@ export default function PlanEntrenamientoPage() {
   const [cargandoProg, setCargandoProg]       = useState(false)
   const [busqEj, setBusqEj]                   = useState("")
   const [metricaProg, setMetricaProg]         = useState<"kg_max"|"volumen">("kg_max")
+
+  // Biblioteca de ejercicios
+  const [bibliotecaEjercicios, setBibliotecaEjercicios] = useState<EjercicioBiblioteca[]>([])
+  const [busquedaBiblioteca, setBusquedaBiblioteca]     = useState("")
+  const [cargandoBiblioteca, setCargandoBiblioteca]     = useState(false)
 
   // Cronómetro
   const [cronSeg, setCronSeg]       = useState(0)
@@ -632,6 +643,22 @@ export default function PlanEntrenamientoPage() {
     if (vista === "progreso" && dias.length > 0) cargarEjerciciosProgreso()
   }, [vista, dias, cargarEjerciciosProgreso])
 
+  /* ── Cargar biblioteca de ejercicios (global, no depende del programa) ── */
+  const cargarBibliotecaEjercicios = useCallback(async () => {
+    setCargandoBiblioteca(true)
+    const { data } = await supabase
+      .from("biblioteca_ejercicios")
+      .select("id, nombre, grupo_muscular, video_url")
+      .order("grupo_muscular")
+      .order("orden")
+    setBibliotecaEjercicios(data ?? [])
+    setCargandoBiblioteca(false)
+  }, [])
+
+  useEffect(() => {
+    if (vista === "biblioteca" && bibliotecaEjercicios.length === 0) cargarBibliotecaEjercicios()
+  }, [vista, bibliotecaEjercicios.length, cargarBibliotecaEjercicios])
+
   /* ── Cargar datos de progreso para un ejercicio ──
      Recibe el NOMBRE del ejercicio (no un ejercicio_id puntual),
      encuentra todos los ejercicio_id históricos que coincidan en
@@ -768,6 +795,7 @@ export default function PlanEntrenamientoPage() {
     ...(modulos.cycling ? [{ k: "cycling", l: "🚴 Cycling", c: B }] : []),
     { k: "core", l: "🎯 CORE", c: P },
     ...(modulos.musculacion ? [{ k: "progreso", l: "📈 Progreso", c: "#a78bfa" }] : []),
+    ...(modulos.musculacion ? [{ k: "biblioteca", l: "📚 Ejercicios", c: "#22c55e" }] : []),
   ]
 
   /* ── Opciones de CORE según cliente ──
@@ -1474,6 +1502,16 @@ export default function PlanEntrenamientoPage() {
           />
         )}
 
+        {/* ══ BIBLIOTECA DE EJERCICIOS ══ */}
+        {vista === "biblioteca" && modulos.musculacion && (
+          <VistaBiblioteca
+            ejercicios={bibliotecaEjercicios}
+            cargando={cargandoBiblioteca}
+            busq={busquedaBiblioteca}
+            onBusq={setBusquedaBiblioteca}
+          />
+        )}
+
       </div>
 
       {/* Toast */}
@@ -1711,6 +1749,125 @@ function SesionCard({ color, titulo, subtitulo, icono, descripcion, objetivo,
 }
 
 /* ══ COMPONENTE VISTA PROGRESO ════════════════════════════════ */
+/* ══ COMPONENTE VISTA BIBLIOTECA DE EJERCICIOS ═════════════════ */
+function VistaBiblioteca({
+  ejercicios, cargando, busq, onBusq
+}: {
+  ejercicios: { id:string; nombre:string; grupo_muscular:string; video_url:string|null }[]
+  cargando: boolean
+  busq: string
+  onBusq: (v:string) => void
+}) {
+  const V = "#22c55e"
+
+  const filtrados = ejercicios.filter(e =>
+    e.nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+      .includes(busq.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))
+  )
+
+  const porGrupo = filtrados.reduce((acc, e) => {
+    const key = e.grupo_muscular
+    if (!acc[key]) acc[key] = []
+    acc[key].push(e)
+    return acc
+  }, {} as Record<string, typeof filtrados>)
+
+  return (
+    <div style={{ animation: "fadeUp 0.3s ease" }}>
+      <div style={{ fontSize: 11, color: V, letterSpacing: "0.12em",
+        textTransform: "uppercase", marginBottom: 16 }}>
+        📚 Biblioteca de ejercicios · Consulta la técnica cuando la necesites
+      </div>
+
+      {/* Buscador */}
+      <div style={{ marginBottom: 20 }}>
+        <input type="text" value={busq} placeholder="Buscar ejercicio..."
+          onChange={e => onBusq(e.target.value)}
+          style={{ width: "100%", padding: "12px 14px",
+            background: "rgba(255,255,255,0.04)",
+            border: `1px solid ${busq ? V+"60" : "rgba(255,255,255,0.12)"}`,
+            color: "#fff", fontFamily: "'Barlow',sans-serif",
+            fontSize: 15, outline: "none" }} />
+      </div>
+
+      {cargando ? (
+        <div style={{ textAlign: "center", padding: "48px",
+          color: "rgba(255,255,255,0.3)", fontSize: 14 }}>
+          Cargando biblioteca...
+        </div>
+      ) : ejercicios.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "48px",
+          border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.3)" }}>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>📚</div>
+          <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 14, fontWeight: 300 }}>
+            Aún no hay ejercicios cargados en la biblioteca.
+          </p>
+        </div>
+      ) : filtrados.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "32px",
+          color: "rgba(255,255,255,0.3)", fontSize: 14 }}>
+          No se encontraron ejercicios
+        </div>
+      ) : (
+        Object.entries(porGrupo).map(([grupo, ejs]) => (
+          <div key={grupo} style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)",
+              letterSpacing: "0.15em", textTransform: "uppercase",
+              marginBottom: 10, paddingBottom: 6,
+              borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              {grupo}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {ejs.map(ej => {
+                const ytMatch = ej.video_url?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+                const ytId = ytMatch?.[1]
+                const thumbUrl = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null
+                return (
+                  <a key={ej.id} href={ej.video_url ?? undefined}
+                    target="_blank" rel="noopener noreferrer"
+                    style={{ display: "flex", alignItems: "center", gap: 12,
+                      padding: "10px", background: "rgba(255,255,255,0.02)",
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      textDecoration: "none", transition: "border-color 0.15s" }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = V+"40")}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)")}>
+                    {thumbUrl ? (
+                      <div style={{ width: 64, height: 48, flexShrink: 0, position: "relative",
+                        overflow: "hidden", background: "#111" }}>
+                        <img src={thumbUrl} alt={ej.nombre}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <div style={{ position: "absolute", inset: 0, display: "flex",
+                          alignItems: "center", justifyContent: "center",
+                          background: "rgba(0,0,0,0.25)" }}>
+                          <span style={{ color: "#fff", fontSize: 12 }}>▶</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ width: 64, height: 48, flexShrink: 0,
+                        background: "rgba(255,255,255,0.04)", display: "flex",
+                        alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ fontSize: 18, opacity: 0.3 }}>🎥</span>
+                      </div>
+                    )}
+                    <span style={{ fontFamily: "'Barlow Condensed',sans-serif",
+                      fontSize: 15, fontWeight: 700, color: "#fff",
+                      textTransform: "uppercase", flex: 1 }}>
+                      {ej.nombre}
+                    </span>
+                    {ej.video_url && (
+                      <span style={{ color: V, fontSize: 12, flexShrink: 0, marginRight: 4 }}>▶</span>
+                    )}
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  )
+}
+
 function VistaProgreso({
   ejercicios, ejercicioSel, puntos, cargando,
   busq, metrica, onBusq, onSelEj, onMetrica
