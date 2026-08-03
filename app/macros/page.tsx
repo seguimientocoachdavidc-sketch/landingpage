@@ -38,6 +38,10 @@ interface MetaMacros {
   fibra_g: number; sodio_mg_max: number; azucares_g_max: number
   grasa_sat_g_max: number; calcio_mg: number; potasio_mg: number; hierro_mg: number
 }
+interface Recordatorio {
+  mensaje: string
+  actualizado_en: string
+}
 interface RegistroDiario {
   fecha: string; kcal_total: number
 }
@@ -113,6 +117,7 @@ export default function MacrosPage() {
   const [nombreUsuario, setNombreUsuario] = useState("")
   const [accesoDenegado, setAccesoDenegado] = useState(false)
   const [planAlimentacion, setPlanAlimentacion] = useState<string|null>(null)
+  const [recordatorio, setRecordatorio] = useState<Recordatorio|null>(null)
 
   const [vistaGlobal, setVistaGlobal] = useState<"inicio"|"macros"|"seguimiento">("inicio")
 
@@ -163,10 +168,21 @@ export default function MacrosPage() {
           setToken(t); setNombreUsuario(data.nombre||"")
           setPlanAlimentacion(data.plan ?? null)
           setDiasGuardados(listarDiasGuardados(t))
+          cargarRecordatorio(t)
         } else setAccesoDenegado(true)
       })
       .catch(()=>setAccesoDenegado(true))
   }, [])
+
+  /* ── Cargar recordatorio activo del cliente ── */
+  const cargarRecordatorio = async (tok: string) => {
+    const { data } = await supabase
+      .from("recordatorios")
+      .select("mensaje, actualizado_en")
+      .eq("cliente_token", tok)
+      .single()
+    if (data) setRecordatorio(data)
+  }
 
   const cargarSeguimientos = useCallback(async (tok: string) => {
     setCargandoSegs(true)
@@ -442,6 +458,8 @@ export default function MacrosPage() {
         <p className="b" style={{fontSize:14,color:"rgba(255,255,255,0.4)",
           fontWeight:300}}>¿Qué quieres hacer hoy?</p>
       </div>
+
+      {recordatorio && <RecordatorioBanner recordatorio={recordatorio} />}
 
       {tieneCiclado && (
         <div style={{marginBottom:28,padding:"18px",
@@ -1104,6 +1122,34 @@ export default function MacrosPage() {
   return (
     <Pantalla onBack={()=>setVistaGlobal("inicio")} titulo="Seguimiento de Medidas"
       accentColor={B}>
+
+      {/* Video guía — cómo tomar los perímetros antropométricos */}
+      <a href="https://www.youtube.com/watch?v=OAn10R6_8NI"
+        target="_blank" rel="noopener noreferrer"
+        style={{display:"flex",alignItems:"center",gap:12,
+          marginBottom:20,padding:"12px",background:`${B}08`,
+          border:`1px solid ${B}30`,textDecoration:"none"}}>
+        <div style={{width:72,height:54,flexShrink:0,position:"relative",
+          overflow:"hidden",background:"#111"}}>
+          <img src="https://img.youtube.com/vi/OAn10R6_8NI/hqdefault.jpg"
+            alt="Video guía de medidas"
+            style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+          <div style={{position:"absolute",inset:0,display:"flex",
+            alignItems:"center",justifyContent:"center",
+            background:"rgba(0,0,0,0.3)"}}>
+            <div style={{width:28,height:28,borderRadius:"50%",
+              background:B,display:"flex",alignItems:"center",
+              justifyContent:"center"}}>
+              <span style={{color:"#fff",fontSize:11,marginLeft:2}}>▶</span>
+            </div>
+          </div>
+        </div>
+        <p className="b" style={{flex:1,fontSize:13,color:"rgba(255,255,255,0.8)",
+          lineHeight:1.5,fontWeight:400,margin:0}}>
+          Revisa este video guía al momento de tomar las medidas — solo te toma unos minutos diligenciarlas.
+        </p>
+      </a>
+
       <div style={{marginBottom:28,padding:"20px",
         border:`1px solid ${segEditando?"rgba(245,158,11,0.3)":B+"30"}`,
         background:segEditando?"rgba(245,158,11,0.04)":`${B}06`}}>
@@ -1311,6 +1357,41 @@ export default function MacrosPage() {
 }
 
 /* ══ COMPONENTES REUTILIZABLES ════════════════════════════════ */
+
+/* Recordatorio del coach en la pantalla de inicio de macros */
+function RecordatorioBanner({recordatorio}:{recordatorio:{mensaje:string; actualizado_en:string}}) {
+  const O = "#f59e0b"
+
+  const dias = Math.floor(
+    (Date.now() - new Date(recordatorio.actualizado_en).getTime()) / (1000 * 60 * 60 * 24)
+  )
+  const textoTiempo =
+    dias <= 0 ? "Actualizado hoy" :
+    dias === 1 ? "Actualizado ayer" :
+    `Actualizado hace ${dias} días`
+
+  return (
+    <div style={{ marginBottom: 28, padding: "16px 18px",
+      background: `${O}0a`, border: `1px solid ${O}35`,
+      borderLeft: `3px solid ${O}` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <span style={{ fontSize: 16 }}>🔔</span>
+        <span className="bc" style={{ fontSize: 12,
+          fontWeight: 900, letterSpacing: "0.2em", textTransform: "uppercase", color: O }}>
+          Recordatorio
+        </span>
+      </div>
+      <p className="b" style={{ fontSize: 14, color: "rgba(255,255,255,0.85)",
+        lineHeight: 1.6, fontWeight: 400, margin: 0, marginBottom: 8 }}>
+        {recordatorio.mensaje}
+      </p>
+      <span className="bc" style={{ fontSize: 11, color: "rgba(255,255,255,0.3)",
+        letterSpacing: "0.05em" }}>
+        {textoTiempo}
+      </span>
+    </div>
+  )
+}
 
 function Pantalla({children, onBack, titulo, accentColor}:{
   children: React.ReactNode
