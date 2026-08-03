@@ -46,6 +46,13 @@ interface Recordatorio {
   mensaje: string
   actualizado_en: string
 }
+interface Seguimiento {
+  id?: string; cliente_token: string; fecha: string
+  peso_kg: number | null; cintura_cm: number | null
+  cadera_cm: number | null; pecho_cm: number | null
+  brazo_cm: number | null; muslo_cm: number | null
+  nota: string | null
+}
 interface EjercicioBiblioteca {
   id: string
   nombre: string
@@ -211,6 +218,14 @@ export default function PlanEntrenamientoPage() {
   // CORE
   const [coreOp, setCoreOp]         = useState<number | null>(null)
 
+  // Medidas (para clientes sin acceso a macros)
+  const [seguimientos, setSeguimientos]   = useState<Seguimiento[]>([])
+  const [cargandoSegs, setCargandoSegs]   = useState(false)
+  const [formSeg, setFormSeg]             = useState<Partial<Seguimiento>>({})
+  const [fechaSeg, setFechaSeg]           = useState("")
+  const [guardandoSeg, setGuardandoSeg]   = useState(false)
+  const [segEditando, setSegEditando]     = useState<string | null>(null)
+
   // Progreso
   const [ejerciciosDisp, setEjerciciosDisp]   = useState<EjercicioProgreso[]>([])
   const [ejercicioSel, setEjercicioSel]       = useState<EjercicioProgreso | null>(null)
@@ -265,6 +280,70 @@ export default function PlanEntrenamientoPage() {
       .eq("cliente_token", tok)
       .single()
     if (data) setRecordatorio(data)
+  }
+
+  /* ── Medidas: cargar historial ── */
+  const cargarSeguimientos = useCallback(async () => {
+    if (!token) return
+    setCargandoSegs(true)
+    const { data } = await supabase
+      .from("seguimientos_medidas")
+      .select("*")
+      .eq("cliente_token", token)
+      .order("fecha", { ascending: false })
+      .limit(20)
+    if (data) setSeguimientos(data)
+    setCargandoSegs(false)
+  }, [token])
+
+  useEffect(() => {
+    if (vista === "medidas" && token) cargarSeguimientos()
+  }, [vista, token, cargarSeguimientos])
+
+  /* ── Medidas: guardar nuevo registro o actualizar uno existente ── */
+  const guardarSeguimiento = async () => {
+    if (!token || !fechaSeg) { showToast("Selecciona la fecha del registro."); return }
+    const tieneDato = Object.entries(formSeg).some(([k, v]) =>
+      k !== "nota" && v !== null && v !== undefined && v !== ""
+    )
+    if (!tieneDato) { showToast("Ingresa al menos una medida."); return }
+
+    setGuardandoSeg(true)
+    const payload: any = {
+      cliente_token: token,
+      fecha: fechaSeg,
+      peso_kg:    formSeg.peso_kg    ? parseFloat(String(formSeg.peso_kg))   : null,
+      cintura_cm: formSeg.cintura_cm ? parseFloat(String(formSeg.cintura_cm)): null,
+      cadera_cm:  formSeg.cadera_cm  ? parseFloat(String(formSeg.cadera_cm)) : null,
+      pecho_cm:   formSeg.pecho_cm   ? parseFloat(String(formSeg.pecho_cm))  : null,
+      brazo_cm:   formSeg.brazo_cm   ? parseFloat(String(formSeg.brazo_cm))  : null,
+      muslo_cm:   formSeg.muslo_cm   ? parseFloat(String(formSeg.muslo_cm))  : null,
+      nota:       formSeg.nota || null,
+    }
+
+    let error
+    if (segEditando) {
+      ;({ error } = await supabase.from("seguimientos_medidas").update(payload).eq("id", segEditando))
+    } else {
+      ;({ error } = await supabase.from("seguimientos_medidas").upsert(payload, { onConflict: "cliente_token,fecha" }))
+    }
+
+    setGuardandoSeg(false)
+    if (error) { showToast("Error al guardar. Intenta de nuevo."); return }
+    showToast("✓ Medidas guardadas")
+    setFormSeg({}); setFechaSeg(""); setSegEditando(null)
+    cargarSeguimientos()
+  }
+
+  const editarSeguimiento = (seg: Seguimiento) => {
+    setSegEditando(seg.id || null)
+    setFechaSeg(seg.fecha)
+    setFormSeg({
+      peso_kg: seg.peso_kg,    cintura_cm: seg.cintura_cm,
+      cadera_cm: seg.cadera_cm, pecho_cm:  seg.pecho_cm,
+      brazo_cm: seg.brazo_cm,   muslo_cm:  seg.muslo_cm,
+      nota: seg.nota,
+    })
   }
 
   const cargarModulos = async (tok: string) => {
@@ -810,6 +889,7 @@ export default function PlanEntrenamientoPage() {
     ...(modulos.running ? [{ k: "running", l: "🏃 Running", c: G }] : []),
     ...(modulos.cycling ? [{ k: "cycling", l: "🚴 Cycling", c: B }] : []),
     { k: "core", l: "🎯 CORE", c: P },
+    { k: "medidas", l: "📊 Medidas", c: B },
     ...(modulos.musculacion ? [{ k: "progreso", l: "📈 Progreso", c: "#a78bfa" }] : []),
     ...(modulos.musculacion ? [{ k: "biblioteca", l: "📚 Ejercicios", c: "#22c55e" }] : []),
   ]
@@ -1505,6 +1585,200 @@ export default function PlanEntrenamientoPage() {
           </div>
         )}
 
+        {/* ══ MEDIDAS ══ */}
+        {vista === "medidas" && (
+          <div style={{ animation: "fadeUp 0.3s ease" }}>
+            <div style={{ fontSize: 11, color: B, letterSpacing: "0.12em",
+              textTransform: "uppercase", marginBottom: 14 }}>
+              📊 Seguimiento de medidas · Registra tu progreso semanal
+            </div>
+
+            {/* Formulario nuevo registro */}
+            <div style={{ marginBottom: 20, padding: 18,
+              border: `1px solid ${segEditando ? "rgba(245,158,11,0.3)" : B + "30"}`,
+              background: segEditando ? "rgba(245,158,11,0.04)" : `${B}06` }}>
+
+              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13,
+                fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.15em",
+                color: segEditando ? O : B, marginBottom: 16,
+                display: "flex", alignItems: "center", gap: 8 }}>
+                {segEditando ? "✏️ Editando registro" : "+ Nuevo registro semanal"}
+              </div>
+
+              {/* Fecha */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700,
+                  letterSpacing: "0.2em", textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.38)", marginBottom: 7,
+                  fontFamily: "'Barlow Condensed',sans-serif" }}>
+                  Fecha del registro *
+                </label>
+                <input type="date" value={fechaSeg}
+                  onChange={e => setFechaSeg(e.target.value)}
+                  max={new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })}
+                  style={{ width: "100%", padding: "11px 14px",
+                    background: "rgba(255,255,255,0.04)",
+                    border: `1px solid ${fechaSeg ? B + "60" : "rgba(255,255,255,0.12)"}`,
+                    color: "#fff", fontFamily: "'Barlow',sans-serif",
+                    fontSize: 15, outline: "none", colorScheme: "dark" }} />
+              </div>
+
+              {/* Grid de medidas */}
+              <div style={{ display: "grid",
+                gridTemplateColumns: "repeat(auto-fill,minmax(120px,1fr))",
+                gap: 12, marginBottom: 14 }}>
+                {[
+                  { key: "peso_kg",    label: "Peso",    unit: "kg", placeholder: "70.5" },
+                  { key: "cintura_cm", label: "Cintura", unit: "cm", placeholder: "80" },
+                  { key: "cadera_cm",  label: "Cadera",  unit: "cm", placeholder: "95" },
+                  { key: "pecho_cm",   label: "Pecho",   unit: "cm", placeholder: "90" },
+                  { key: "brazo_cm",   label: "Brazo",   unit: "cm", placeholder: "33" },
+                  { key: "muslo_cm",   label: "Muslo",   unit: "cm", placeholder: "55" },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label style={{ display: "block", fontSize: 10, fontWeight: 700,
+                      letterSpacing: "0.15em", textTransform: "uppercase",
+                      color: "rgba(255,255,255,0.35)", marginBottom: 6,
+                      fontFamily: "'Barlow Condensed',sans-serif" }}>
+                      {f.label} ({f.unit})
+                    </label>
+                    <input type="number" inputMode="decimal" placeholder={f.placeholder}
+                      value={(formSeg as any)[f.key] ?? ""}
+                      onChange={e => setFormSeg(s => ({ ...s, [f.key]: e.target.value }))}
+                      style={{ width: "100%", padding: "10px 12px",
+                        background: "rgba(255,255,255,0.04)",
+                        border: `1px solid ${(formSeg as any)[f.key] ? B + "50" : "rgba(255,255,255,0.1)"}`,
+                        color: "#fff", fontFamily: "'Barlow Condensed',sans-serif",
+                        fontSize: 20, fontWeight: 900, outline: "none", textAlign: "center" }} />
+                  </div>
+                ))}
+              </div>
+
+              {/* Nota */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 10, fontWeight: 700,
+                  letterSpacing: "0.15em", textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.35)", marginBottom: 6,
+                  fontFamily: "'Barlow Condensed',sans-serif" }}>
+                  Nota (opcional)
+                </label>
+                <textarea value={formSeg.nota ?? ""} rows={2}
+                  placeholder="¿Cómo te sentiste esta semana? Cambios notables..."
+                  onChange={e => setFormSeg(s => ({ ...s, nota: e.target.value }))}
+                  style={{ width: "100%", padding: "9px 12px",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "rgba(255,255,255,0.8)", fontFamily: "'Barlow',sans-serif",
+                    fontSize: 13, outline: "none", resize: "none" }} />
+              </div>
+
+              <div style={{ display: "flex", gap: 8 }}>
+                {segEditando && (
+                  <button onClick={() => { setSegEditando(null); setFormSeg({}); setFechaSeg("") }}
+                    style={{ flex: 1, padding: "12px",
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      color: "rgba(255,255,255,0.5)",
+                      fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700,
+                      letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>
+                    Cancelar
+                  </button>
+                )}
+                <button onClick={guardarSeguimiento} disabled={guardandoSeg}
+                  style={{ flex: 2, padding: "13px",
+                    background: guardandoSeg ? `${B}50` : segEditando ? O : B,
+                    border: "none", color: "#fff",
+                    fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 900,
+                    letterSpacing: "0.15em", textTransform: "uppercase",
+                    cursor: guardandoSeg ? "not-allowed" : "pointer" }}>
+                  {guardandoSeg ? "Guardando..." : segEditando ? "✓ Actualizar registro" : "✓ Guardar medidas"}
+                </button>
+              </div>
+            </div>
+
+            {/* Historial */}
+            {cargandoSegs ? (
+              <div style={{ textAlign: "center", padding: "32px",
+                color: "rgba(255,255,255,0.3)", fontSize: 14 }}>
+                Cargando historial...
+              </div>
+            ) : seguimientos.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px 20px",
+                border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.3)" }}>
+                <div style={{ fontSize: 36, marginBottom: 10 }}>📊</div>
+                <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 14, fontWeight: 300 }}>
+                  Aún no tienes registros. ¡Empieza hoy!
+                </p>
+              </div>
+            ) : (
+              <div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)",
+                  letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 12,
+                  fontFamily: "'Barlow Condensed',sans-serif" }}>
+                  Historial de medidas — {seguimientos.length} registros
+                </div>
+
+                {seguimientos.filter(s => s.peso_kg).length >= 2 && (
+                  <MiniGraficaPeso datos={seguimientos.filter(s => s.peso_kg).slice(0, 8).reverse()} />
+                )}
+
+                {seguimientos.map(seg => (
+                  <div key={seg.id} style={{ marginBottom: 10, padding: "14px 16px",
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <div style={{ display: "flex", alignItems: "center",
+                      justifyContent: "space-between", marginBottom: 10 }}>
+                      <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14,
+                        fontWeight: 700, color: B, letterSpacing: "0.1em",
+                        textTransform: "uppercase" }}>
+                        {fmtFecha(seg.fecha)}
+                      </div>
+                      <button onClick={() => editarSeguimiento(seg)}
+                        style={{ background: "none", border: "none",
+                          color: "rgba(255,255,255,0.3)", cursor: "pointer",
+                          fontSize: 12, fontFamily: "'Barlow Condensed',sans-serif",
+                          fontWeight: 700, letterSpacing: "0.1em",
+                          textTransform: "uppercase", padding: "4px 8px" }}>
+                        editar
+                      </button>
+                    </div>
+                    <div style={{ display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill,minmax(80px,1fr))", gap: 8 }}>
+                      {[
+                        { label: "Peso",    val: seg.peso_kg,    unit: "kg", color: "#fff" },
+                        { label: "Cintura", val: seg.cintura_cm, unit: "cm", color: R },
+                        { label: "Cadera",  val: seg.cadera_cm,  unit: "cm", color: O },
+                        { label: "Pecho",   val: seg.pecho_cm,   unit: "cm", color: B },
+                        { label: "Brazo",   val: seg.brazo_cm,   unit: "cm", color: G },
+                        { label: "Muslo",   val: seg.muslo_cm,   unit: "cm", color: P },
+                      ].map(m => m.val != null && (
+                        <div key={m.label} style={{ textAlign: "center", padding: "8px 4px",
+                          background: "rgba(255,255,255,0.03)",
+                          border: "1px solid rgba(255,255,255,0.06)" }}>
+                          <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 18,
+                            fontWeight: 900, color: m.color, lineHeight: 1 }}>
+                            {m.val}
+                          </div>
+                          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)",
+                            textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 3 }}>
+                            {m.label} {m.unit}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {seg.nota && (
+                      <div style={{ marginTop: 10, fontSize: 12, color: "rgba(255,255,255,0.4)",
+                        fontStyle: "italic", lineHeight: 1.5 }}>
+                        "{seg.nota}"
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
 
         {/* ══ PROGRESO ══ */}
         {vista === "progreso" && modulos.musculacion && (
@@ -1590,6 +1864,66 @@ function NotaCoachBanner({nota}:{nota: {mensaje:string; actualizado_en:string}})
 }
 
 /* ══ COMPONENTE: Recordatorio ═══════════════════════════ */
+/* ══ COMPONENTE: Mini gráfica de peso (pestaña Medidas) ═ */
+function MiniGraficaPeso({ datos }: { datos: Seguimiento[] }) {
+  const W = 340, H = 80, PAD = 8
+  const pesos = datos.map(d => d.peso_kg!)
+  const min = Math.min(...pesos) - 2
+  const max = Math.max(...pesos) + 2
+  const pts = pesos.map((p, i) => {
+    const x = PAD + (i / (pesos.length - 1)) * (W - PAD * 2)
+    const y = PAD + (1 - (p - min) / (max - min)) * (H - PAD * 2)
+    return `${x},${y}`
+  })
+  const primero = pesos[0]
+  const ultimo  = pesos[pesos.length - 1]
+  const diff    = Math.round((ultimo - primero) * 10) / 10
+  const color   = diff <= 0 ? "#22c55e" : "#E8000D"
+
+  return (
+    <div style={{ marginBottom: 20, padding: "14px 16px",
+      background: "rgba(255,255,255,0.02)",
+      border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div style={{ display: "flex", alignItems: "center",
+        justifyContent: "space-between", marginBottom: 10 }}>
+        <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11,
+          color: "rgba(255,255,255,0.35)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          Evolución del peso
+        </span>
+        <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14,
+          fontWeight: 900, color }}>
+          {diff > 0 ? "+" : ""}{diff} kg
+        </span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: H }}>
+        <polyline points={pts.join(" ")}
+          fill="none" stroke={color} strokeWidth="1.5"
+          strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+        {pesos.map((p, i) => {
+          const x = PAD + (i / (pesos.length - 1)) * (W - PAD * 2)
+          const y = PAD + (1 - (p - min) / (max - min)) * (H - PAD * 2)
+          return (
+            <g key={i}>
+              <circle cx={x} cy={y} r="3" fill={color} opacity="0.9" />
+              {(i === 0 || i === pesos.length - 1) && (
+                <text x={x} y={i === 0 ? y - 6 : y + 14} textAnchor="middle"
+                  fill="rgba(255,255,255,0.5)" fontSize="9">
+                  {p}
+                </text>
+              )}
+            </g>
+          )
+        })}
+      </svg>
+      <div style={{ display: "flex", justifyContent: "space-between",
+        marginTop: 4, fontSize: 10, color: "rgba(255,255,255,0.25)" }}>
+        <span>{fmtFecha(datos[0].fecha)}</span>
+        <span>{fmtFecha(datos[datos.length - 1].fecha)}</span>
+      </div>
+    </div>
+  )
+}
+
 function RecordatorioBanner({recordatorio}:{recordatorio: {mensaje:string; actualizado_en:string}}) {
   const O = "#f59e0b"
 
