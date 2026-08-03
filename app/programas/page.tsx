@@ -97,15 +97,16 @@ function Hero() {
           Dos servicios, un mismo sistema
         </span>
       </div>
-      <h1 className="bc" style={{ position: "relative", fontSize: "clamp(40px,7vw,84px)",
-        fontWeight: 900, textTransform: "uppercase", lineHeight: 0.95, letterSpacing: "-0.02em",
+      <h1 className="bc" style={{ position: "relative", fontSize: "clamp(34px,6vw,68px)",
+        fontWeight: 900, textTransform: "uppercase", lineHeight: 1.02, letterSpacing: "-0.02em",
         marginBottom: 24 }}>
-        Entrena y come<br/>con <span style={{ color: R }}>datos reales,</span><br/>no con hojas de cálculo
+        Programas interactivos, con <span style={{ color: R }}>seguimiento continuo,</span> basados en evidencia, personalizados, para que logres tus objetivos
       </h1>
       <p className="b" style={{ position: "relative", fontSize: 18, color: "rgba(255,255,255,0.5)",
-        maxWidth: 560, lineHeight: 1.7, fontWeight: 300 }}>
-        Nada de PDFs ni plantillas genéricas. Cada cliente entra a una app propia donde
-        registra, ve su progreso y recibe seguimiento real — mío, no de un algoritmo.
+        maxWidth: 600, lineHeight: 1.7, fontWeight: 300 }}>
+        Construimos un sistema de seguimiento en tiempo real de nivel mundial, capaz de
+        registrar y actualizar tu progreso, mostrarnos los puntos de mejora e incluso
+        motivarnos a entrenar más duro.
       </p>
     </header>
   )
@@ -217,6 +218,11 @@ function DemoVolumen() {
    PLANES
    ══════════════════════════════════════════════════════════ */
 function SeccionPlanes() {
+  const PRECIO_ENTRENAMIENTO = 140000
+  const PRECIO_MACROS = 130000
+  const PRECIO_DUO = 220000
+  const AHORRO_DUO = (PRECIO_ENTRENAMIENTO + PRECIO_MACROS) - PRECIO_DUO
+
   return (
     <section style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px 80px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 40 }}>
@@ -233,6 +239,7 @@ function SeccionPlanes() {
           nombre="Entrenamiento"
           tagline="Tu programa, ejecutado con precisión"
           color={R}
+          precio={PRECIO_ENTRENAMIENTO}
           items={[
             "App web personalizada — tu programa, tus ejercicios, tu progreso",
             "Registra cada serie en segundos: peso y repeticiones",
@@ -253,6 +260,7 @@ function SeccionPlanes() {
           tagline="Tu alimentación, sin adivinar"
           color={G}
           destacado
+          precio={PRECIO_MACROS}
           items={[
             "Menú calculado según tu objetivo — déficit, mantenimiento o superávit",
             "App de registro diario con cerca de 500 alimentos colombianos y de marca",
@@ -269,11 +277,12 @@ function SeccionPlanes() {
           nombre="Dúo"
           tagline="Los dos mundos, un solo acceso"
           color={O}
+          precio={PRECIO_DUO}
+          ahorro={AHORRO_DUO}
           items={[
             "Todo lo del plan de Entrenamiento",
             "Todo lo del plan de Macros",
             "Un solo acceso, un solo seguimiento",
-            "Precio más accesible que contratarlos por separado",
           ]}
         />
       </div>
@@ -281,10 +290,11 @@ function SeccionPlanes() {
   )
 }
 
-function PlanCard({ icono, nombre, tagline, color, items, destacado }: {
+function PlanCard({ icono, nombre, tagline, color, items, precio, ahorro, destacado }: {
   icono: string; nombre: string; tagline: string; color: string
-  items: string[]; destacado?: boolean
+  items: string[]; precio: number; ahorro?: number; destacado?: boolean
 }) {
+  const precioFmt = precio.toLocaleString("es-CO")
   return (
     <div style={{ padding: "32px 26px", background: destacado ? `${color}08` : "rgba(255,255,255,0.015)",
       border: `1px solid ${destacado ? color + "40" : "rgba(255,255,255,0.08)"}`,
@@ -301,10 +311,32 @@ function PlanCard({ icono, nombre, tagline, color, items, destacado }: {
         marginBottom: 4, letterSpacing: "-0.01em" }}>
         {nombre}
       </h3>
-      <p className="b" style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 24,
+      <p className="b" style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 18,
         fontWeight: 300 }}>
         {tagline}
       </p>
+
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+        <span className="bc" style={{ fontSize: 34, fontWeight: 900, color: "#fff" }}>
+          ${precioFmt}
+        </span>
+        <span className="b" style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>
+          / mes
+        </span>
+      </div>
+
+      {ahorro && (
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 20,
+          padding: "6px 12px", background: `${G}15`, border: `1px solid ${G}40`, width: "fit-content" }}>
+          <span style={{ color: G, fontSize: 12 }}>↓</span>
+          <span className="bc" style={{ fontSize: 12, fontWeight: 800, color: G,
+            letterSpacing: "0.03em" }}>
+            Ahorras ${ahorro.toLocaleString("es-CO")}/mes vs. contratarlos por separado
+          </span>
+        </div>
+      )}
+      {!ahorro && <div style={{ marginBottom: 24 }} />}
+
       <ul style={{ listStyle: "none", padding: 0, margin: 0, marginBottom: 28, flex: 1 }}>
         {items.map((item, i) => (
           <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10,
