@@ -112,6 +112,7 @@ export default function MacrosPage() {
   const [token, setToken]                 = useState<string|null>(null)
   const [nombreUsuario, setNombreUsuario] = useState("")
   const [accesoDenegado, setAccesoDenegado] = useState(false)
+  const [planAlimentacion, setPlanAlimentacion] = useState<string|null>(null)
 
   const [vistaGlobal, setVistaGlobal] = useState<"inicio"|"macros"|"seguimiento">("inicio")
 
@@ -160,6 +161,7 @@ export default function MacrosPage() {
       .then(data => {
         if (data.valido) {
           setToken(t); setNombreUsuario(data.nombre||"")
+          setPlanAlimentacion(data.plan ?? null)
           setDiasGuardados(listarDiasGuardados(t))
         } else setAccesoDenegado(true)
       })
@@ -515,6 +517,29 @@ export default function MacrosPage() {
             <span style={{color:R,fontSize:20}}>→</span>
           </div>
         </button>
+
+        {planAlimentacion && (
+          <a href={`/plan-alimentacion?token=${token}`}
+            style={{padding:"20px",background:"rgba(245,158,11,0.06)",
+              border:`1px solid ${O}30`,textDecoration:"none",
+              display:"block",transition:"all 0.2s"}}
+            onMouseEnter={e=>(e.currentTarget.style.background=`rgba(245,158,11,0.1)`)}
+            onMouseLeave={e=>(e.currentTarget.style.background=`rgba(245,158,11,0.06)`)}>
+            <div style={{display:"flex",alignItems:"center",gap:14}}>
+              <span style={{fontSize:28}}>📋</span>
+              <div style={{flex:1}}>
+                <div className="bc" style={{fontSize:18,fontWeight:900,
+                  textTransform:"uppercase",color:"#fff",marginBottom:3}}>
+                  Plan de Alimentación
+                </div>
+                <div className="b" style={{fontSize:13,color:"rgba(255,255,255,0.45)"}}>
+                  Tu plan de comidas asignado por Coach David
+                </div>
+              </div>
+              <span style={{color:O,fontSize:20}}>→</span>
+            </div>
+          </a>
+        )}
 
         <button onClick={()=>setVistaGlobal("seguimiento")}
           style={{padding:"20px",background:"rgba(59,130,246,0.06)",
