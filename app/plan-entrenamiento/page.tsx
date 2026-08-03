@@ -42,6 +42,10 @@ interface NotaCoach {
   mensaje: string
   actualizado_en: string
 }
+interface Recordatorio {
+  mensaje: string
+  actualizado_en: string
+}
 interface EjercicioBiblioteca {
   id: string
   nombre: string
@@ -72,9 +76,9 @@ const DISTRIBUCION_RIVS = [
   { dia: "Día 1", label: "Tren Superior + Recovery Run Z2", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
   { dia: "Día 2", label: "Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
   { dia: "Día 3", label: "Cycling Continuo Z2 + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
-  { dia: "Día 4", label: "Tren Superior",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
-  { dia: "Día 5", label: "Rodaje Cycling Z2 con Progresivos",        icono: "🚴", tags: ["CYCLING"] },
-  { dia: "Día 6", label: "Fondo Running ",     icono: "🏃",   tags: ["RUNNING"] },
+  { dia: "Día 4", label: "Tren Superior + Pliometría",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
+  { dia: "Día 5", label: "Intervalos 5X3 minutos - Zona umbral",        icono: "🚴🏃", tags: ["RUNNING"] },
+  { dia: "Día 6", label: "Fondo Cycling ",     icono: "🔥",   tags: ["CYCLING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
@@ -190,6 +194,7 @@ export default function PlanEntrenamientoPage() {
   const [resumenSesion, setResumenSesion] = useState<ResumenSesionData | null>(null)
   const [insightSesion, setInsightSesion] = useState<{tipo:string; mensaje:string} | null>(null)
   const [notaCoach, setNotaCoach] = useState<NotaCoach | null>(null)
+  const [recordatorio, setRecordatorio] = useState<Recordatorio | null>(null)
 
   // Running
   const [semanasRun, setSemanasRun]   = useState<SemanaRun[]>([])
@@ -238,6 +243,7 @@ export default function PlanEntrenamientoPage() {
         setCliente(data)
         cargarModulos(t)
         cargarNotaCoach(t)
+        cargarRecordatorio(t)
       })
   }, [])
 
@@ -249,6 +255,16 @@ export default function PlanEntrenamientoPage() {
       .eq("cliente_token", tok)
       .single()
     if (data) setNotaCoach(data)
+  }
+
+  /* ── Cargar recordatorio activo del cliente ── */
+  const cargarRecordatorio = async (tok: string) => {
+    const { data } = await supabase
+      .from("recordatorios")
+      .select("mensaje, actualizado_en")
+      .eq("cliente_token", tok)
+      .single()
+    if (data) setRecordatorio(data)
   }
 
   const cargarModulos = async (tok: string) => {
@@ -1066,6 +1082,9 @@ export default function PlanEntrenamientoPage() {
             {/* Nota semanal del coach — siempre visible, no descartable */}
             {notaCoach && <NotaCoachBanner nota={notaCoach} />}
 
+            {/* Recordatorio — acciones puntuales fuera del entrenamiento */}
+            {recordatorio && <RecordatorioBanner recordatorio={recordatorio} />}
+
             {/* Insight pre-sesión */}
             {diaActivo && insightSesion && !sesionCerrada && (
               <InsightPreSesion insight={insightSesion} onClose={() => setInsightSesion(null)} />
@@ -1395,13 +1414,13 @@ export default function PlanEntrenamientoPage() {
               ))}
             </div>
             {semanaCyc && [
-              { num: 1, titulo: "Sesión 1 · Día 3", subtitulo: "Revisar Detalle de Sesión", icono: "🚴", color: B,
+              { num: 1, titulo: "Sesión 1 · Día 3", subtitulo: "Continuo Z2", icono: "🚴", color: B,
                 desc: semanaCyc.sesion_1_descripcion, obj: semanaCyc.sesion_1_objetivo },
-              { num: 2, titulo: "Sesión 2 · Día 5", subtitulo: "Revisar Detalle de Sesión", icono: "🏃", color: B,
+              { num: 2, titulo: "Sesión 2 · Día 5", subtitulo: "Cycling Z2 + Carrera", icono: "🚴🏃", color: B,
                 desc: semanaCyc.sesion_2_descripcion, obj: semanaCyc.sesion_2_objetivo },
-              { num: 3, titulo: "Sesión 3 · Día 6 ", subtitulo: "Revisar Detalle de Sesión", icono: "", color: O,
+              { num: 3, titulo: "Sesión 3 · Día 6 — Bricks", subtitulo: "Parte bici antes de correr", icono: "🔥🚴", color: O,
                 desc: semanaCyc.sesion_3_descripcion, obj: semanaCyc.sesion_3_objetivo,
-                notaBricks: "" },
+                notaBricks: "Parte de ciclismo del Día 6. La carrera se registra en Running." },
             ].map(cfg => (
               <SesionCard key={cfg.num}
                 color={cfg.color}
@@ -1561,6 +1580,41 @@ function NotaCoachBanner({nota}:{nota: {mensaje:string; actualizado_en:string}})
       <p style={{ fontSize: 14, color: "rgba(255,255,255,0.85)",
         lineHeight: 1.6, fontWeight: 400, margin: 0, marginBottom: 8 }}>
         {nota.mensaje}
+      </p>
+      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)",
+        fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: "0.05em" }}>
+        {textoTiempo}
+      </span>
+    </div>
+  )
+}
+
+/* ══ COMPONENTE: Recordatorio ═══════════════════════════ */
+function RecordatorioBanner({recordatorio}:{recordatorio: {mensaje:string; actualizado_en:string}}) {
+  const O = "#f59e0b"
+
+  const dias = Math.floor(
+    (Date.now() - new Date(recordatorio.actualizado_en).getTime()) / (1000 * 60 * 60 * 24)
+  )
+  const textoTiempo =
+    dias <= 0 ? "Actualizado hoy" :
+    dias === 1 ? "Actualizado ayer" :
+    `Actualizado hace ${dias} días`
+
+  return (
+    <div style={{ marginBottom: 16, padding: "16px 18px",
+      background: `${O}0a`, border: `1px solid ${O}35`,
+      borderLeft: `3px solid ${O}` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <span style={{ fontSize: 16 }}>🔔</span>
+        <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12,
+          fontWeight: 900, letterSpacing: "0.2em", textTransform: "uppercase", color: O }}>
+          Recordatorio
+        </span>
+      </div>
+      <p style={{ fontSize: 14, color: "rgba(255,255,255,0.85)",
+        lineHeight: 1.6, fontWeight: 400, margin: 0, marginBottom: 8 }}>
+        {recordatorio.mensaje}
       </p>
       <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)",
         fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: "0.05em" }}>
