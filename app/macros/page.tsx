@@ -42,6 +42,12 @@ interface Recordatorio {
   mensaje: string
   actualizado_en: string
 }
+interface Receta {
+  id: string
+  nombre: string
+  video_url: string | null
+  categoria: string | null
+}
 interface RegistroDiario {
   fecha: string; kcal_total: number
 }
@@ -118,8 +124,10 @@ export default function MacrosPage() {
   const [accesoDenegado, setAccesoDenegado] = useState(false)
   const [planAlimentacion, setPlanAlimentacion] = useState<string|null>(null)
   const [recordatorio, setRecordatorio] = useState<Recordatorio|null>(null)
+  const [recetas, setRecetas] = useState<Receta[]>([])
+  const [cargandoRecetas, setCargandoRecetas] = useState(false)
 
-  const [vistaGlobal, setVistaGlobal] = useState<"inicio"|"macros"|"seguimiento">("inicio")
+  const [vistaGlobal, setVistaGlobal] = useState<"inicio"|"macros"|"seguimiento"|"recetas">("inicio")
 
   const [fechaSel, setFechaSel]     = useState("")
   const [diasGuardados, setDiasGuardados] = useState<string[]>([])
@@ -183,6 +191,21 @@ export default function MacrosPage() {
       .single()
     if (data) setRecordatorio(data)
   }
+
+  /* ── Cargar recetas (global, no depende del cliente) ── */
+  const cargarRecetas = useCallback(async () => {
+    setCargandoRecetas(true)
+    const { data } = await supabase
+      .from("recetas")
+      .select("id, nombre, video_url, categoria")
+      .order("orden")
+    setRecetas(data ?? [])
+    setCargandoRecetas(false)
+  }, [])
+
+  useEffect(() => {
+    if (vistaGlobal === "recetas" && recetas.length === 0) cargarRecetas()
+  }, [vistaGlobal, recetas.length, cargarRecetas])
 
   const cargarSeguimientos = useCallback(async (tok: string) => {
     setCargandoSegs(true)
@@ -577,6 +600,27 @@ export default function MacrosPage() {
               </div>
             </div>
             <span style={{color:B,fontSize:20}}>→</span>
+          </div>
+        </button>
+
+        <button onClick={()=>setVistaGlobal("recetas")}
+          style={{padding:"20px",background:"rgba(34,197,94,0.06)",
+            border:`1px solid ${G}30`,cursor:"pointer",textAlign:"left",
+            transition:"all 0.2s"}}
+          onMouseEnter={e=>(e.currentTarget.style.background=`rgba(34,197,94,0.1)`)}
+          onMouseLeave={e=>(e.currentTarget.style.background=`rgba(34,197,94,0.06)`)}>
+          <div style={{display:"flex",alignItems:"center",gap:14}}>
+            <span style={{fontSize:28}}>🍳</span>
+            <div style={{flex:1}}>
+              <div className="bc" style={{fontSize:18,fontWeight:900,
+                textTransform:"uppercase",color:"#fff",marginBottom:3}}>
+                Recetas Fitness
+              </div>
+              <div className="b" style={{fontSize:13,color:"rgba(255,255,255,0.45)"}}>
+                Ideas de comidas variadas, con video de preparación
+              </div>
+            </div>
+            <span style={{color:G,fontSize:20}}>→</span>
           </div>
         </button>
 
@@ -1117,6 +1161,84 @@ export default function MacrosPage() {
       )}
       {toast&&<Toast toast={toast}/>}
     </div>
+  )
+
+  if (vistaGlobal==="recetas") return (
+    <Pantalla onBack={()=>setVistaGlobal("inicio")} titulo="Recetas Fitness"
+      accentColor={G}>
+      <div className="bc" style={{fontSize:11,color:G,letterSpacing:"0.12em",
+        textTransform:"uppercase",marginBottom:16}}>
+        🍳 Ideas de comidas con video de preparación
+      </div>
+
+      {cargandoRecetas?(
+        <div style={{textAlign:"center",padding:"48px",
+          color:"rgba(255,255,255,0.3)",fontSize:14}}>
+          Cargando recetas...
+        </div>
+      ):recetas.length===0?(
+        <div style={{textAlign:"center",padding:"48px",
+          border:"1px solid rgba(255,255,255,0.07)",color:"rgba(255,255,255,0.3)"}}>
+          <div style={{fontSize:32,marginBottom:10}}>🍳</div>
+          <p className="b" style={{fontSize:14,fontWeight:300}}>
+            Aún no hay recetas cargadas.
+          </p>
+        </div>
+      ):(
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {recetas.map(r=>{
+            const ytMatch = r.video_url?.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+            const ytId = ytMatch?.[1]
+            const thumbUrl = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null
+            return (
+              <a key={r.id} href={r.video_url ?? undefined}
+                target="_blank" rel="noopener noreferrer"
+                style={{display:"flex",alignItems:"center",gap:12,
+                  padding:"10px",background:"rgba(255,255,255,0.02)",
+                  border:"1px solid rgba(255,255,255,0.07)",
+                  textDecoration:"none",transition:"border-color 0.15s"}}
+                onMouseEnter={e=>(e.currentTarget.style.borderColor=G+"40")}
+                onMouseLeave={e=>(e.currentTarget.style.borderColor="rgba(255,255,255,0.07)")}>
+                {thumbUrl ? (
+                  <div style={{width:64,height:48,flexShrink:0,position:"relative",
+                    overflow:"hidden",background:"#111"}}>
+                    <img src={thumbUrl} alt={r.nombre}
+                      style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    <div style={{position:"absolute",inset:0,display:"flex",
+                      alignItems:"center",justifyContent:"center",
+                      background:"rgba(0,0,0,0.25)"}}>
+                      <span style={{color:"#fff",fontSize:12}}>▶</span>
+                    </div>
+                  </div>
+                ):(
+                  <div style={{width:64,height:48,flexShrink:0,
+                    background:"rgba(34,197,94,0.08)",display:"flex",
+                    alignItems:"center",justifyContent:"center"}}>
+                    <span style={{fontSize:20}}>📸</span>
+                  </div>
+                )}
+                <div style={{flex:1}}>
+                  <div className="bc" style={{fontSize:15,fontWeight:700,color:"#fff",
+                    textTransform:"uppercase"}}>
+                    {r.nombre}
+                  </div>
+                  {!thumbUrl && r.video_url && (
+                    <div className="b" style={{fontSize:11,color:"rgba(255,255,255,0.35)",
+                      marginTop:2}}>
+                      Ver receta en Instagram
+                    </div>
+                  )}
+                </div>
+                {r.video_url && (
+                  <span style={{color:G,fontSize:12,flexShrink:0,marginRight:4}}>▶</span>
+                )}
+              </a>
+            )
+          })}
+        </div>
+      )}
+      {toast&&<Toast toast={toast}/>}
+    </Pantalla>
   )
 
   return (
