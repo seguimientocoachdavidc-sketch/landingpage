@@ -2,550 +2,490 @@
 
 import { useEffect, useRef, useState } from "react"
 
+/* ── Identidad de marca (consistente con el resto de la app) ── */
 const R = "#E8000D"
+const G = "#22c55e"
+const B = "#3b82f6"
+const O = "#f59e0b"
 
-/* ── Hook responsive ──────────────────────────────────────────── */
-function useBreakpoint() {
-  const [w, setW] = useState(1200)
-  useEffect(() => {
-    const check = () => setW(window.innerWidth)
-    check()
-    window.addEventListener("resize", check)
-    return () => window.removeEventListener("resize", check)
-  }, [])
-  return { isMobile: w < 768, isTablet: w < 1024, w }
-}
+/* ══════════════════════════════════════════════════════════
+   DATOS DE LOS DEMOS INTERACTIVOS
+   ══════════════════════════════════════════════════════════ */
 
-/* ── FadeIn ───────────────────────────────────────────────────── */
-function FadeIn({ children, delay = 0, from = "bottom" }: {
-  children: React.ReactNode; delay?: number; from?: "bottom" | "left" | "right"
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [v, setV] = useState(false)
-  useEffect(() => {
-    const el = ref.current; if (!el) return
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setV(true); obs.disconnect() } },
-      { threshold: 0.06 }
-    )
-    obs.observe(el); return () => obs.disconnect()
-  }, [])
-  const tx = from === "left" ? "-32px" : from === "right" ? "32px" : "0"
-  const ty = from === "bottom" ? "36px" : "0"
+// Demo 1 — Progresión de volumen real (Sentadilla, 8 semanas)
+const VOLUMEN_SEMANAS = [
+  { semana: 1, volumen: 1240 },
+  { semana: 2, volumen: 1310 },
+  { semana: 3, volumen: 1290 },
+  { semana: 4, volumen: 1480, pr: true },
+  { semana: 5, volumen: 1520 },
+  { semana: 6, volumen: 1610 },
+  { semana: 7, volumen: 1590 },
+  { semana: 8, volumen: 1780, pr: true },
+]
+
+// Demo 2 — Alimentos de ejemplo para el mini registrador
+const ALIMENTOS_DEMO = [
+  { id: 1, nombre: "Pechuga de pollo 150g", kcal: 246, p: 44.6, c: 0.3, g: 7.4 },
+  { id: 2, nombre: "Arroz blanco 200g",     kcal: 322, p: 4.6,  c: 65.0, g: 4.2 },
+  { id: 3, nombre: "Aguacate 50g",          kcal: 111, p: 0.7,  c: 6.8, g: 8.2 },
+  { id: 4, nombre: "Whey Protein · 1 scoop",kcal: 120, p: 24.0, c: 3.0, g: 1.0 },
+]
+const META_DEMO = { kcal: 2100, p: 160, c: 220, g: 65 }
+
+export default function ProgramasPage() {
   return (
-    <div ref={ref} style={{
-      transition: `opacity 0.85s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 0.85s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
-      opacity: v ? 1 : 0, transform: v ? "translate(0,0)" : `translate(${tx},${ty})`,
-    }}>{children}</div>
-  )
-}
-
-/* ── BenefitRow ───────────────────────────────────────────────── */
-function BenefitRow({ text, delay }: { text: string; delay: number }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [v, setV] = useState(false)
-  useEffect(() => {
-    const el = ref.current; if (!el) return
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setV(true); obs.disconnect() } },
-      { threshold: 0.1 }
-    )
-    obs.observe(el); return () => obs.disconnect()
-  }, [])
-  return (
-    <div ref={ref} style={{
-      display: "flex", alignItems: "center", gap: 12,
-      padding: "11px 0", borderBottom: "1px solid rgba(255,255,255,0.04)",
-      transition: `opacity 0.6s ease ${delay}ms, transform 0.6s ease ${delay}ms`,
-      opacity: v ? 1 : 0, transform: v ? "translateX(0)" : "translateX(-16px)",
-    }}>
-      <div style={{ width: 5, height: 5, background: R, flexShrink: 0, transform: "rotate(45deg)" }} />
-      <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: "rgba(255,255,255,0.6)", fontWeight: 300 }}>{text}</span>
+    <div style={{ background: "#050507", minHeight: "100vh", color: "#fff",
+      fontFamily: "'Barlow', sans-serif", overflowX: "hidden" }}>
+      <Estilos />
+      <Nav />
+      <Hero />
+      <DemoVolumen />
+      <SeccionPlanes />
+      <DemoMacros />
+      <CierreCTA />
+      <Footer />
     </div>
   )
 }
 
-/* ── Botón CTA general ────────────────────────────────────────── */
-function CTABtn({ href, children, primary = false, outline = false, ext = false }: {
-  href: string; children: React.ReactNode; primary?: boolean; outline?: boolean; ext?: boolean
-}) {
-  const [hover, setHover] = useState(false)
-  const base: React.CSSProperties = {
-    display: "inline-flex", alignItems: "center", gap: 10,
-    padding: "16px 36px", fontSize: 14, fontWeight: 900,
-    fontFamily: "'Barlow Condensed', Impact, sans-serif",
-    letterSpacing: "0.2em", textTransform: "uppercase", textDecoration: "none",
-    transition: "all 0.25s ease", cursor: "pointer",
-  }
-  const style: React.CSSProperties = primary
-    ? { ...base, background: hover ? "#fff" : R, color: hover ? "#000" : "#fff", boxShadow: hover ? "none" : `0 10px 36px ${R}38`, clipPath: "polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))" }
-    : { ...base, border: `1px solid ${hover ? R : "rgba(255,255,255,0.15)"}`, color: hover ? "#fff" : "rgba(255,255,255,0.55)", background: hover ? `${R}10` : "transparent" }
-  return (
-    <a href={href} target={ext ? "_blank" : undefined} rel={ext ? "noopener noreferrer" : undefined}
-      style={style} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
-      {children}
-    </a>
-  )
-}
-
-/* ── Bloque de precio + botón de pago ────────────────────────── */
-function PrecioConPago({
-  monto, montoDisplay, programa, ctaLabel, secondaryCta
-}: {
-  monto: number
-  montoDisplay: string
-  programa: string
-  ctaLabel?: string
-  secondaryCta?: { label: string; href: string; ext?: boolean }
-}) {
-  const [hover, setHover] = useState(false)
-  const href = `/pagos?programa=${programa}`
-
-  return (
-    <div>
-      {/* Precio */}
-      <div className="bc" style={{ fontSize: "clamp(44px, 4vw, 64px)", fontWeight: 900, color: R, lineHeight: 1 }}>
-        {montoDisplay}
-      </div>
-      <div className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em", textTransform: "uppercase", marginTop: 4, marginBottom: 24 }}>
-        por mes
-      </div>
-
-      {/* Botón de pago principal */}
-      <a href={href}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        style={{
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-          width: "100%", padding: "17px 24px",
-          background: hover ? "#fff" : R, color: hover ? "#000" : "#fff",
-          fontFamily: "'Barlow Condensed', Impact, sans-serif",
-          fontSize: 15, fontWeight: 900, letterSpacing: "0.2em",
-          textTransform: "uppercase", textDecoration: "none",
-          clipPath: "polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))",
-          boxShadow: hover ? "none" : `0 10px 36px ${R}35`,
-          transition: "all 0.25s ease",
-        }}>
-        🔒 {ctaLabel || "Pagar ahora →"}
-      </a>
-
-      {/* Seguridad */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 10 }}>
-        <span style={{ fontSize: 11 }}>🔒</span>
-        <span className="b" style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", fontWeight: 300 }}>
-          PSE · Tarjeta · Nequi · Daviplata · Bancolombia
-        </span>
-      </div>
-
-      {/* CTA secundario opcional */}
-      {secondaryCta && (
-        <div style={{ marginTop: 12 }}>
-          <CTABtn href={secondaryCta.href} ext={secondaryCta.ext} outline>
-            {secondaryCta.label}
-          </CTABtn>
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* ══ COMPONENTE PRINCIPAL ═════════════════════════════════════════ */
-export default function Programas() {
-  const { isMobile, isTablet } = useBreakpoint()
-  const [scrollY, setScrollY] = useState(0)
-  const [heroIn, setHeroIn] = useState(false)
-
+/* ══════════════════════════════════════════════════════════
+   NAV
+   ══════════════════════════════════════════════════════════ */
+function Nav() {
+  const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
-    setTimeout(() => setHeroIn(true), 80)
-    const onScroll = () => setScrollY(window.scrollY)
-    window.addEventListener("scroll", onScroll, { passive: true })
+    const onScroll = () => setScrolled(window.scrollY > 40)
+    window.addEventListener("scroll", onScroll)
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
+  return (
+    <nav style={{ position: "sticky", top: 0, zIndex: 100,
+      background: scrolled ? "rgba(5,5,7,0.9)" : "transparent",
+      backdropFilter: scrolled ? "blur(12px)" : "none",
+      borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent",
+      transition: "all 0.3s ease" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px",
+        display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span className="bc" style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.01em" }}>
+          COACH<span style={{ color: R }}>.</span>DAVID
+        </span>
+        <a href="https://wa.me/573243747367" target="_blank" rel="noopener noreferrer"
+          className="bc" style={{ padding: "10px 20px", background: R, color: "#fff",
+            textDecoration: "none", fontSize: 13, fontWeight: 800, letterSpacing: "0.1em",
+            textTransform: "uppercase" }}>
+          Empezar →
+        </a>
+      </div>
+    </nav>
+  )
+}
 
-  const pad = isMobile ? "72px 20px" : isTablet ? "100px 32px" : "140px 64px"
-  const titleSize = isMobile ? "clamp(40px, 11vw, 60px)" : "clamp(48px, 5vw, 80px)"
+/* ══════════════════════════════════════════════════════════
+   HERO
+   ══════════════════════════════════════════════════════════ */
+function Hero() {
+  return (
+    <header style={{ maxWidth: 1100, margin: "0 auto", padding: "72px 24px 40px", position: "relative" }}>
+      <div style={{ position: "absolute", top: "10%", left: "50%", width: 600, height: 600,
+        background: `radial-gradient(circle, ${R}12 0%, transparent 70%)`,
+        transform: "translateX(-50%)", pointerEvents: "none" }} />
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+        <div style={{ width: 40, height: 2, background: R }} />
+        <span className="bc" style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.35em",
+          textTransform: "uppercase", color: R }}>
+          Dos servicios, un mismo sistema
+        </span>
+      </div>
+      <h1 className="bc" style={{ position: "relative", fontSize: "clamp(40px,7vw,84px)",
+        fontWeight: 900, textTransform: "uppercase", lineHeight: 0.95, letterSpacing: "-0.02em",
+        marginBottom: 24 }}>
+        Entrena y come<br/>con <span style={{ color: R }}>datos reales,</span><br/>no con hojas de cálculo
+      </h1>
+      <p className="b" style={{ position: "relative", fontSize: 18, color: "rgba(255,255,255,0.5)",
+        maxWidth: 560, lineHeight: 1.7, fontWeight: 300 }}>
+        Nada de PDFs ni plantillas genéricas. Cada cliente entra a una app propia donde
+        registra, ve su progreso y recibe seguimiento real — mío, no de un algoritmo.
+      </p>
+    </header>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   DEMO 1 — Progresión de volumen (animada, autoplay una vez)
+   ══════════════════════════════════════════════════════════ */
+function DemoVolumen() {
+  const [visibles, setVisibles] = useState(0)
+  const ref = useRef<HTMLDivElement>(null)
+  const [enViewport, setEnViewport] = useState(false)
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setEnViewport(true)
+    }, { threshold: 0.4 })
+    if (ref.current) obs.observe(ref.current)
+    return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!enViewport) return
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (reduce) { setVisibles(VOLUMEN_SEMANAS.length); return }
+    let i = 0
+    const t = setInterval(() => {
+      i++
+      setVisibles(i)
+      if (i >= VOLUMEN_SEMANAS.length) clearInterval(t)
+    }, 220)
+    return () => clearInterval(t)
+  }, [enViewport])
+
+  const maxVol = Math.max(...VOLUMEN_SEMANAS.map(s => s.volumen))
+  const primero = VOLUMEN_SEMANAS[0].volumen
+  const ultimo = VOLUMEN_SEMANAS[VOLUMEN_SEMANAS.length - 1].volumen
+  const mejora = Math.round(((ultimo - primero) / primero) * 100)
 
   return (
-    <main style={{ background: "#000", color: "#fff", fontFamily: "'Barlow', sans-serif", overflowX: "hidden" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;0,800;0,900;1,900&family=Barlow:wght@300;400;500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::selection { background: ${R}; color: #fff; }
-        .bc { font-family: 'Barlow Condensed', Impact, sans-serif; }
-        .b  { font-family: 'Barlow', sans-serif; }
-        @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-        @keyframes breathe { 0%,100%{opacity:0.6} 50%{opacity:1} }
-        @keyframes glow    { 0%,100%{box-shadow:0 0 20px ${R}30} 50%{box-shadow:0 0 50px ${R}55} }
-      `}</style>
-
-      {/* ══ HERO ════════════════════════════════════════════════════ */}
-      <section style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, transform: isMobile ? "none" : `translateY(${scrollY * 0.25}px)`, willChange: "transform" }}>
-          <img src="/gym-2.jpg" alt="" style={{ width: "100%", height: "110%", objectFit: "cover", filter: "grayscale(30%) contrast(1.1)", opacity: isMobile ? 0.25 : 0.35 }} />
-        </div>
-        <div style={{ position: "absolute", inset: 0, background: isMobile ? "linear-gradient(to bottom, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.78) 100%)" : "linear-gradient(to right, #000 45%, rgba(0,0,0,0.65) 70%, rgba(0,0,0,0.25) 100%)" }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, #000 0%, transparent 55%)" }} />
-        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 75% 40%, ${R}10 0%, transparent 50%)` }} />
-        {!isMobile && (
-          <div style={{ position: "absolute", left: "max(32px, calc(50vw - 700px))", top: 0, bottom: 0, width: 2, background: `linear-gradient(to bottom, transparent, ${R} 25%, ${R} 75%, transparent)`, opacity: heroIn ? 1 : 0, transition: "opacity 1.2s ease 0.5s" }} />
-        )}
-
-        <div style={{ position: "relative", zIndex: 10, maxWidth: 1400, margin: "0 auto", padding: isMobile ? "100px 20px 80px" : "140px 64px 100px", width: "100%" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, opacity: heroIn ? 1 : 0, transform: heroIn ? "none" : "translateY(20px)", transition: "all 0.7s ease 0.2s" }}>
-            <div style={{ width: 32, height: 2, background: R }} />
-            <span className="bc" style={{ color: R, fontSize: isMobile ? 11 : 12, fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase" }}>
-              Programas · Estructura · Resultados
+    <section ref={ref} style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px 80px" }}>
+      <div style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.015)",
+        padding: "36px 28px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+          flexWrap: "wrap", gap: 16, marginBottom: 32 }}>
+          <div>
+            <span className="bc" style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.25em",
+              textTransform: "uppercase", color: "rgba(255,255,255,0.35)" }}>
+              Esto es lo que ve un cliente real — Sentadilla, 8 semanas
             </span>
+            <h3 className="bc" style={{ fontSize: 28, fontWeight: 900, textTransform: "uppercase",
+              marginTop: 6 }}>
+              Su volumen, semana a semana
+            </h3>
           </div>
-
-          <div style={{ marginBottom: isMobile ? 24 : 32 }}>
-            {["NO DISEÑO", '"RUTINAS".', "CONSTRUYO", "RESULTADOS."].map((line, i) => (
-              <div key={line} style={{ opacity: heroIn ? 1 : 0, transform: heroIn ? "translateY(0)" : "translateY(80px)", transition: `all 0.9s cubic-bezier(0.16,1,0.3,1) ${0.3 + i * 0.12}s` }}>
-                <span className="bc" style={{ display: "block", fontSize: isMobile ? "clamp(48px, 13vw, 68px)" : "clamp(56px, 9vw, 140px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.87, letterSpacing: "-0.02em", color: i === 2 ? R : "#fff", textShadow: i === 2 ? `0 0 60px ${R}45` : "none" }}>{line}</span>
+          {visibles >= VOLUMEN_SEMANAS.length && (
+            <div style={{ textAlign: "right", animation: "fadeUp 0.4s ease" }}>
+              <div className="bc" style={{ fontSize: 36, fontWeight: 900, color: G, lineHeight: 1 }}>
+                +{mejora}%
               </div>
-            ))}
-          </div>
-
-          <p className="b" style={{ fontSize: isMobile ? 15 : 17, color: "rgba(255,255,255,0.5)", maxWidth: 460, lineHeight: 1.7, fontWeight: 300, opacity: heroIn ? 1 : 0, transform: heroIn ? "none" : "translateY(20px)", transition: "all 0.7s ease 0.9s", marginBottom: isMobile ? 32 : 48 }}>
-            Cada programa está diseñado con estructura, seguimiento y progresión real. No improvisamos.
-          </p>
-
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, opacity: heroIn ? 1 : 0, transform: heroIn ? "none" : "translateY(20px)", transition: "all 0.7s ease 1.1s" }}>
-            {[{ label: "Entrenamiento", href: "#entrenamiento" }, { label: "Alimentación", href: "#alimentacion" }, { label: "Programa Duo", href: "#duo" }].map((a, i) => (
-              <a key={a.href} href={a.href} className="bc" style={{ display: "flex", alignItems: "center", gap: 8, padding: isMobile ? "10px 16px" : "12px 24px", border: `1px solid ${i === 2 ? R : "rgba(255,255,255,0.15)"}`, background: i === 2 ? `${R}18` : "transparent", color: i === 2 ? "#fff" : "rgba(255,255,255,0.5)", fontSize: isMobile ? 12 : 13, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", textDecoration: "none", transition: "all 0.25s ease" }}
-                onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = R; el.style.color = "#fff" }}
-                onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = i === 2 ? R : "rgba(255,255,255,0.15)"; el.style.color = i === 2 ? "#fff" : "rgba(255,255,255,0.5)" }}
-              >
-                <span style={{ color: R }}>0{i + 1}</span> {a.label}
-              </a>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", padding: "11px 0", overflow: "hidden", opacity: heroIn ? 1 : 0, transition: "opacity 1s ease 1.5s" }}>
-          <div style={{ display: "flex", animation: "marquee 22s linear infinite", width: "max-content" }}>
-            {Array(6).fill(null).map((_, i) => (
-              <span key={i} className="bc" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(255,255,255,0.12)", paddingRight: 60, whiteSpace: "nowrap" }}>
-                Entrenamiento · Alimentación · Seguimiento · Progresión · Sin Improvisación ·&nbsp;
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══ PROGRAMA 01 — ENTRENAMIENTO ════════════════════════════ */}
-      <section id="entrenamiento" style={{ position: "relative", overflow: "hidden" }}>
-        {!isMobile && (
-          <div className="bc" style={{ position: "absolute", right: -40, top: "50%", transform: "translateY(-50%)", fontSize: "40vw", fontWeight: 900, color: "rgba(255,255,255,0.012)", lineHeight: 1, pointerEvents: "none", userSelect: "none", letterSpacing: "-0.05em" }}>01</div>
-        )}
-        <div style={{ position: "relative", maxWidth: 1400, margin: "0 auto", padding: pad }}>
-          <FadeIn>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: isMobile ? 36 : 64 }}>
-              <div style={{ width: 32, height: 2, background: R }} />
-              <span className="bc" style={{ color: R, fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>Programa 01</span>
-            </div>
-          </FadeIn>
-
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 48 : 80, alignItems: "center" }}>
-            <FadeIn from={isMobile ? "bottom" : "left"}>
-              <div>
-                <h2 className="bc" style={{ fontSize: titleSize, fontWeight: 900, textTransform: "uppercase", lineHeight: 0.88, letterSpacing: "-0.02em", marginBottom: 24 }}>
-                  PROGRAMA DE<br />ENTRENAMIENTO<br /><span style={{ color: R }}>PERSONALIZADO</span>
-                </h2>
-                <p className="b" style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", lineHeight: 1.75, fontWeight: 300, marginBottom: 32 }}>
-                  Un sistema de coaching estructurado basado en la ciencia del entrenamiento de fuerza e hipertrofia: volumen, intensidad, tensión mecánica y sobrecarga progresiva.
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 40 }}>
-                  {["Recolección de información (historial físico y médico)", "Pruebas físicas diagnósticas", "Programa estructurado por objetivos", "Progresión planificada semana a semana", "Ajustes según rendimiento real", "Seguimiento 1 a 1 constante", "Aprenderás a entrenar de forma óptima"].map((item, i) => (
-                    <BenefitRow key={i} text={item} delay={i * 50} />
-                  ))}
-                </div>
-
-                {/* ✅ BOTÓN DE PAGO INTEGRADO */}
-                <PrecioConPago
-                  monto={140000}
-                  montoDisplay="$140.000"
-                  programa="entrenamiento"
-                  ctaLabel="Pagar mensualidad →"
-                  secondaryCta={{ label: "Aplicar a asesoría primero", href: "/asesoria" }}
-                />
+              <div className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+                de volumen en 8 semanas
               </div>
-            </FadeIn>
-
-            <FadeIn from={isMobile ? "bottom" : "right"} delay={isMobile ? 0 : 150}>
-              <div style={{ position: "relative" }}>
-                <img src="/Entrenando_1.jpeg" alt="Programa de entrenamiento" style={{ width: "100%", objectFit: "cover", filter: "grayscale(15%) contrast(1.05)", display: "block" }} />
-                <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 60%, ${R}15)` }} />
-                {!isMobile && <div style={{ position: "absolute", top: -16, right: -16, bottom: 16, left: 16, border: `1px solid ${R}25`, pointerEvents: "none" }} />}
-                <div style={{ position: "absolute", top: 20, left: 20, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", border: `1px solid ${R}40`, padding: "10px 16px" }}>
-                  <div className="bc" style={{ fontSize: 11, color: R, letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: 700 }}>Hipertrofia · Fuerza</div>
-                </div>
-              </div>
-            </FadeIn>
-          </div>
-        </div>
-      </section>
-
-      <div style={{ height: 1, background: `linear-gradient(to right, transparent, ${R}40, transparent)` }} />
-
-      {/* ══ PROGRAMA 02 — ALIMENTACIÓN ═════════════════════════════ */}
-      <section id="alimentacion" style={{ position: "relative", background: "#050505", overflow: "hidden" }}>
-        {!isMobile && (
-          <div className="bc" style={{ position: "absolute", left: -40, top: "50%", transform: "translateY(-50%)", fontSize: "40vw", fontWeight: 900, color: "rgba(255,255,255,0.012)", lineHeight: 1, pointerEvents: "none", userSelect: "none", letterSpacing: "-0.05em" }}>02</div>
-        )}
-        <div style={{ position: "relative", maxWidth: 1400, margin: "0 auto", padding: pad }}>
-          <FadeIn>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: isMobile ? 36 : 64 }}>
-              <div style={{ width: 32, height: 2, background: "rgba(255,255,255,0.2)" }} />
-              <span className="bc" style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>Programa 02</span>
-            </div>
-          </FadeIn>
-
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 48 : 80, alignItems: "center" }}>
-            <div style={{ order: isMobile ? 2 : 1 }}>
-              <FadeIn from={isMobile ? "bottom" : "left"} delay={isMobile ? 0 : 150}>
-                <div style={{ position: "relative" }}>
-                  <img src="/comida.jpg" alt="Plan de alimentación" style={{ width: "100%", objectFit: "cover", filter: "grayscale(10%) contrast(1.05)", display: "block" }} />
-                  <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 50%, rgba(5,5,5,0.8))` }} />
-                  {!isMobile && <div style={{ position: "absolute", top: 16, left: -16, bottom: -16, right: 16, border: `1px solid rgba(255,255,255,0.08)`, pointerEvents: "none" }} />}
-                  <div style={{ position: "absolute", bottom: 20, right: 20, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)", padding: "10px 16px" }}>
-                    <div className="bc" style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", letterSpacing: "0.25em", textTransform: "uppercase", fontWeight: 700 }}>Adherencia · Resultados</div>
-                  </div>
-                </div>
-              </FadeIn>
-            </div>
-
-            <div style={{ order: isMobile ? 1 : 2 }}>
-              <FadeIn from={isMobile ? "bottom" : "right"}>
-                <div>
-                  <h2 className="bc" style={{ fontSize: titleSize, fontWeight: 900, textTransform: "uppercase", lineHeight: 0.88, letterSpacing: "-0.02em", marginBottom: 24 }}>
-                    ESTRATEGIA DE<br /><span style={{ color: R }}>ALIMENTACIÓN</span><br />PERSONALIZADA
-                  </h2>
-                  <p className="b" style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", lineHeight: 1.75, fontWeight: 300, marginBottom: 32 }}>
-                    No es una dieta genérica. Es una estrategia adaptada a tu contexto, hábitos y preferencias reales — diseñada para que puedas sostenerla en el tiempo.
-                  </p>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 40 }}>
-                    {["Revisión de hábitos alimenticios actuales", "Recolección de información detallada", "Guía adaptada a tus gustos y preferencias", "Ajustes constantes según evolución", "Seguimiento continuo"].map((item, i) => (
-                      <BenefitRow key={i} text={item} delay={i * 50} />
-                    ))}
-                  </div>
-
-                  {/* ✅ BOTÓN DE PAGO INTEGRADO */}
-                  <PrecioConPago
-                    monto={130000}
-                    montoDisplay="$130.000"
-                    programa="alimentacion"
-                    ctaLabel="Pagar mensualidad →"
-                    secondaryCta={{ label: "Iniciar evaluación nutricional", href: "/nutricion-cuestionario" }}
-                  />
-                </div>
-              </FadeIn>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div style={{ height: 1, background: `linear-gradient(to right, transparent, ${R}40, transparent)` }} />
-
-      {/* ══ PROGRAMA 03 — DUO ══════════════════════════════════════ */}
-      <section id="duo" style={{ position: "relative", overflow: "hidden", background: "#000" }}>
-        <div style={{ position: "absolute", inset: 0, opacity: 0.35, backgroundImage: `linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)`, backgroundSize: "60px 60px" }} />
-        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 50%, ${R}10 0%, transparent 65%)` }} />
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(to right, transparent, ${R}, transparent)` }} />
-
-        <div style={{ position: "relative", maxWidth: 1400, margin: "0 auto", padding: pad }}>
-          <FadeIn>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
-              <div style={{ width: 32, height: 2, background: R }} />
-              <span className="bc" style={{ color: R, fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>Programa 03 · Recomendado</span>
-            </div>
-            <h2 className="bc" style={{ fontSize: isMobile ? "clamp(48px, 12vw, 72px)" : "clamp(56px, 7vw, 110px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.87, letterSpacing: "-0.02em", marginBottom: 16 }}>
-              ENTRENA Y<br />COME COMO<br /><span style={{ color: R, textShadow: `0 0 60px ${R}45` }}>UN SISTEMA.</span>
-            </h2>
-            <p className="b" style={{ fontSize: isMobile ? 15 : 17, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontWeight: 300, maxWidth: 520, marginBottom: isMobile ? 40 : 64 }}>
-              El progreso real ocurre cuando entrenamiento y nutrición trabajan juntos — como un sistema integrado.
-            </p>
-          </FadeIn>
-
-          <FadeIn delay={100}>
-            <div style={{ border: `2px solid ${R}`, background: "rgba(232,0,13,0.04)", position: "relative", overflow: "hidden", boxShadow: `0 0 60px ${R}15, inset 0 0 60px ${R}06`, animation: "glow 3s ease infinite" }}>
-              <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, background: `${R}12`, borderRadius: "50%", filter: "blur(50px)", pointerEvents: "none" }} />
-
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 0 }}>
-
-                {/* Columna izquierda — beneficios */}
-                <div style={{ padding: isMobile ? "36px 24px" : "56px 48px", borderRight: isMobile ? "none" : `1px solid ${R}20`, borderBottom: isMobile ? `1px solid ${R}15` : "none" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28 }}>
-                    <div style={{ width: 7, height: 7, background: R, animation: "breathe 2s ease infinite" }} />
-                    <span className="bc" style={{ fontSize: 11, color: R, letterSpacing: "0.35em", textTransform: "uppercase", fontWeight: 700 }}>Programa DUO — Todo incluido</span>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                    {[
-                      { cat: "Entrenamiento", items: ["Programa personalizado completo", "Progresión planificada", "Ajustes según rendimiento"] },
-                      { cat: "Alimentación", items: ["Guía adaptada a tus gustos", "Ajustes constantes", "Seguimiento continuo"] },
-                      { cat: "Beneficios exclusivos", items: ["Seguimiento completo integrado", "Tips y recomendaciones avanzadas", "Mayor velocidad de progreso"] },
-                    ].map((group) => (
-                      <div key={group.cat} style={{ marginBottom: 24 }}>
-                        <div className="bc" style={{ fontSize: 11, color: R, letterSpacing: "0.3em", textTransform: "uppercase", fontWeight: 700, marginBottom: 12 }}>{group.cat}</div>
-                        {group.items.map((item, i) => (
-                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                            <div style={{ width: 5, height: 5, background: R, flexShrink: 0, transform: "rotate(45deg)" }} />
-                            <span className="b" style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", fontWeight: 300 }}>{item}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Columna derecha — precio + pago */}
-                <div style={{ padding: isMobile ? "36px 24px" : "56px 48px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <div style={{ marginBottom: 8 }}>
-                    <span className="bc" style={{ fontSize: isMobile ? 20 : 24, color: "rgba(255,255,255,0.2)", textDecoration: "line-through", fontWeight: 700 }}>$270.000</span>
-                    <span className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", marginLeft: 8 }}>/mes</span>
-                  </div>
-
-                  {/* Badge descuento */}
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: R, color: "#fff", padding: "8px 14px", width: "fit-content", marginBottom: 20 }}>
-                    <span className="bc" style={{ fontSize: isMobile ? 18 : 22, fontWeight: 900 }}>20%</span>
-                    <span className="bc" style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>de descuento</span>
-                  </div>
-
-                  {/* Ahorro */}
-                  <div style={{ padding: "14px 18px", border: "1px solid rgba(255,255,255,0.07)", marginBottom: 28, background: "rgba(255,255,255,0.02)" }}>
-                    <div className="bc" style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: 4 }}>Ahorro mensual</div>
-                    <div className="bc" style={{ fontSize: 28, fontWeight: 900, color: "#fff" }}>$50.000</div>
-                  </div>
-
-                  {/* ✅ BOTÓN DE PAGO INTEGRADO */}
-                  <PrecioConPago
-                    monto={220000}
-                    montoDisplay="$220.000"
-                    programa="duo"
-                    ctaLabel="Pagar programa DUO →"
-                    secondaryCta={{
-                      label: "Consultar por WhatsApp",
-                      href: "https://wa.me/573243747367?text=Hola Coach David, quiero el programa DUO.",
-                      ext: true,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ══ COMPARATIVA ════════════════════════════════════════════ */}
-      <section style={{ background: "#080808", padding: isMobile ? "64px 20px" : "100px 64px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-        <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-          <FadeIn>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 32, height: 2, background: "rgba(255,255,255,0.15)" }} />
-              <span className="bc" style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>Comparativa</span>
-            </div>
-            <h2 className="bc" style={{ fontSize: isMobile ? "clamp(36px, 10vw, 52px)" : "clamp(36px, 4vw, 60px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.9, letterSpacing: "-0.02em", marginBottom: isMobile ? 36 : 52 }}>
-              ¿CUÁL ES EL<br /><span style={{ color: R }}>INDICADO PARA TI?</span>
-            </h2>
-          </FadeIn>
-
-          {isMobile ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {[
-                { title: "Entrenamiento", price: "$140.000", color: "rgba(255,255,255,0.6)", items: ["✓ Programa personalizado", "✓ Seguimiento 1 a 1", "✓ Progresión planificada", "✓ Ajustes constantes", "— Plan de alimentación", "— Tips avanzados"], href: "/pagos?programa=entrenamiento", cta: "🔒 Pagar ahora", featured: false },
-                { title: "Alimentación", price: "$130.000", color: "rgba(255,255,255,0.6)", items: ["— Programa de entrenamiento", "✓ Plan de alimentación", "✓ Seguimiento 1 a 1", "— Progresión planificada", "✓ Ajustes constantes", "— Tips avanzados"], href: "/pagos?programa=alimentacion", cta: "🔒 Pagar ahora", featured: false },
-                { title: "DUO ★", price: "$220.000", color: R, items: ["✓ Programa personalizado", "✓ Plan de alimentación", "✓ Seguimiento 1 a 1", "✓ Progresión planificada", "✓ Ajustes constantes", "✓ Tips avanzados exclusivos"], href: "/pagos?programa=duo", cta: "🔒 Pagar programa DUO", featured: true },
-              ].map((card) => (
-                <FadeIn key={card.title}>
-                  <div style={{ background: card.featured ? `${R}08` : "#0a0a0a", border: `${card.featured ? "2px" : "1px"} solid ${card.featured ? R : "rgba(255,255,255,0.07)"}`, padding: "28px 22px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-                      <h3 className="bc" style={{ fontSize: 22, fontWeight: 900, textTransform: "uppercase", color: card.color }}>{card.title}</h3>
-                      <div className="bc" style={{ fontSize: 22, fontWeight: 900, color: card.featured ? R : "#fff" }}>{card.price}<span className="b" style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginLeft: 4 }}>/mes</span></div>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
-                      {card.items.map((item, i) => (
-                        <div key={i} className="b" style={{ fontSize: 13, color: item.startsWith("✓") ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.2)", fontWeight: 300 }}>{item}</div>
-                      ))}
-                    </div>
-                    <a href={card.href} className="bc"
-                      style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "14px", fontSize: 13, fontWeight: 800, letterSpacing: "0.15em", textTransform: "uppercase", textDecoration: "none", background: card.featured ? R : "transparent", color: card.featured ? "#fff" : "rgba(255,255,255,0.5)", border: card.featured ? "none" : `1px solid rgba(255,255,255,0.12)`, clipPath: card.featured ? "polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))" : "none" }}>
-                      {card.cta}
-                    </a>
-                  </div>
-                </FadeIn>
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 1, background: "rgba(255,255,255,0.04)" }}>
-              {["", "Entrenamiento", "Alimentación", "DUO ★"].map((h, i) => (
-                <div key={i} style={{ padding: "20px 24px", background: i === 3 ? `${R}15` : "#080808", borderBottom: `2px solid ${i === 3 ? R : "rgba(255,255,255,0.06)"}` }}>
-                  <span className="bc" style={{ fontSize: i === 0 ? 11 : 16, fontWeight: 800, textTransform: "uppercase", letterSpacing: i === 0 ? "0.3em" : "0.05em", color: i === 3 ? R : i === 0 ? "rgba(255,255,255,0.25)" : "#fff" }}>{h}</span>
-                </div>
-              ))}
-              {[
-                { feat: "Programa de entrenamiento", e: true, a: false, d: true },
-                { feat: "Plan de alimentación", e: false, a: true, d: true },
-                { feat: "Seguimiento 1 a 1", e: true, a: true, d: true },
-                { feat: "Progresión planificada", e: true, a: false, d: true },
-                { feat: "Ajustes constantes", e: true, a: true, d: true },
-                { feat: "Tips avanzados exclusivos", e: false, a: false, d: true },
-                { feat: "Mayor velocidad de progreso", e: false, a: false, d: true },
-                { feat: "Precio mensual", e: "$140.000", a: "$130.000", d: "$220.000" },
-                { feat: "Pago seguro", e: "🔒 Pagar", a: "🔒 Pagar", d: "🔒 Pagar DUO" },
-              ].map((row, ri) => ([
-                <div key={`f${ri}`} style={{ padding: "15px 24px", background: "#080808", display: "flex", alignItems: "center" }}>
-                  <span className="b" style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", fontWeight: 300 }}>{row.feat}</span>
-                </div>,
-                ...([
-                  { val: row.e, programa: "entrenamiento" },
-                  { val: row.a, programa: "alimentacion" },
-                  { val: row.d, programa: "duo" },
-                ].map(({ val, programa }, ci) => (
-                  <div key={`${ri}-${ci}`} style={{ padding: "15px 24px", display: "flex", alignItems: "center", justifyContent: "center", background: ci === 2 ? `${R}08` : "#080808", borderLeft: "1px solid rgba(255,255,255,0.04)" }}>
-                    {/* Fila de pago */}
-                    {row.feat === "Pago seguro" ? (
-                      <a href={`/pagos?programa=${programa}`} className="bc"
-                        style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", textDecoration: "none", color: ci === 2 ? R : "rgba(255,255,255,0.5)", borderBottom: `1px solid ${ci === 2 ? R : "rgba(255,255,255,0.2)"}`, paddingBottom: 2, transition: "all 0.2s ease" }}
-                        onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.color = "#fff"}
-                        onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.color = ci === 2 ? R : "rgba(255,255,255,0.5)"}
-                      >{typeof val === "string" ? val : ""}</a>
-                    ) : typeof val === "boolean" ? (
-                      val
-                        ? <span style={{ color: R, fontSize: 17, fontWeight: 900 }}>◈</span>
-                        : <span style={{ color: "rgba(255,255,255,0.1)", fontSize: 17 }}>—</span>
-                    ) : (
-                      <span className="bc" style={{ fontSize: 15, fontWeight: 800, color: ci === 2 ? R : "rgba(255,255,255,0.7)" }}>{val}</span>
-                    )}
-                  </div>
-                )))
-              ]))}
             </div>
           )}
         </div>
-      </section>
 
-      {/* ══ CTA FINAL ═══════════════════════════════════════════════ */}
-      <section style={{ position: "relative", padding: isMobile ? "80px 20px" : "140px 64px", background: "#000", overflow: "hidden", textAlign: "center" }}>
-        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at center, ${R}0d 0%, transparent 60%)` }} />
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(to right, transparent, ${R}70, transparent)` }} />
-
-        <div style={{ position: "relative", maxWidth: 900, margin: "0 auto" }}>
-          <FadeIn>
-            <span className="bc" style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, letterSpacing: "0.4em", textTransform: "uppercase", fontWeight: 700 }}>El siguiente paso</span>
-            <h2 className="bc" style={{ fontSize: isMobile ? "clamp(40px, 11vw, 60px)" : "clamp(48px, 7vw, 100px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.88, letterSpacing: "-0.02em", marginTop: 16 }}>
-              QUIERO AYUDARTE<br />A QUE LO HAGAS<br /><span style={{ color: R, textShadow: `0 0 50px ${R}55` }}>DE FORMA CORRECTA.</span>
-            </h2>
-            <p className="b" style={{ marginTop: 24, fontSize: isMobile ? 15 : 17, color: "rgba(255,255,255,0.4)", fontWeight: 300 }}>Avancemos a un nuevo nivel. Con un sistema real.</p>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 44 }}>
-              <CTABtn href="/asesoria" primary>Aplicar a asesoría →</CTABtn>
-              <CTABtn href="/pagos" outline>🔒 Ir a pagos</CTABtn>
-              <CTABtn href="https://wa.me/573243747367" ext outline>Escribir por WhatsApp</CTABtn>
-            </div>
-            <p className="b" style={{ marginTop: 20, fontSize: 12, color: "rgba(255,255,255,0.18)" }}>Sin compromisos. Una conversación para ver si hay fit.</p>
-          </FadeIn>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 200 }}>
+          {VOLUMEN_SEMANAS.map((s, i) => {
+            const mostrar = i < visibles
+            const alturaPct = (s.volumen / maxVol) * 100
+            return (
+              <div key={s.semana} style={{ flex: 1, display: "flex", flexDirection: "column",
+                alignItems: "center", height: "100%", justifyContent: "flex-end", position: "relative" }}>
+                {mostrar && s.pr && (
+                  <div style={{ position: "absolute", top: -28,
+                    fontSize: 10, fontWeight: 800, color: R, letterSpacing: "0.1em",
+                    animation: "fadeUp 0.3s ease" }} className="bc">
+                    PR 🔥
+                  </div>
+                )}
+                <div style={{
+                  width: "100%",
+                  height: mostrar ? `${alturaPct}%` : "0%",
+                  background: s.pr ? R : "rgba(255,255,255,0.15)",
+                  transition: "height 0.5s cubic-bezier(0.22,1,0.36,1)",
+                  boxShadow: s.pr && mostrar ? `0 0 20px ${R}70` : "none",
+                }} />
+                <span className="bc" style={{ fontSize: 10, color: "rgba(255,255,255,0.3)",
+                  marginTop: 8, letterSpacing: "0.05em" }}>
+                  S{s.semana}
+                </span>
+              </div>
+            )
+          })}
         </div>
-      </section>
 
-    </main>
+        <p className="b" style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginTop: 24,
+          lineHeight: 1.6, maxWidth: 480 }}>
+          Cada barra sale directo del historial real de registros — no es una proyección.
+          El sistema detecta el PR automáticamente y se lo muestra al cliente el mismo día que ocurre.
+        </p>
+      </div>
+    </section>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   PLANES
+   ══════════════════════════════════════════════════════════ */
+function SeccionPlanes() {
+  return (
+    <section style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px 80px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 40 }}>
+        <div style={{ width: 40, height: 2, background: R }} />
+        <span className="bc" style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.3em",
+          textTransform: "uppercase", color: R }}>
+          Elige tu mundo
+        </span>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 20 }}>
+        <PlanCard
+          icono="🏋️"
+          nombre="Entrenamiento"
+          tagline="Tu programa, ejecutado con precisión"
+          color={R}
+          items={[
+            "App web personalizada — tu programa, tus ejercicios, tu progreso",
+            "Registra cada serie en segundos: peso y repeticiones",
+            "Historial completo por ejercicio, incluso cuando cambiamos tu rutina",
+            "Detección automática de PRs — sabes el mismo día que superaste tu marca",
+            "Racha semanal de consistencia por cada día de tu split",
+            "Mensaje distinto antes de cada sesión, según tu historial real",
+            "Nota semanal mía, siempre visible, con el foco de esa semana",
+            "Biblioteca de ejercicios con video guía — técnica a un clic",
+            "CORE y calentamiento guiados para cualquier día",
+            "Seguimiento de medidas con gráfica de evolución",
+            "Resumen de cada sesión directo a mi WhatsApp — te reviso de verdad",
+          ]}
+        />
+        <PlanCard
+          icono="🍽️"
+          nombre="Macros"
+          tagline="Tu alimentación, sin adivinar"
+          color={G}
+          destacado
+          items={[
+            "Menú calculado según tu objetivo — déficit, mantenimiento o superávit",
+            "App de registro diario con cerca de 500 alimentos colombianos y de marca",
+            "Metas visuales en tiempo real: calorías, proteína, grasas y carbos",
+            "También fibra, sodio, azúcares, hierro, calcio y potasio",
+            "Déficit real de la semana, calculado con lo que de verdad comiste",
+            "Recetario con video de preparación — variedad sin salirte del plan",
+            "Seguimiento de medidas incluido",
+            "Acompañamiento directo conmigo, no un chatbot",
+          ]}
+        />
+        <PlanCard
+          icono="⚡"
+          nombre="Dúo"
+          tagline="Los dos mundos, un solo acceso"
+          color={O}
+          items={[
+            "Todo lo del plan de Entrenamiento",
+            "Todo lo del plan de Macros",
+            "Un solo acceso, un solo seguimiento",
+            "Precio más accesible que contratarlos por separado",
+          ]}
+        />
+      </div>
+    </section>
+  )
+}
+
+function PlanCard({ icono, nombre, tagline, color, items, destacado }: {
+  icono: string; nombre: string; tagline: string; color: string
+  items: string[]; destacado?: boolean
+}) {
+  return (
+    <div style={{ padding: "32px 26px", background: destacado ? `${color}08` : "rgba(255,255,255,0.015)",
+      border: `1px solid ${destacado ? color + "40" : "rgba(255,255,255,0.08)"}`,
+      display: "flex", flexDirection: "column", position: "relative" }}>
+      {destacado && (
+        <div className="bc" style={{ position: "absolute", top: -1, right: 20,
+          background: color, color: "#000", fontSize: 10, fontWeight: 900,
+          letterSpacing: "0.1em", padding: "5px 12px", textTransform: "uppercase" }}>
+          Más pedido
+        </div>
+      )}
+      <span style={{ fontSize: 32, marginBottom: 16 }}>{icono}</span>
+      <h3 className="bc" style={{ fontSize: 26, fontWeight: 900, textTransform: "uppercase",
+        marginBottom: 4, letterSpacing: "-0.01em" }}>
+        {nombre}
+      </h3>
+      <p className="b" style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 24,
+        fontWeight: 300 }}>
+        {tagline}
+      </p>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0, marginBottom: 28, flex: 1 }}>
+        {items.map((item, i) => (
+          <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10,
+            marginBottom: 13, fontSize: 13.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>
+            <span style={{ color, flexShrink: 0, marginTop: 2, fontSize: 12 }}>✓</span>
+            <span className="b" style={{ fontWeight: 300 }}>{item}</span>
+          </li>
+        ))}
+      </ul>
+      <a href="https://wa.me/573243747367" target="_blank" rel="noopener noreferrer"
+        className="bc" style={{ padding: "14px", background: destacado ? color : "transparent",
+          border: `1px solid ${color}`, color: destacado ? "#000" : color,
+          textAlign: "center", textDecoration: "none", fontSize: 13, fontWeight: 800,
+          letterSpacing: "0.1em", textTransform: "uppercase" }}>
+        Escríbeme por este plan →
+      </a>
+    </div>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   DEMO 2 — Mini registrador de macros interactivo
+   ══════════════════════════════════════════════════════════ */
+function DemoMacros() {
+  const [seleccionados, setSeleccionados] = useState<number[]>([])
+
+  const toggle = (id: number) => {
+    setSeleccionados(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])
+  }
+
+  const totales = ALIMENTOS_DEMO
+    .filter(a => seleccionados.includes(a.id))
+    .reduce((acc, a) => ({
+      kcal: acc.kcal + a.kcal, p: acc.p + a.p, c: acc.c + a.c, g: acc.g + a.g
+    }), { kcal: 0, p: 0, c: 0, g: 0 })
+
+  const barras = [
+    { label: "Calorías", val: totales.kcal, meta: META_DEMO.kcal, unit: "kcal", color: "#fff" },
+    { label: "Proteína", val: totales.p, meta: META_DEMO.p, unit: "g", color: G },
+    { label: "Carbos", val: totales.c, meta: META_DEMO.c, unit: "g", color: B },
+    { label: "Grasas", val: totales.g, meta: META_DEMO.g, unit: "g", color: O },
+  ]
+
+  return (
+    <section style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 24px 90px" }}>
+      <div style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.015)",
+        padding: "36px 28px" }}>
+        <span className="bc" style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.25em",
+          textTransform: "uppercase", color: "rgba(255,255,255,0.35)" }}>
+          Pruébalo — toca los alimentos de abajo
+        </span>
+        <h3 className="bc" style={{ fontSize: 28, fontWeight: 900, textTransform: "uppercase",
+          marginTop: 6, marginBottom: 28 }}>
+          Así se registra un día real
+        </h3>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32,
+          alignItems: "start" }} className="demo-macros-grid">
+
+          {/* Chips de alimentos */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {ALIMENTOS_DEMO.map(a => {
+              const activo = seleccionados.includes(a.id)
+              return (
+                <button key={a.id} onClick={() => toggle(a.id)}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "14px 16px", background: activo ? `${R}15` : "rgba(255,255,255,0.03)",
+                    border: `1px solid ${activo ? R + "60" : "rgba(255,255,255,0.08)"}`,
+                    cursor: "pointer", transition: "all 0.15s", textAlign: "left" }}>
+                  <div>
+                    <div className="bc" style={{ fontSize: 15, fontWeight: 700, color: "#fff",
+                      textTransform: "uppercase" }}>
+                      {a.nombre}
+                    </div>
+                    <div className="b" style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                      {a.kcal} kcal · P {a.p}g · C {a.c}g · G {a.g}g
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 20, color: activo ? R : "rgba(255,255,255,0.2)",
+                    flexShrink: 0, marginLeft: 12 }}>
+                    {activo ? "✓" : "+"}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Barras de totales */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 18, paddingTop: 4 }}>
+            {barras.map(b => {
+              const pct = Math.min(Math.round((b.val / b.meta) * 100), 100)
+              return (
+                <div key={b.label}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                    <span className="bc" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em",
+                      textTransform: "uppercase", color: "rgba(255,255,255,0.5)" }}>
+                      {b.label}
+                    </span>
+                    <span className="bc" style={{ fontSize: 12, fontWeight: 700, color: b.color }}>
+                      {Math.round(b.val)}{b.unit} <span style={{ color: "rgba(255,255,255,0.3)" }}>/ {b.meta}{b.unit}</span>
+                    </span>
+                  </div>
+                  <div style={{ height: 8, background: "rgba(255,255,255,0.08)", borderRadius: 4,
+                    overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${pct}%`, background: b.color,
+                      borderRadius: 4, transition: "width 0.4s cubic-bezier(0.22,1,0.36,1)" }} />
+                  </div>
+                </div>
+              )
+            })}
+            {seleccionados.length === 0 && (
+              <p className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 8,
+                fontStyle: "italic" }}>
+                Toca uno o varios alimentos de la izquierda para ver esto en acción.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   CTA FINAL
+   ══════════════════════════════════════════════════════════ */
+function CierreCTA() {
+  return (
+    <section style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px 100px", textAlign: "center" }}>
+      <h2 className="bc" style={{ fontSize: "clamp(28px,5vw,48px)", fontWeight: 900,
+        textTransform: "uppercase", lineHeight: 1.05, marginBottom: 20 }}>
+        Deja de adivinar.<br/><span style={{ color: R }}>Empieza a medir.</span>
+      </h2>
+      <a href="https://wa.me/573243747367" target="_blank" rel="noopener noreferrer"
+        className="bc" style={{ display: "inline-block", padding: "18px 40px", background: R,
+          color: "#fff", textDecoration: "none", fontSize: 15, fontWeight: 900,
+          letterSpacing: "0.15em", textTransform: "uppercase" }}>
+        Hablemos por WhatsApp →
+      </a>
+    </section>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════════════════════════ */
+function Footer() {
+  return (
+    <footer style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "40px 24px" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex",
+        justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+        <span className="bc" style={{ fontSize: 15, fontWeight: 900 }}>
+          COACH<span style={{ color: R }}>.</span>DAVID
+        </span>
+        <span className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+          Bogotá, Colombia · @coachfitdavid
+        </span>
+      </div>
+    </footer>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   ESTILOS
+   ══════════════════════════════════════════════════════════ */
+function Estilos() {
+  return (
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@300;400;500&display=swap');
+      *{box-sizing:border-box;margin:0;padding:0}
+      html{scroll-behavior:smooth}
+      .bc{font-family:'Barlow Condensed',Impact,sans-serif}
+      .b{font-family:'Barlow',sans-serif}
+      button{font-family:inherit}
+      @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+      @media (max-width: 720px){
+        .demo-macros-grid{grid-template-columns:1fr !important}
+      }
+      @media (prefers-reduced-motion: reduce){
+        *{animation-duration:0.01ms !important;transition-duration:0.01ms !important}
+      }
+    `}</style>
   )
 }
