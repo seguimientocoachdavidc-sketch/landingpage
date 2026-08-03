@@ -1593,6 +1593,33 @@ export default function PlanEntrenamientoPage() {
               📊 Seguimiento de medidas · Registra tu progreso semanal
             </div>
 
+            {/* Video guía — cómo tomar los perímetros antropométricos */}
+            <a href="https://www.youtube.com/watch?v=OAn10R6_8NI"
+              target="_blank" rel="noopener noreferrer"
+              style={{ display: "flex", alignItems: "center", gap: 12,
+                marginBottom: 18, padding: "12px", background: `${B}08`,
+                border: `1px solid ${B}30`, textDecoration: "none" }}>
+              <div style={{ width: 72, height: 54, flexShrink: 0, position: "relative",
+                overflow: "hidden", background: "#111" }}>
+                <img src="https://img.youtube.com/vi/OAn10R6_8NI/hqdefault.jpg"
+                  alt="Video guía de medidas"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <div style={{ position: "absolute", inset: 0, display: "flex",
+                  alignItems: "center", justifyContent: "center",
+                  background: "rgba(0,0,0,0.3)" }}>
+                  <div style={{ width: 28, height: 28, borderRadius: "50%",
+                    background: B, display: "flex", alignItems: "center",
+                    justifyContent: "center" }}>
+                    <span style={{ color: "#fff", fontSize: 11, marginLeft: 2 }}>▶</span>
+                  </div>
+                </div>
+              </div>
+              <p style={{ flex: 1, fontSize: 13, color: "rgba(255,255,255,0.8)",
+                lineHeight: 1.5, fontWeight: 400, margin: 0 }}>
+                Revisa este video guía al momento de tomar las medidas — solo te toma unos minutos diligenciarlas.
+              </p>
+            </a>
+
             {/* Formulario nuevo registro */}
             <div style={{ marginBottom: 20, padding: 18,
               border: `1px solid ${segEditando ? "rgba(245,158,11,0.3)" : B + "30"}`,
