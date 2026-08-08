@@ -48,6 +48,12 @@ interface Receta {
   video_url: string | null
   categoria: string | null
 }
+interface Suplemento {
+  id: string
+  objetivo: string
+  nombre: string
+  descripcion: string
+}
 interface RegistroDiario {
   fecha: string; kcal_total: number
 }
@@ -126,8 +132,11 @@ export default function MacrosPage() {
   const [recordatorio, setRecordatorio] = useState<Recordatorio|null>(null)
   const [recetas, setRecetas] = useState<Receta[]>([])
   const [cargandoRecetas, setCargandoRecetas] = useState(false)
+  const [guiaSuplementos, setGuiaSuplementos] = useState<Suplemento[]>([])
+  const [cargandoSuplementos, setCargandoSuplementos] = useState(false)
+  const [objetivoSel, setObjetivoSel] = useState<string | null>(null)
 
-  const [vistaGlobal, setVistaGlobal] = useState<"inicio"|"macros"|"seguimiento"|"recetas">("inicio")
+  const [vistaGlobal, setVistaGlobal] = useState<"inicio"|"macros"|"seguimiento"|"recetas"|"suplementacion">("inicio")
 
   const [fechaSel, setFechaSel]     = useState("")
   const [diasGuardados, setDiasGuardados] = useState<string[]>([])
@@ -206,6 +215,21 @@ export default function MacrosPage() {
   useEffect(() => {
     if (vistaGlobal === "recetas" && recetas.length === 0) cargarRecetas()
   }, [vistaGlobal, recetas.length, cargarRecetas])
+
+  /* ── Cargar guía de suplementación (global) ── */
+  const cargarGuiaSuplementos = useCallback(async () => {
+    setCargandoSuplementos(true)
+    const { data } = await supabase
+      .from("guia_suplementacion")
+      .select("id, objetivo, nombre, descripcion")
+      .order("orden")
+    setGuiaSuplementos(data ?? [])
+    setCargandoSuplementos(false)
+  }, [])
+
+  useEffect(() => {
+    if (vistaGlobal === "suplementacion" && guiaSuplementos.length === 0) cargarGuiaSuplementos()
+  }, [vistaGlobal, guiaSuplementos.length, cargarGuiaSuplementos])
 
   const cargarSeguimientos = useCallback(async (tok: string) => {
     setCargandoSegs(true)
@@ -621,6 +645,27 @@ export default function MacrosPage() {
               </div>
             </div>
             <span style={{color:G,fontSize:20}}>→</span>
+          </div>
+        </button>
+
+        <button onClick={()=>setVistaGlobal("suplementacion")}
+          style={{padding:"20px",background:"rgba(129,140,248,0.06)",
+            border:"1px solid rgba(129,140,248,0.3)",cursor:"pointer",textAlign:"left",
+            transition:"all 0.2s"}}
+          onMouseEnter={e=>(e.currentTarget.style.background=`rgba(129,140,248,0.1)`)}
+          onMouseLeave={e=>(e.currentTarget.style.background=`rgba(129,140,248,0.06)`)}>
+          <div style={{display:"flex",alignItems:"center",gap:14}}>
+            <span style={{fontSize:28}}>💊</span>
+            <div style={{flex:1}}>
+              <div className="bc" style={{fontSize:18,fontWeight:900,
+                textTransform:"uppercase",color:"#fff",marginBottom:3}}>
+                Guía de Suplementación
+              </div>
+              <div className="b" style={{fontSize:13,color:"rgba(255,255,255,0.45)"}}>
+                Según tu objetivo — masa muscular, recomposición o rendimiento
+              </div>
+            </div>
+            <span style={{color:"#818cf8",fontSize:20}}>→</span>
           </div>
         </button>
 
@@ -1240,6 +1285,91 @@ export default function MacrosPage() {
       {toast&&<Toast toast={toast}/>}
     </Pantalla>
   )
+
+  if (vistaGlobal==="suplementacion") {
+    const OBJETIVOS = [
+      { key: "masa_muscular", label: "Ganancia de masa muscular", icono: "💪" },
+      { key: "recomposicion", label: "Recomposición corporal", icono: "🔄" },
+      { key: "rendimiento", label: "Mejora de rendimiento físico", icono: "⚡" },
+    ]
+    const V = "#818cf8"
+    const suplementosFiltrados = objetivoSel
+      ? guiaSuplementos.filter(s => s.objetivo === objetivoSel)
+      : []
+
+    return (
+      <Pantalla onBack={()=>setVistaGlobal("inicio")} titulo="Guía de Suplementación"
+        accentColor={V}>
+        <div className="bc" style={{fontSize:11,color:V,letterSpacing:"0.12em",
+          textTransform:"uppercase",marginBottom:16}}>
+          💊 Selecciona tu objetivo actual
+        </div>
+
+        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:24}}>
+          {OBJETIVOS.map(o => {
+            const activo = objetivoSel === o.key
+            return (
+              <button key={o.key} onClick={()=>setObjetivoSel(activo ? null : o.key)}
+                style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",
+                  border:`1px solid ${activo ? V+"70" : "rgba(255,255,255,0.1)"}`,
+                  background:activo ? `${V}15` : "rgba(255,255,255,0.02)",
+                  cursor:"pointer",textAlign:"left",transition:"all 0.15s"}}>
+                <span style={{fontSize:22}}>{o.icono}</span>
+                <span className="bc" style={{flex:1,fontSize:15,fontWeight:800,
+                  textTransform:"uppercase",color:activo?"#fff":"rgba(255,255,255,0.6)"}}>
+                  {o.label}
+                </span>
+                <span style={{color:V,fontSize:14}}>{activo ? "▲" : "▼"}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {objetivoSel && (
+          <div style={{animation:"slideIn 0.2s ease"}}>
+            {cargandoSuplementos ? (
+              <div style={{textAlign:"center",padding:"32px",
+                color:"rgba(255,255,255,0.3)",fontSize:14}}>
+                Cargando guía...
+              </div>
+            ) : suplementosFiltrados.length === 0 ? (
+              <div style={{textAlign:"center",padding:"32px",
+                color:"rgba(255,255,255,0.3)",fontSize:14}}>
+                Aún no hay suplementos cargados para este objetivo.
+              </div>
+            ) : (
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {suplementosFiltrados.map((s,i) => (
+                  <div key={s.id} style={{padding:"16px 18px",
+                    background:"rgba(255,255,255,0.02)",
+                    border:"1px solid rgba(255,255,255,0.07)"}}>
+                    <div className="bc" style={{fontSize:16,fontWeight:800,
+                      textTransform:"uppercase",color:"#fff",marginBottom:6,
+                      display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{color:V,opacity:0.6,fontSize:12}}>
+                        {String(i+1).padStart(2,"0")}
+                      </span>
+                      {s.nombre}
+                    </div>
+                    <p className="b" style={{fontSize:13,color:"rgba(255,255,255,0.55)",
+                      lineHeight:1.6,fontWeight:300,margin:0}}>
+                      {s.descripcion}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="b" style={{fontSize:11,color:"rgba(255,255,255,0.25)",
+              marginTop:16,lineHeight:1.6,fontStyle:"italic"}}>
+              Esta guía es informativa y general. Si tienes alguna condición de salud
+              particular, consúltalo con tu médico antes de suplementarte.
+            </p>
+          </div>
+        )}
+        {toast&&<Toast toast={toast}/>}
+      </Pantalla>
+    )
+  }
 
   return (
     <Pantalla onBack={()=>setVistaGlobal("inicio")} titulo="Seguimiento de Medidas"
