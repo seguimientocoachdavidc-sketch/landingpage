@@ -43,6 +43,7 @@ interface NotaCoach {
   actualizado_en: string
 }
 interface Recordatorio {
+  tipo: string
   mensaje: string
   actualizado_en: string
 }
@@ -214,7 +215,7 @@ export default function PlanEntrenamientoPage() {
   const [resumenSesion, setResumenSesion] = useState<ResumenSesionData | null>(null)
   const [insightSesion, setInsightSesion] = useState<{tipo:string; mensaje:string} | null>(null)
   const [notaCoach, setNotaCoach] = useState<NotaCoach | null>(null)
-  const [recordatorio, setRecordatorio] = useState<Recordatorio | null>(null)
+  const [recordatorios, setRecordatorios] = useState<Recordatorio[]>([])
 
   // Running
   const [semanasRun, setSemanasRun]   = useState<SemanaRun[]>([])
@@ -260,20 +261,43 @@ export default function PlanEntrenamientoPage() {
   const [toast, setToast]           = useState<string | null>(null)
   const showToast = (m: string) => { setToast(m); setTimeout(() => setToast(null), 3000) }
 
-  /* ── Auth + carga ── */
+  /* ── Auth + carga ──
+     IMPORTANTE: la consulta de autenticación NUNCA debe incluir
+     columnas de features nuevas — si esa columna llegara a fallar
+     por cualquier razón, tumbaría el acceso de todos. Por eso
+     proximo_pago se consulta aparte, en su propia función que
+     nunca puede bloquear el login. */
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("token")
     if (!t) { setDenegado(true); setCargando(false); return }
     setToken(t)
-    supabase.from("clientes").select("token,nombre,proximo_pago").eq("token", t).eq("activo", true).single()
+    supabase.from("clientes").select("token,nombre").eq("token", t).eq("activo", true).single()
       .then(({ data, error }) => {
         if (error || !data) { setDenegado(true); setCargando(false); return }
-        setCliente(data)
+        setCliente({ ...data, proximo_pago: null })
         cargarModulos(t)
         cargarNotaCoach(t)
         cargarRecordatorio(t)
+        cargarProximoPago(t)
       })
   }, [])
+
+  /* ── Cargar estado de pago — aparte, nunca bloquea el acceso ── */
+  const cargarProximoPago = async (tok: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("proximo_pago")
+        .eq("token", tok)
+        .single()
+      if (!error && data) {
+        setCliente(c => c ? { ...c, proximo_pago: data.proximo_pago } : c)
+      }
+    } catch {
+      // Si falla (ej. la columna aún no existe), simplemente no
+      // se activa ningún recordatorio ni bloqueo — acceso normal.
+    }
+  }
 
   /* ── Cargar nota semanal del coach ── */
   const cargarNotaCoach = async (tok: string) => {
@@ -285,14 +309,18 @@ export default function PlanEntrenamientoPage() {
     if (data) setNotaCoach(data)
   }
 
-  /* ── Cargar recordatorio activo del cliente ── */
+  /* ── Cargar TODOS los recordatorios activos del cliente
+     (puede tener varios a la vez, uno por tipo) ── */
   const cargarRecordatorio = async (tok: string) => {
-    const { data } = await supabase
-      .from("recordatorios")
-      .select("mensaje, actualizado_en")
-      .eq("cliente_token", tok)
-      .single()
-    if (data) setRecordatorio(data)
+    try {
+      const { data, error } = await supabase
+        .from("recordatorios")
+        .select("tipo, mensaje, actualizado_en")
+        .eq("cliente_token", tok)
+      if (!error && data) setRecordatorios(data)
+    } catch {
+      // Si algo falla, simplemente no se muestra ningún recordatorio.
+    }
   }
 
   /* ── Medidas: cargar historial ── */
@@ -1239,7 +1267,9 @@ export default function PlanEntrenamientoPage() {
             {notaCoach && <NotaCoachBanner nota={notaCoach} />}
 
             {/* Recordatorio — acciones puntuales fuera del entrenamiento */}
-            {recordatorio && <RecordatorioBanner recordatorio={recordatorio} token={token} />}
+            {recordatorios.map(r => (
+              <RecordatorioBanner key={r.tipo} recordatorio={r} token={token} />
+            ))}
 
             {/* Insight pre-sesión */}
             {diaActivo && insightSesion && !sesionCerrada && (
@@ -2027,8 +2057,10 @@ function MiniGraficaPeso({ datos }: { datos: Seguimiento[] }) {
   )
 }
 
-function RecordatorioBanner({recordatorio, token}:{recordatorio: {mensaje:string; actualizado_en:string}; token: string | null}) {
+function RecordatorioBanner({recordatorio, token}:{recordatorio: {tipo?:string; mensaje:string; actualizado_en:string}; token: string | null}) {
   const O = "#f59e0b"
+  const ICONOS: Record<string, string> = { pago: "💳", comidas: "🍽️", general: "🔔" }
+  const icono = ICONOS[recordatorio.tipo ?? "general"] ?? "🔔"
 
   const dias = Math.floor(
     (Date.now() - new Date(recordatorio.actualizado_en).getTime()) / (1000 * 60 * 60 * 24)
@@ -2043,7 +2075,7 @@ function RecordatorioBanner({recordatorio, token}:{recordatorio: {mensaje:string
       background: `${O}0a`, border: `1px solid ${O}35`,
       borderLeft: `3px solid ${O}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 16 }}>🔔</span>
+        <span style={{ fontSize: 16 }}>{icono}</span>
         <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12,
           fontWeight: 900, letterSpacing: "0.2em", textTransform: "uppercase", color: O }}>
           Recordatorio
