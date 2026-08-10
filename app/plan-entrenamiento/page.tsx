@@ -2085,7 +2085,15 @@ function RecordatorioBanner({recordatorio, token}:{recordatorio: {tipo?:string; 
         lineHeight: 1.6, fontWeight: 400, margin: 0, marginBottom: 12 }}>
         {recordatorio.mensaje}
       </p>
-      {token && (
+      {recordatorio.tipo === "pago" ? (
+        <a href="https://www.coachdavidfitness.com/pagos" target="_blank" rel="noopener noreferrer"
+          style={{ display: "inline-block", padding: "9px 18px", background: O,
+            color: "#000", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12,
+            fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase",
+            textDecoration: "none", marginBottom: 10 }}>
+          Ir a métodos de pago →
+        </a>
+      ) : token && (
         <a href={`/macros?token=${token}`}
           style={{ display: "inline-block", padding: "9px 18px", background: O,
             color: "#000", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12,
