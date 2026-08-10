@@ -1075,8 +1075,21 @@ export default function PlanEntrenamientoPage() {
             </div>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.6,
               margin: 0, marginBottom: 10 }}>
-              Tu pago de este mes está pendiente — tienes {7 - estadoPago.diasVencido} {7 - estadoPago.diasVencido === 1 ? "día" : "días"} para
-              ponerte al día antes de que tu acceso se pause.
+              Recuerda realizar el pago de la mensualidad para no perder acceso a los
+              servicios — el acceso se bloqueará el día 15 del mes en caso de no
+              registrar el pago.
+            </p>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.6,
+              margin: 0, marginBottom: 10 }}>
+              Si ya pagaste este mes y no puedes acceder, habla con David.
+            </p>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.6,
+              margin: 0, marginBottom: 10 }}>
+              El enlace para realizar el pago es el siguiente:{" "}
+              <a href="https://www.coachdavidfitness.com/pagos" target="_blank" rel="noopener noreferrer"
+                style={{ color: "#f59e0b" }}>
+                coachdavidfitness.com/pagos
+              </a>
             </p>
             <a href="https://www.coachdavidfitness.com/pagos" target="_blank" rel="noopener noreferrer"
               style={{ display: "inline-block", padding: "9px 18px", background: "#f59e0b",
