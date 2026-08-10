@@ -384,7 +384,7 @@ export default function Pagos() {
                     <img
                       src={NEQUI_QR}
                       alt="QR Nequi Coach David"
-                      style={{ width: 160, height: 160, display: "block", imageRendering: "pixelated" }}
+                      style={{ width: 240, height: 240, display: "block", imageRendering: "pixelated" }}
                       onError={e => {
                         // Si no se ha subido el QR aún, muestra placeholder
                         const target = e.currentTarget
