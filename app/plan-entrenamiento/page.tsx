@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase"
 import ResumenSesionModal, { ResumenSesionData } from "@/components/ResumenSesionModal"
 
 /* ── Tipos ─────────────────────────────────────────── */
-interface Cliente { token: string; nombre: string }
+interface Cliente { token: string; nombre: string; proximo_pago: string | null }
 interface Dia { id: string; numero: number; nombre: string }
 interface Ejercicio {
   id: string; orden: number; nombre: string
@@ -180,6 +180,19 @@ function fmtCron(s: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`
 }
 
+/* ── Estado de pago: null (sin seguimiento) | "ok" | "gracia" | "bloqueado" ── */
+function calcularEstadoPago(proximoPago: string | null): { estado: "ok"|"gracia"|"bloqueado"|null; diasVencido: number } {
+  if (!proximoPago) return { estado: null, diasVencido: 0 }
+  const hoy = new Date().toISOString().split("T")[0]
+  const msPorDia = 1000 * 60 * 60 * 24
+  const diasVencido = Math.floor(
+    (new Date(hoy).getTime() - new Date(proximoPago).getTime()) / msPorDia
+  )
+  if (diasVencido <= 0) return { estado: "ok", diasVencido }
+  if (diasVencido <= 7) return { estado: "gracia", diasVencido }
+  return { estado: "bloqueado", diasVencido }
+}
+
 /* ══ PÁGINA PRINCIPAL ══════════════════════════════════ */
 export default function PlanEntrenamientoPage() {
   const [token, setToken]           = useState<string | null>(null)
@@ -252,7 +265,7 @@ export default function PlanEntrenamientoPage() {
     const t = new URLSearchParams(window.location.search).get("token")
     if (!t) { setDenegado(true); setCargando(false); return }
     setToken(t)
-    supabase.from("clientes").select("token,nombre").eq("token", t).eq("activo", true).single()
+    supabase.from("clientes").select("token,nombre,proximo_pago").eq("token", t).eq("activo", true).single()
       .then(({ data, error }) => {
         if (error || !data) { setDenegado(true); setCargando(false); return }
         setCliente(data)
@@ -974,6 +987,30 @@ export default function PlanEntrenamientoPage() {
     </div>
   )
 
+  const estadoPago = calcularEstadoPago(cliente?.proximo_pago ?? null)
+
+  if (estadoPago.estado === "bloqueado") return (
+    <div style={{ background: "#000", minHeight: "100vh", display: "flex", alignItems: "center",
+      justifyContent: "center", flexDirection: "column", color: "#fff", textAlign: "center", padding: 32 }}>
+      <div style={{ fontSize: 48, color: R, marginBottom: 16 }}>🔒</div>
+      <h1 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 26, fontWeight: 900,
+        textTransform: "uppercase", marginBottom: 12 }}>
+        Acceso pausado
+      </h1>
+      <p style={{ fontSize: 15, color: "rgba(255,255,255,0.6)", marginTop: 8, maxWidth: 360,
+        lineHeight: 1.6 }}>
+        Recuerda ponerte al día para retomar tu acceso. Si ya pagaste, comunícate con
+        Coach David para informar un problema.
+      </p>
+      <a href="https://wa.me/573243747367" target="_blank" rel="noopener noreferrer"
+        style={{ marginTop: 28, padding: "14px 32px", background: G, color: "#fff",
+          fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 900,
+          letterSpacing: "0.2em", textTransform: "uppercase", textDecoration: "none" }}>
+        Contactar por WhatsApp
+      </a>
+    </div>
+  )
+
   return (
     <div style={{ background: "#000", minHeight: "100vh", color: "#fff",
       fontFamily: "'Barlow', sans-serif", paddingBottom: 80 }}>
@@ -1024,6 +1061,32 @@ export default function PlanEntrenamientoPage() {
             Hola, <span style={{ color: R }}>{cliente?.nombre.split(" ")[0]}</span>
           </h1>
         </div>
+
+        {estadoPago.estado === "gracia" && (
+          <div style={{ marginBottom: 20, padding: "16px 18px",
+            background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.35)",
+            borderLeft: "3px solid #f59e0b" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 16 }}>⚠️</span>
+              <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12,
+                fontWeight: 900, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f59e0b" }}>
+                Recordatorio de pago
+              </span>
+            </div>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.6,
+              margin: 0, marginBottom: 10 }}>
+              Tu pago de este mes está pendiente — tienes {7 - estadoPago.diasVencido} {7 - estadoPago.diasVencido === 1 ? "día" : "días"} para
+              ponerte al día antes de que tu acceso se pause.
+            </p>
+            <a href="https://www.coachdavidfitness.com/pagos" target="_blank" rel="noopener noreferrer"
+              style={{ display: "inline-block", padding: "9px 18px", background: "#f59e0b",
+                color: "#000", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12,
+                fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase",
+                textDecoration: "none" }}>
+              Ir a métodos de pago →
+            </a>
+          </div>
+        )}
 
         {/* Tabs */}
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${tabs.length},1fr)`, gap: 6, marginBottom: 24 }}>
@@ -1163,7 +1226,7 @@ export default function PlanEntrenamientoPage() {
             {notaCoach && <NotaCoachBanner nota={notaCoach} />}
 
             {/* Recordatorio — acciones puntuales fuera del entrenamiento */}
-            {recordatorio && <RecordatorioBanner recordatorio={recordatorio} />}
+            {recordatorio && <RecordatorioBanner recordatorio={recordatorio} token={token} />}
 
             {/* Insight pre-sesión */}
             {diaActivo && insightSesion && !sesionCerrada && (
@@ -1494,13 +1557,13 @@ export default function PlanEntrenamientoPage() {
               ))}
             </div>
             {semanaCyc && [
-              { num: 1, titulo: "Sesión 1 · Día 3", subtitulo: "Sesión 1 Cycling", icono: "🚴", color: B,
+              { num: 1, titulo: "Sesión 1 · Día 3", subtitulo: "Continuo Z2", icono: "🚴", color: B,
                 desc: semanaCyc.sesion_1_descripcion, obj: semanaCyc.sesion_1_objetivo },
-              { num: 2, titulo: "Sesión 2 · Día 5", subtitulo: "Sesión 2 Cycling", icono: "🚴🏃", color: B,
+              { num: 2, titulo: "Sesión 2 · Día 5", subtitulo: "Cycling Z2 + Carrera", icono: "🚴🏃", color: B,
                 desc: semanaCyc.sesion_2_descripcion, obj: semanaCyc.sesion_2_objetivo },
-              { num: 3, titulo: "Sesión 3 · Día 6 — Bricks", subtitulo: "Revisar el detalle si aplica", icono: "🔥🚴", color: O,
+              { num: 3, titulo: "Sesión 3 · Día 6 — Bricks", subtitulo: "Parte bici antes de correr", icono: "🔥🚴", color: O,
                 desc: semanaCyc.sesion_3_descripcion, obj: semanaCyc.sesion_3_objetivo,
-                notaBricks: "." },
+                notaBricks: "Parte de ciclismo del Día 6. La carrera se registra en Running." },
             ].map(cfg => (
               <SesionCard key={cfg.num}
                 color={cfg.color}
@@ -1951,7 +2014,7 @@ function MiniGraficaPeso({ datos }: { datos: Seguimiento[] }) {
   )
 }
 
-function RecordatorioBanner({recordatorio}:{recordatorio: {mensaje:string; actualizado_en:string}}) {
+function RecordatorioBanner({recordatorio, token}:{recordatorio: {mensaje:string; actualizado_en:string}; token: string | null}) {
   const O = "#f59e0b"
 
   const dias = Math.floor(
@@ -1974,9 +2037,18 @@ function RecordatorioBanner({recordatorio}:{recordatorio: {mensaje:string; actua
         </span>
       </div>
       <p style={{ fontSize: 14, color: "rgba(255,255,255,0.85)",
-        lineHeight: 1.6, fontWeight: 400, margin: 0, marginBottom: 8 }}>
+        lineHeight: 1.6, fontWeight: 400, margin: 0, marginBottom: 12 }}>
         {recordatorio.mensaje}
       </p>
+      {token && (
+        <a href={`/macros?token=${token}`}
+          style={{ display: "inline-block", padding: "9px 18px", background: O,
+            color: "#000", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12,
+            fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase",
+            textDecoration: "none", marginBottom: 10 }}>
+          Accede a la app de registro de macros →
+        </a>
+      )}
       <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)",
         fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: "0.05em" }}>
         {textoTiempo}
