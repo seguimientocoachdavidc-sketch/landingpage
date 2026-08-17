@@ -975,7 +975,7 @@ export default function PlanEntrenamientoPage() {
             { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
           ]},
       ]
-    : [
+    , [
         { num: 1, titulo: "Sesión 1 · Martes", subtitulo: "Running", icono: "🏃",
           getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min ? `${s.sesion_1_objetivo_min} min` : null,
