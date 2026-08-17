@@ -346,6 +346,31 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ══ PROGRESO REAL ══════════════════════════════════════════ */}
+      <section style={{ padding: "140px 64px", background: "#000", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(to right, transparent, ${R}60, transparent)` }} />
+        <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <div style={{ width: 36, height: 2, background: R }} />
+              <span className="bc" style={{ color: R, fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>Progreso real</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 24, marginBottom: 64 }}>
+              <h2 className="bc" style={{ fontSize: "clamp(44px, 5vw, 80px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.88, letterSpacing: "-0.02em" }}>
+                ASÍ SE VE TU<br /><span style={{ color: R }}>PROGRESO.</span>
+              </h2>
+              <p className="b" style={{ color: "rgba(255,255,255,0.35)", maxWidth: 340, fontSize: 15, lineHeight: 1.65, fontWeight: 300 }}>
+                Cada serie que registras queda en tu historial. Esto es exactamente lo que
+                ve un cliente real en su app — no una proyección, su volumen real semana a semana.
+              </p>
+            </div>
+          </FadeIn>
+          <FadeIn delay={100}>
+            <VolumenDemo />
+          </FadeIn>
+        </div>
+      </section>
+
       {/* ══ SERVICIOS ═══════════════════════════════════════════════ */}
       <section style={{ padding: "140px 64px", background: "#000", position: "relative", overflow: "hidden" }}>
 
@@ -416,7 +441,7 @@ export default function Home() {
             style={{
               width: "100%", height: "100%", objectFit: "cover",
               filter: "grayscale(20%) contrast(1.05)",
-              transform: `scale(1.04) translateY(${(scrollY - 2600) * 0.06}px)`,
+              transform: `scale(1.04) translateY(${(scrollY - 3550) * 0.06}px)`,
             }} />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, transparent 55%, #000)" }} />
           <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, ${R}20 0%, transparent 40%)` }} />
@@ -462,6 +487,30 @@ export default function Home() {
                 Próximamente: artículos y análisis
               </span>
             </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ══ TU APP DE MACROS ═══════════════════════════════════════ */}
+      <section style={{ padding: "140px 64px", background: "#050505", position: "relative", overflow: "hidden", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <div style={{ width: 36, height: 2, background: R }} />
+              <span className="bc" style={{ color: R, fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>Alimentación</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 24, marginBottom: 64 }}>
+              <h2 className="bc" style={{ fontSize: "clamp(44px, 5vw, 80px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.88, letterSpacing: "-0.02em" }}>
+                REGISTRA EN<br /><span style={{ color: R }}>SEGUNDOS.</span>
+              </h2>
+              <p className="b" style={{ color: "rgba(255,255,255,0.35)", maxWidth: 340, fontSize: 15, lineHeight: 1.65, fontWeight: 300 }}>
+                Así se ve tu app de macros — toca los alimentos de abajo y mira cómo se
+                llenan tus metas del día en tiempo real.
+              </p>
+            </div>
+          </FadeIn>
+          <FadeIn delay={100}>
+            <MacrosDemo />
           </FadeIn>
         </div>
       </section>
@@ -528,7 +577,7 @@ export default function Home() {
       <section style={{ position: "relative", padding: "160px 64px", background: "#000", overflow: "hidden", textAlign: "center" }}>
 
         {/* Imagen de fondo tenue */}
-        <div style={{ position: "absolute", inset: 0, transform: `translateY(${(scrollY - 4000) * 0.12}px)` }}>
+        <div style={{ position: "absolute", inset: 0, transform: `translateY(${(scrollY - 5840) * 0.12}px)` }}>
           <img src="/Entrenando_1.jpeg" alt=""
             style={{ width: "100%", height: "110%", objectFit: "cover", opacity: 0.06, filter: "grayscale(60%)" }} />
         </div>
@@ -561,6 +610,172 @@ export default function Home() {
       </section>
 
     </main>
+  )
+}
+
+/* ── Datos de los demos ──────────────────────────────────────── */
+const VOLUMEN_SEMANAS = [
+  { semana: 1, volumen: 1240 },
+  { semana: 2, volumen: 1310 },
+  { semana: 3, volumen: 1290 },
+  { semana: 4, volumen: 1480, pr: true },
+  { semana: 5, volumen: 1520 },
+  { semana: 6, volumen: 1610 },
+  { semana: 7, volumen: 1590 },
+  { semana: 8, volumen: 1780, pr: true },
+]
+
+const ALIMENTOS_DEMO = [
+  { id: 1, nombre: "Pechuga de pollo 150g", kcal: 246, p: 44.6, c: 0.3, g: 7.4 },
+  { id: 2, nombre: "Arroz blanco 200g", kcal: 322, p: 4.6, c: 65.0, g: 4.2 },
+  { id: 3, nombre: "Aguacate 50g", kcal: 111, p: 0.7, c: 6.8, g: 8.2 },
+  { id: 4, nombre: "Whey Protein · 1 scoop", kcal: 120, p: 24.0, c: 3.0, g: 1.0 },
+]
+const META_DEMO = { kcal: 2100, p: 160, c: 220, g: 65 }
+
+/* ── Demo: gráfica de volumen animada (autoplay al entrar en pantalla) ── */
+function VolumenDemo() {
+  const G = "#22c55e"
+  const [visibles, setVisibles] = useState(0)
+  const ref = useRef<HTMLDivElement>(null)
+  const started = useRef(false)
+
+  useEffect(() => {
+    const el = ref.current; if (!el) return
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !started.current) {
+        started.current = true
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        if (reduce) { setVisibles(VOLUMEN_SEMANAS.length); return }
+        let i = 0
+        const t = setInterval(() => {
+          i++; setVisibles(i)
+          if (i >= VOLUMEN_SEMANAS.length) clearInterval(t)
+        }, 220)
+      }
+    }, { threshold: 0.35 })
+    obs.observe(el); return () => obs.disconnect()
+  }, [])
+
+  const maxVol = Math.max(...VOLUMEN_SEMANAS.map(s => s.volumen))
+  const primero = VOLUMEN_SEMANAS[0].volumen
+  const ultimo = VOLUMEN_SEMANAS[VOLUMEN_SEMANAS.length - 1].volumen
+  const mejora = Math.round(((ultimo - primero) / primero) * 100)
+
+  return (
+    <div ref={ref} style={{ border: "1px solid rgba(255,255,255,0.08)", background: "#0a0a0a", padding: "44px 40px" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 36 }}>
+        <span className="bc" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>
+          Sentadilla · 8 semanas · Historial real de un cliente
+        </span>
+        {visibles >= VOLUMEN_SEMANAS.length && (
+          <div style={{ textAlign: "right" }}>
+            <div className="bc" style={{ fontSize: 40, fontWeight: 900, color: G, lineHeight: 1 }}>+{mejora}%</div>
+            <div className="b" style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>de volumen</div>
+          </div>
+        )}
+      </div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 220 }}>
+        {VOLUMEN_SEMANAS.map((s, i) => {
+          const mostrar = i < visibles
+          const alturaPct = (s.volumen / maxVol) * 100
+          return (
+            <div key={s.semana} style={{ flex: 1, display: "flex", flexDirection: "column",
+              alignItems: "center", height: "100%", justifyContent: "flex-end", position: "relative" }}>
+              {mostrar && (s as any).pr && (
+                <div className="bc" style={{ position: "absolute", top: -26, fontSize: 10,
+                  fontWeight: 800, color: R, letterSpacing: "0.1em" }}>PR 🔥</div>
+              )}
+              <div style={{
+                width: "100%",
+                height: mostrar ? `${alturaPct}%` : "0%",
+                background: (s as any).pr ? R : "rgba(255,255,255,0.15)",
+                transition: "height 0.5s cubic-bezier(0.22,1,0.36,1)",
+                boxShadow: (s as any).pr && mostrar ? `0 0 20px ${R}70` : "none",
+              }} />
+              <span className="bc" style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>S{s.semana}</span>
+            </div>
+          )
+        })}
+      </div>
+      <p className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", marginTop: 22, lineHeight: 1.6, maxWidth: 460 }}>
+        Cada barra sale directo del historial real de registros — el sistema detecta
+        el PR automáticamente y se lo muestra al cliente el mismo día que ocurre.
+      </p>
+    </div>
+  )
+}
+
+/* ── Demo: mini app de macros interactiva ────────────────────── */
+function MacrosDemo() {
+  const B = "#3b82f6", O = "#f59e0b", G = "#22c55e"
+  const [sel, setSel] = useState<number[]>([])
+  const toggle = (id: number) => setSel(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])
+  const t = ALIMENTOS_DEMO.filter(a => sel.includes(a.id)).reduce(
+    (acc, a) => ({ kcal: acc.kcal + a.kcal, p: acc.p + a.p, c: acc.c + a.c, g: acc.g + a.g }),
+    { kcal: 0, p: 0, c: 0, g: 0 }
+  )
+  const barras = [
+    { label: "Calorías", val: t.kcal, meta: META_DEMO.kcal, unit: "kcal", color: "#fff" },
+    { label: "Proteína", val: t.p, meta: META_DEMO.p, unit: "g", color: G },
+    { label: "Carbos", val: t.c, meta: META_DEMO.c, unit: "g", color: B },
+    { label: "Grasas", val: t.g, meta: META_DEMO.g, unit: "g", color: O },
+  ]
+  return (
+    <div style={{ border: "1px solid rgba(255,255,255,0.08)", background: "#0a0a0a",
+      padding: "44px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {ALIMENTOS_DEMO.map(a => {
+          const activo = sel.includes(a.id)
+          return (
+            <button key={a.id} onClick={() => toggle(a.id)} style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "16px 18px", background: activo ? `${R}12` : "rgba(255,255,255,0.02)",
+              border: `1px solid ${activo ? R + "50" : "rgba(255,255,255,0.07)"}`,
+              cursor: "pointer", textAlign: "left", transition: "all 0.2s",
+            }}>
+              <div>
+                <div className="bc" style={{ fontSize: 15, fontWeight: 700, color: "#fff", textTransform: "uppercase" }}>
+                  {a.nombre}
+                </div>
+                <div className="b" style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                  {a.kcal} kcal · P {a.p}g · C {a.c}g · G {a.g}g
+                </div>
+              </div>
+              <span style={{ fontSize: 20, color: activo ? R : "rgba(255,255,255,0.2)" }}>
+                {activo ? "✓" : "+"}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 20, justifyContent: "center" }}>
+        {barras.map(b => {
+          const pct = Math.min(Math.round((b.val / b.meta) * 100), 100)
+          return (
+            <div key={b.label}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                <span className="bc" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "rgba(255,255,255,0.5)" }}>{b.label}</span>
+                <span className="bc" style={{ fontSize: 12, fontWeight: 700, color: b.color }}>
+                  {Math.round(b.val)}{b.unit}{" "}
+                  <span style={{ color: "rgba(255,255,255,0.3)" }}>/ {b.meta}{b.unit}</span>
+                </span>
+              </div>
+              <div style={{ height: 8, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${pct}%`, background: b.color,
+                  transition: "width 0.4s cubic-bezier(0.22,1,0.36,1)" }} />
+              </div>
+            </div>
+          )
+        })}
+        {sel.length === 0 && (
+          <p className="b" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>
+            Toca un alimento de la izquierda para verlo en acción.
+          </p>
+        )}
+      </div>
+    </div>
   )
 }
 
