@@ -84,9 +84,9 @@ const DISTRIBUCION_RIVS = [
   { dia: "Día 1", label: "Tren Superior + Recovery Run Z2", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
   { dia: "Día 2", label: "Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
   { dia: "Día 3", label: "Cycling Continuo Z2 + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
-  { dia: "Día 4", label: "Tren Superior + Pliometría",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
-  { dia: "Día 5", label: "Intervalos 5X3 minutos - Zona umbral",        icono: "🚴🏃", tags: ["RUNNING"] },
-  { dia: "Día 6", label: "Fondo Cycling ",     icono: "🔥",   tags: ["CYCLING"] },
+  { dia: "Día 4", label: "Tren Superior sin Pliometria",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
+  { dia: "Día 5", label: "Intervalos 4x400mts - Zona umbral",        icono: "🚴🏃", tags: ["RUNNING"] },
+  { dia: "Día 6", label: "Ultimo Bricks pre IronMan ",     icono: "🔥",   tags: ["CYCLING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
