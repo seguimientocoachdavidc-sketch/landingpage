@@ -218,10 +218,13 @@ function DemoVolumen() {
    PLANES
    ══════════════════════════════════════════════════════════ */
 function SeccionPlanes() {
-  const PRECIO_ENTRENAMIENTO = 140000
-  const PRECIO_MACROS = 130000
-  const PRECIO_DUO = 220000
-  const AHORRO_DUO = (PRECIO_ENTRENAMIENTO + PRECIO_MACROS) - PRECIO_DUO
+  const PRECIO_ENTRENAMIENTO = 150000
+  const PRECIO_ENTRENAMIENTO_PREMIUM = 170000
+  const PRECIO_MACROS = 140000
+  const PRECIO_DUO_ESTANDAR = 230000
+  const PRECIO_DUO_PREMIUM = 250000
+  const AHORRO_DUO_ESTANDAR = (PRECIO_ENTRENAMIENTO + PRECIO_MACROS) - PRECIO_DUO_ESTANDAR
+  const AHORRO_DUO_PREMIUM = (PRECIO_ENTRENAMIENTO_PREMIUM + PRECIO_MACROS) - PRECIO_DUO_PREMIUM
 
   return (
     <section style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px 80px" }}>
@@ -255,11 +258,22 @@ function SeccionPlanes() {
           ]}
         />
         <PlanCard
+          icono="🏆"
+          nombre="Entrenamiento Premium"
+          tagline="Todo lo online + acompañamiento presencial"
+          color={R}
+          precio={PRECIO_ENTRENAMIENTO_PREMIUM}
+          items={[
+            "Todo lo del plan de Entrenamiento online",
+            "3 sesiones presenciales al mes — ajuste de técnica en vivo, entrenamiento conmigo y consejos",
+            "Ideal si vives cerca y quieres supervisión directa además del seguimiento en la app",
+          ]}
+        />
+        <PlanCard
           icono="🍽️"
           nombre="Macros"
           tagline="Tu alimentación, sin adivinar"
           color={G}
-          destacado
           precio={PRECIO_MACROS}
           items={[
             "Menú calculado según tu objetivo — déficit, mantenimiento o superávit",
@@ -274,13 +288,28 @@ function SeccionPlanes() {
         />
         <PlanCard
           icono="⚡"
-          nombre="Dúo"
-          tagline="Los dos mundos, un solo acceso"
+          nombre="Dúo Estándar"
+          tagline="Entrenamiento online + Macros, un solo acceso"
           color={O}
-          precio={PRECIO_DUO}
-          ahorro={AHORRO_DUO}
+          precio={PRECIO_DUO_ESTANDAR}
+          ahorro={AHORRO_DUO_ESTANDAR}
           items={[
-            "Todo lo del plan de Entrenamiento",
+            "Todo lo del plan de Entrenamiento (online)",
+            "Todo lo del plan de Macros",
+            "Un solo acceso, un solo seguimiento",
+          ]}
+        />
+        <PlanCard
+          icono="👑"
+          nombre="Dúo Premium"
+          tagline="Entrenamiento con presenciales + Macros"
+          color={O}
+          destacado
+          precio={PRECIO_DUO_PREMIUM}
+          ahorro={AHORRO_DUO_PREMIUM}
+          items={[
+            "Todo lo del plan de Entrenamiento Premium",
+            "3 sesiones presenciales al mes incluidas",
             "Todo lo del plan de Macros",
             "Un solo acceso, un solo seguimiento",
           ]}
