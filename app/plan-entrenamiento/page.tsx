@@ -956,7 +956,7 @@ const sesionesRunConfig = modulos.cycling
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "145", tipo: "number" },
           ], notaBricks: undefined, color: G },
-        { num: 2, titulo: "Sesión 2 · Día 6 — Bricks", subtitulo: "Parte carrera tras bici", icono: "🔥🏃",
+        { num: 2, titulo: "Sesión 2 ", subtitulo: ":", icono: "🔥🏃",
           getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
           campos: [
@@ -964,8 +964,8 @@ const sesionesRunConfig = modulos.cycling
             { k: "distancia_km", l: "Distancia (km)", p: "4", tipo: "number" },
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
-          ], notaBricks: "Parte de carrera del Día 6. El ciclismo se registra en Cycling.", color: O },
-        { num: 3, titulo: "Sesión 3 · Brick final", subtitulo: "Carrera post-bici (pre-competencia)", icono: "🔥🏃",
+          ], notaBricks: "...", color: O },
+        { num: 3, titulo: "Sesión 3", subtitulo: ":", icono: "🔥🏃",
           getDesc: (s: SemanaRun) => s.sesion_3_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_3_objetivo_min,
           campos: [
@@ -973,7 +973,7 @@ const sesionesRunConfig = modulos.cycling
             { k: "distancia_km", l: "Distancia (km)", p: "3", tipo: "number" },
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "150", tipo: "number" },
-          ], notaBricks: "Carrera corta a ritmo de carrera, justo al bajar de la bici. Practica la sensación de piernas cargadas.", color: R },
+          ], notaBricks: ":", color: R },
       ]
     : [
         { num: 1, titulo: "Sesión 1 · Martes", subtitulo: "Running", icono: "🏃",
@@ -1609,13 +1609,13 @@ const sesionesRunConfig = modulos.cycling
               ))}
             </div>
             {semanaCyc && [
-              { num: 1, titulo: "Sesión 1 · Día 3", subtitulo: "Continuo Z2", icono: "🚴", color: B,
+              { num: 1, titulo: "Sesión 1", subtitulo: "Continuo Z2", icono: "🚴", color: B,
                 desc: semanaCyc.sesion_1_descripcion, obj: semanaCyc.sesion_1_objetivo },
-              { num: 2, titulo: "Sesión 2 · Día 5", subtitulo: "Cycling Z2 + Carrera", icono: "🚴🏃", color: B,
+              { num: 2, titulo: "Sesión 2", subtitulo: "Cycling Z2 + Carrera", icono: "🚴🏃", color: B,
                 desc: semanaCyc.sesion_2_descripcion, obj: semanaCyc.sesion_2_objetivo },
-              { num: 3, titulo: "Sesión 3 · Día 6 — Bricks", subtitulo: "Parte bici antes de correr", icono: "🔥🚴", color: O,
+              { num: 3, titulo: "Sesión 3", subtitulo: ":", icono: "🔥🚴", color: O,
                 desc: semanaCyc.sesion_3_descripcion, obj: semanaCyc.sesion_3_objetivo,
-                notaBricks: "Parte de ciclismo del Día 6. La carrera se registra en Running." },
+                notaBricks: ":" },
             ].map(cfg => (
               <SesionCard key={cfg.num}
                 color={cfg.color}
