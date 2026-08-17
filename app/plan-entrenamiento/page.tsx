@@ -945,7 +945,7 @@ export default function PlanEntrenamientoPage() {
   /* ── Definición de sesiones running según cliente ── */
   // David: 3 sesiones (martes, miércoles, domingo)
   // Rivs: 2 sesiones (día 1 easy run, día 6 bricks-carrera)
-  const sesionesRunConfig = modulos.cycling
+const sesionesRunConfig = modulos.cycling
     ? [
         { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Sesión 1 Running", icono: "🏃",
           getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
@@ -956,7 +956,7 @@ export default function PlanEntrenamientoPage() {
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "145", tipo: "number" },
           ], notaBricks: undefined, color: G },
-        { num: 2, titulo: "Sesión 2 · Sesión 2 Running", subtitulo: ":", icono: "🔥🏃",
+        { num: 2, titulo: "Sesión 2 · Día 6 — Bricks", subtitulo: "Parte carrera tras bici", icono: "🔥🏃",
           getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
           campos: [
@@ -964,18 +964,18 @@ export default function PlanEntrenamientoPage() {
             { k: "distancia_km", l: "Distancia (km)", p: "4", tipo: "number" },
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
-
-          { num: 3, titulo: "Sesión 3 · Sesión 2 Running", subtitulo: ":", icono: "🔥🏃",
-          getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
-          getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
+          ], notaBricks: "Parte de carrera del Día 6. El ciclismo se registra en Cycling.", color: O },
+        { num: 3, titulo: "Sesión 3 · Brick final", subtitulo: "Carrera post-bici (pre-competencia)", icono: "🔥🏃",
+          getDesc: (s: SemanaRun) => s.sesion_3_descripcion,
+          getObj:  (s: SemanaRun) => s.sesion_3_objetivo_min,
           campos: [
-            { k: "tiempo_min", l: "Tiempo carrera (min)", p: "20", tipo: "number" },
-            { k: "distancia_km", l: "Distancia (km)", p: "4", tipo: "number" },
+            { k: "tiempo_min", l: "Tiempo carrera (min)", p: "15", tipo: "number" },
+            { k: "distancia_km", l: "Distancia (km)", p: "3", tipo: "number" },
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
-            { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
-          ]},
+            { k: "pulsaciones_prom", l: "Puls. prom", p: "150", tipo: "number" },
+          ], notaBricks: "Carrera corta a ritmo de carrera, justo al bajar de la bici. Practica la sensación de piernas cargadas.", color: R },
       ]
-    , [
+    : [
         { num: 1, titulo: "Sesión 1 · Martes", subtitulo: "Running", icono: "🏃",
           getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_1_objetivo_min ? `${s.sesion_1_objetivo_min} min` : null,
