@@ -405,7 +405,7 @@ export default function Home() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 2 }}>
             <FadeIn delay={0}>
               <ServicioCard
-                n="01" title="Entrenamiento" price="$140.000"
+                n="01" title="Entrenamiento" price="$150.000"
                 desc="Programa estructurado para hipertrofia, pérdida de grasa o rendimiento físico."
                 items={["Plan personalizado", "Progresión planificada", "Ajustes semanales", "Soporte 1 a 1"]}
                 href="/asesoria" cta="Aplicar" featured={false}
@@ -413,7 +413,7 @@ export default function Home() {
             </FadeIn>
             <FadeIn delay={130}>
               <ServicioCard
-                n="02" title="Alimentación" price="$130.000"
+                n="02" title="Alimentación" price="$140.000"
                 desc="Plan nutricional adaptado a tus hábitos, gustos y contexto real."
                 items={["Plan personalizado", "Seguimiento continuo", "Ajustes constantes", "Valoración inicial"]}
                 href="/nutricion-cuestionario" cta="Iniciar evaluación" featured={false}
@@ -421,7 +421,7 @@ export default function Home() {
             </FadeIn>
             <FadeIn delay={260}>
               <ServicioCard
-                n="03" title="Programa DUO" price="$220.000"
+                n="03" title="Programa DUO" price="Desde $230.000"
                 desc="Entrenamiento + alimentación integrados como un sistema para maximizar resultados."
                 items={["Todo el programa de entrenamiento", "Todo el plan de alimentación", "Seguimiento completo", "Mayor velocidad de progreso"]}
                 href="https://wa.me/573243747367?text=Hola Coach David, quiero el programa DUO."
