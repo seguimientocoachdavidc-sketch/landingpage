@@ -84,9 +84,9 @@ const DISTRIBUCION_RIVS = [
   { dia: "Día 1", label: "Tren Superior + Recovery Run Z2", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
   { dia: "Día 2", label: "Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
   { dia: "Día 3", label: "Cycling Continuo Z2 + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
-  { dia: "Día 4", label: "Tren Superior sin Pliometria",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
-  { dia: "Día 5", label: "Intervalos 4x400mts - Zona umbral",        icono: "🚴🏃", tags: ["RUNNING"] },
-  { dia: "Día 6", label: "Ultimo Bricks pre IronMan ",     icono: "🔥",   tags: ["CYCLING"] },
+  { dia: "Día 4", label: "Tren Superior + Pliometría",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
+  { dia: "Día 5", label: "Intervalos 5X3 minutos - Zona umbral",        icono: "🚴🏃", tags: ["RUNNING"] },
+  { dia: "Día 6", label: "Fondo Cycling ",     icono: "🔥",   tags: ["CYCLING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
@@ -216,6 +216,12 @@ export default function PlanEntrenamientoPage() {
   const [insightSesion, setInsightSesion] = useState<{tipo:string; mensaje:string} | null>(null)
   const [notaCoach, setNotaCoach] = useState<NotaCoach | null>(null)
   const [recordatorios, setRecordatorios] = useState<Recordatorio[]>([])
+  const [tienePresencial, setTienePresencial] = useState(false)
+  const [fechaCita, setFechaCita] = useState("")
+  const [horaCita, setHoraCita] = useState("")
+  const [notaCita, setNotaCita] = useState("")
+  const [enviandoCita, setEnviandoCita] = useState(false)
+  const [citaEnviada, setCitaEnviada] = useState(false)
 
   // Running
   const [semanasRun, setSemanasRun]   = useState<SemanaRun[]>([])
@@ -279,6 +285,7 @@ export default function PlanEntrenamientoPage() {
         cargarNotaCoach(t)
         cargarRecordatorio(t)
         cargarProximoPago(t)
+        cargarTienePresencial(t)
       })
   }, [])
 
@@ -297,6 +304,50 @@ export default function PlanEntrenamientoPage() {
       // Si falla (ej. la columna aún no existe), simplemente no
       // se activa ningún recordatorio ni bloqueo — acceso normal.
     }
+  }
+
+  /* ── Cargar si el cliente tiene el beneficio de presenciales —
+     aparte, nunca bloquea el acceso ni tumba nada si falla ── */
+  const cargarTienePresencial = async (tok: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("tiene_presencial")
+        .eq("token", tok)
+        .single()
+      if (!error && data) setTienePresencial(!!data.tiene_presencial)
+    } catch {
+      // Si falla, simplemente no aparece la pestaña — sin riesgo.
+    }
+  }
+
+  /* ── Enviar solicitud de cita presencial ── */
+  const solicitarCita = async () => {
+    if (!token || !cliente || !fechaCita || !horaCita) {
+      showToast("Selecciona fecha y hora para tu cita.")
+      return
+    }
+    setEnviandoCita(true)
+    try {
+      const res = await fetch("/api/citas/solicitar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token, nombre: cliente.nombre,
+          fecha: fechaCita, hora: horaCita, nota: notaCita || null,
+        }),
+      })
+      if (res.ok) {
+        setCitaEnviada(true)
+        setFechaCita(""); setHoraCita(""); setNotaCita("")
+        showToast("✓ Solicitud enviada — David la va a revisar pronto")
+      } else {
+        showToast("Error al enviar. Intenta de nuevo.")
+      }
+    } catch {
+      showToast("Sin conexión. Intenta de nuevo.")
+    }
+    setEnviandoCita(false)
   }
 
   /* ── Cargar nota semanal del coach ── */
@@ -931,6 +982,7 @@ export default function PlanEntrenamientoPage() {
     ...(modulos.cycling ? [{ k: "cycling", l: "🚴 Cycling", c: B }] : []),
     { k: "core", l: "🎯 CORE", c: P },
     { k: "medidas", l: "📊 Medidas", c: B },
+    ...(tienePresencial ? [{ k: "presencial", l: "📅 Presencial", c: R }] : []),
     ...(modulos.musculacion ? [{ k: "progreso", l: "📈 Progreso", c: "#a78bfa" }] : []),
     ...(modulos.musculacion ? [{ k: "biblioteca", l: "📚 Ejercicios", c: "#22c55e" }] : []),
   ]
@@ -945,7 +997,7 @@ export default function PlanEntrenamientoPage() {
   /* ── Definición de sesiones running según cliente ── */
   // David: 3 sesiones (martes, miércoles, domingo)
   // Rivs: 2 sesiones (día 1 easy run, día 6 bricks-carrera)
-const sesionesRunConfig = modulos.cycling
+  const sesionesRunConfig = modulos.cycling
     ? [
         { num: 1, titulo: "Sesión 1 · Día 1", subtitulo: "Sesión 1 Running", icono: "🏃",
           getDesc: (s: SemanaRun) => s.sesion_1_descripcion,
@@ -956,7 +1008,7 @@ const sesionesRunConfig = modulos.cycling
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:30", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "145", tipo: "number" },
           ], notaBricks: undefined, color: G },
-        { num: 2, titulo: "Sesión 2 ", subtitulo: ":", icono: "🔥🏃",
+        { num: 2, titulo: "Sesión 2 · Sesión 2 Running", subtitulo: ":", icono: "🔥🏃",
           getDesc: (s: SemanaRun) => s.sesion_2_descripcion,
           getObj:  (s: SemanaRun) => s.sesion_2_objetivo,
           campos: [
@@ -964,16 +1016,7 @@ const sesionesRunConfig = modulos.cycling
             { k: "distancia_km", l: "Distancia (km)", p: "4", tipo: "number" },
             { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
             { k: "pulsaciones_prom", l: "Puls. prom", p: "155", tipo: "number" },
-          ], notaBricks: "...", color: O },
-        { num: 3, titulo: "Sesión 3", subtitulo: ":", icono: "🔥🏃",
-          getDesc: (s: SemanaRun) => s.sesion_3_descripcion,
-          getObj:  (s: SemanaRun) => s.sesion_3_objetivo_min,
-          campos: [
-            { k: "tiempo_min", l: "Tiempo carrera (min)", p: "15", tipo: "number" },
-            { k: "distancia_km", l: "Distancia (km)", p: "3", tipo: "number" },
-            { k: "ritmo_min_km", l: "Ritmo (min/km)", p: "5:00", tipo: "text" },
-            { k: "pulsaciones_prom", l: "Puls. prom", p: "150", tipo: "number" },
-          ], notaBricks: ":", color: R },
+          ]},
       ]
     : [
         { num: 1, titulo: "Sesión 1 · Martes", subtitulo: "Running", icono: "🏃",
@@ -1609,13 +1652,13 @@ const sesionesRunConfig = modulos.cycling
               ))}
             </div>
             {semanaCyc && [
-              { num: 1, titulo: "Sesión 1", subtitulo: "Continuo Z2", icono: "🚴", color: B,
+              { num: 1, titulo: "Sesión 1 · Día 3", subtitulo: "Continuo Z2", icono: "🚴", color: B,
                 desc: semanaCyc.sesion_1_descripcion, obj: semanaCyc.sesion_1_objetivo },
-              { num: 2, titulo: "Sesión 2", subtitulo: "Cycling Z2 + Carrera", icono: "🚴🏃", color: B,
+              { num: 2, titulo: "Sesión 2 · Día 5", subtitulo: "Cycling Z2 + Carrera", icono: "🚴🏃", color: B,
                 desc: semanaCyc.sesion_2_descripcion, obj: semanaCyc.sesion_2_objetivo },
-              { num: 3, titulo: "Sesión 3", subtitulo: ":", icono: "🔥🚴", color: O,
+              { num: 3, titulo: "Sesión 3 · Día 6 — Bricks", subtitulo: "Parte bici antes de correr", icono: "🔥🚴", color: O,
                 desc: semanaCyc.sesion_3_descripcion, obj: semanaCyc.sesion_3_objetivo,
-                notaBricks: ":" },
+                notaBricks: "Parte de ciclismo del Día 6. La carrera se registra en Running." },
             ].map(cfg => (
               <SesionCard key={cfg.num}
                 color={cfg.color}
@@ -1916,6 +1959,103 @@ const sesionesRunConfig = modulos.cycling
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══ PRESENCIAL ══ */}
+        {vista === "presencial" && tienePresencial && (
+          <div style={{ animation: "fadeUp 0.3s ease" }}>
+            <div style={{ fontSize: 11, color: R, letterSpacing: "0.12em",
+              textTransform: "uppercase", marginBottom: 14 }}>
+              📅 Sesión presencial · Solicita fecha y hora — David confirma después
+            </div>
+
+            {citaEnviada ? (
+              <div style={{ padding: "32px 24px", border: "1px solid rgba(34,197,94,0.2)",
+                background: "rgba(34,197,94,0.04)", textAlign: "center" }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>✓</div>
+                <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20,
+                  fontWeight: 900, textTransform: "uppercase", color: G, marginBottom: 8 }}>
+                  Solicitud enviada
+                </div>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.6,
+                  marginBottom: 20 }}>
+                  David va a revisar la fecha y hora, y te confirma directamente.
+                </p>
+                <button onClick={() => setCitaEnviada(false)}
+                  style={{ padding: "12px 24px", background: R, border: "none", color: "#fff",
+                    fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 900,
+                    letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer" }}>
+                  Solicitar otra cita
+                </button>
+              </div>
+            ) : (
+              <div style={{ padding: 18, border: `1px solid ${R}30`, background: `${R}06` }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 10, fontWeight: 700,
+                      letterSpacing: "0.15em", textTransform: "uppercase",
+                      color: "rgba(255,255,255,0.35)", marginBottom: 6,
+                      fontFamily: "'Barlow Condensed',sans-serif" }}>
+                      Fecha *
+                    </label>
+                    <input type="date" value={fechaCita}
+                      onChange={e => setFechaCita(e.target.value)}
+                      min={new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })}
+                      style={{ width: "100%", padding: "11px 12px",
+                        background: "rgba(255,255,255,0.04)",
+                        border: `1px solid ${fechaCita ? R + "60" : "rgba(255,255,255,0.12)"}`,
+                        color: "#fff", fontFamily: "'Barlow',sans-serif",
+                        fontSize: 14, outline: "none", colorScheme: "dark" }} />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 10, fontWeight: 700,
+                      letterSpacing: "0.15em", textTransform: "uppercase",
+                      color: "rgba(255,255,255,0.35)", marginBottom: 6,
+                      fontFamily: "'Barlow Condensed',sans-serif" }}>
+                      Hora *
+                    </label>
+                    <input type="time" value={horaCita}
+                      onChange={e => setHoraCita(e.target.value)}
+                      style={{ width: "100%", padding: "11px 12px",
+                        background: "rgba(255,255,255,0.04)",
+                        border: `1px solid ${horaCita ? R + "60" : "rgba(255,255,255,0.12)"}`,
+                        color: "#fff", fontFamily: "'Barlow',sans-serif",
+                        fontSize: 14, outline: "none", colorScheme: "dark" }} />
+                  </div>
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: "block", fontSize: 10, fontWeight: 700,
+                    letterSpacing: "0.15em", textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.35)", marginBottom: 6,
+                    fontFamily: "'Barlow Condensed',sans-serif" }}>
+                    Nota (opcional)
+                  </label>
+                  <textarea value={notaCita} rows={2}
+                    placeholder="¿Qué te gustaría trabajar en esta sesión?"
+                    onChange={e => setNotaCita(e.target.value)}
+                    style={{ width: "100%", padding: "10px 12px",
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      color: "rgba(255,255,255,0.8)", fontFamily: "'Barlow',sans-serif",
+                      fontSize: 13, outline: "none", resize: "none" }} />
+                </div>
+                <button onClick={solicitarCita} disabled={enviandoCita || !fechaCita || !horaCita}
+                  style={{ width: "100%", padding: 15,
+                    background: (enviandoCita || !fechaCita || !horaCita) ? "rgba(232,0,13,0.3)" : R,
+                    border: "none", color: "#fff",
+                    fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 900,
+                    letterSpacing: "0.2em", textTransform: "uppercase",
+                    cursor: (enviandoCita || !fechaCita || !horaCita) ? "not-allowed" : "pointer" }}>
+                  {enviandoCita ? "Enviando..." : "Solicitar cita →"}
+                </button>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 12,
+                  lineHeight: 1.5 }}>
+                  Esto envía una solicitud — David revisa disponibilidad y te confirma
+                  directamente, no es una cita automática.
+                </p>
               </div>
             )}
           </div>
