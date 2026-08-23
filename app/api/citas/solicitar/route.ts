@@ -6,7 +6,7 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: Request) {
   try {
-    const { token, nombre, fecha, hora, nota } = await req.json()
+    const { token, nombre, fecha, hora, duracion_horas, nota } = await req.json()
 
     if (!token || !fecha || !hora) {
       return NextResponse.json({ error: "Datos incompletos" }, { status: 400 })
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     // 1. Guardar la solicitud en Supabase
     const { error: insertError } = await supabase
       .from("citas_presenciales")
-      .insert({ cliente_token: token, fecha, hora, nota: nota || null })
+      .insert({ cliente_token: token, fecha, hora, duracion_horas: duracion_horas || 1, nota: nota || null })
 
     if (insertError) {
       console.error("Error guardando cita:", insertError)
@@ -56,6 +56,10 @@ export async function POST(req: Request) {
                 <tr>
                   <td style="padding:8px 0;color:#888;font-size:13px;">Hora solicitada</td>
                   <td style="padding:8px 0;color:#fff;font-size:14px;font-weight:600;">${hora}</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;color:#888;font-size:13px;">Duración</td>
+                  <td style="padding:8px 0;color:#fff;font-size:14px;font-weight:600;">${duracion_horas || 1} ${(duracion_horas || 1) === 1 ? "hora" : "horas"}</td>
                 </tr>
                 ${nota ? `
                 <tr>
