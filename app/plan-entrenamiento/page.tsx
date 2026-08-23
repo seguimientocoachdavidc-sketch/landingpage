@@ -194,6 +194,46 @@ function calcularEstadoPago(proximoPago: string | null): { estado: "ok"|"gracia"
   return { estado: "bloqueado", diasVencido }
 }
 
+/* ── Genera los horarios de inicio disponibles para una fecha y
+   duración dadas. Bloquea SIEMPRE de lunes a viernes 8:30am-6:30pm.
+   Franja general del día: 5:00am a 11:00pm. ── */
+function generarHorariosDisponibles(fecha: string, duracionHoras: number): string[] {
+  if (!fecha) return []
+  const diaSemana = new Date(fecha + "T00:00:00").getDay() // 0=domingo ... 6=sábado
+  const esFinDeSemana = diaSemana === 0 || diaSemana === 6
+
+  const BLOQUE_INICIO = 8 * 60 + 30   // 8:30am
+  const BLOQUE_FIN = 18 * 60 + 30     // 6:30pm
+  const DIA_INICIO = 5 * 60           // 5:00am
+  const DIA_FIN = 23 * 60             // 11:00pm
+
+  const slots: string[] = []
+  for (let min = DIA_INICIO; min <= DIA_FIN - duracionHoras * 60; min += 30) {
+    const finMin = min + duracionHoras * 60
+    if (!esFinDeSemana) {
+      const solapaConBloqueo = min < BLOQUE_FIN && finMin > BLOQUE_INICIO
+      if (solapaConBloqueo) continue
+    }
+    const h = Math.floor(min / 60)
+    const m = min % 60
+    slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`)
+  }
+  return slots
+}
+
+function formatearRangoHora(horaInicio: string, duracionHoras: number): string {
+  const [h, m] = horaInicio.split(":").map(Number)
+  const totalFin = h * 60 + m + duracionHoras * 60
+  const hFin = Math.floor(totalFin / 60) % 24
+  const mFin = totalFin % 60
+  const fmt = (hh: number, mm: number) => {
+    const periodo = hh < 12 ? "AM" : "PM"
+    const hh12 = hh % 12 === 0 ? 12 : hh % 12
+    return `${hh12}:${String(mm).padStart(2, "0")} ${periodo}`
+  }
+  return `${fmt(h, m)} - ${fmt(hFin, mFin)}`
+}
+
 /* ══ PÁGINA PRINCIPAL ══════════════════════════════════ */
 export default function PlanEntrenamientoPage() {
   const [token, setToken]           = useState<string | null>(null)
@@ -219,6 +259,7 @@ export default function PlanEntrenamientoPage() {
   const [tienePresencial, setTienePresencial] = useState(false)
   const [fechaCita, setFechaCita] = useState("")
   const [horaCita, setHoraCita] = useState("")
+  const [duracionCita, setDuracionCita] = useState<1 | 2>(1)
   const [notaCita, setNotaCita] = useState("")
   const [enviandoCita, setEnviandoCita] = useState(false)
   const [citaEnviada, setCitaEnviada] = useState(false)
@@ -334,12 +375,12 @@ export default function PlanEntrenamientoPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           token, nombre: cliente.nombre,
-          fecha: fechaCita, hora: horaCita, nota: notaCita || null,
+          fecha: fechaCita, hora: horaCita, duracion_horas: duracionCita, nota: notaCita || null,
         }),
       })
       if (res.ok) {
         setCitaEnviada(true)
-        setFechaCita(""); setHoraCita(""); setNotaCita("")
+        setFechaCita(""); setHoraCita(""); setNotaCita(""); setDuracionCita(1)
         showToast("✓ Solicitud enviada — David la va a revisar pronto")
       } else {
         showToast("Error al enviar. Intenta de nuevo.")
@@ -1993,39 +2034,76 @@ export default function PlanEntrenamientoPage() {
               </div>
             ) : (
               <div style={{ padding: 18, border: `1px solid ${R}30`, background: `${R}06` }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: 10, fontWeight: 700,
-                      letterSpacing: "0.15em", textTransform: "uppercase",
-                      color: "rgba(255,255,255,0.35)", marginBottom: 6,
-                      fontFamily: "'Barlow Condensed',sans-serif" }}>
-                      Fecha *
-                    </label>
-                    <input type="date" value={fechaCita}
-                      onChange={e => setFechaCita(e.target.value)}
-                      min={new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })}
-                      style={{ width: "100%", padding: "11px 12px",
-                        background: "rgba(255,255,255,0.04)",
-                        border: `1px solid ${fechaCita ? R + "60" : "rgba(255,255,255,0.12)"}`,
-                        color: "#fff", fontFamily: "'Barlow',sans-serif",
-                        fontSize: 14, outline: "none", colorScheme: "dark" }} />
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: "block", fontSize: 10, fontWeight: 700,
+                    letterSpacing: "0.15em", textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.35)", marginBottom: 6,
+                    fontFamily: "'Barlow Condensed',sans-serif" }}>
+                    Fecha *
+                  </label>
+                  <input type="date" value={fechaCita}
+                    onChange={e => { setFechaCita(e.target.value); setHoraCita("") }}
+                    min={new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })}
+                    style={{ width: "100%", padding: "11px 12px",
+                      background: "rgba(255,255,255,0.04)",
+                      border: `1px solid ${fechaCita ? R + "60" : "rgba(255,255,255,0.12)"}`,
+                      color: "#fff", fontFamily: "'Barlow',sans-serif",
+                      fontSize: 14, outline: "none", colorScheme: "dark" }} />
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: "block", fontSize: 10, fontWeight: 700,
+                    letterSpacing: "0.15em", textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.35)", marginBottom: 6,
+                    fontFamily: "'Barlow Condensed',sans-serif" }}>
+                    Duración *
+                  </label>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {([1, 2] as const).map(d => (
+                      <button key={d} onClick={() => { setDuracionCita(d); setHoraCita("") }}
+                        style={{ flex: 1, padding: "11px",
+                          border: `1px solid ${duracionCita === d ? R : "rgba(255,255,255,0.12)"}`,
+                          background: duracionCita === d ? `${R}20` : "rgba(255,255,255,0.03)",
+                          color: duracionCita === d ? "#fff" : "rgba(255,255,255,0.5)",
+                          fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 700,
+                          cursor: "pointer" }}>
+                        {d} {d === 1 ? "hora" : "horas"}
+                      </button>
+                    ))}
                   </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: 10, fontWeight: 700,
-                      letterSpacing: "0.15em", textTransform: "uppercase",
-                      color: "rgba(255,255,255,0.35)", marginBottom: 6,
-                      fontFamily: "'Barlow Condensed',sans-serif" }}>
-                      Hora *
-                    </label>
-                    <input type="time" value={horaCita}
-                      onChange={e => setHoraCita(e.target.value)}
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: "block", fontSize: 10, fontWeight: 700,
+                    letterSpacing: "0.15em", textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.35)", marginBottom: 6,
+                    fontFamily: "'Barlow Condensed',sans-serif" }}>
+                    Horario *
+                  </label>
+                  {!fechaCita ? (
+                    <div style={{ padding: "11px 12px", fontSize: 13,
+                      color: "rgba(255,255,255,0.3)", fontStyle: "italic",
+                      border: "1px solid rgba(255,255,255,0.1)" }}>
+                      Selecciona primero una fecha
+                    </div>
+                  ) : (
+                    <select value={horaCita} onChange={e => setHoraCita(e.target.value)}
                       style={{ width: "100%", padding: "11px 12px",
                         background: "rgba(255,255,255,0.04)",
                         border: `1px solid ${horaCita ? R + "60" : "rgba(255,255,255,0.12)"}`,
                         color: "#fff", fontFamily: "'Barlow',sans-serif",
-                        fontSize: 14, outline: "none", colorScheme: "dark" }} />
-                  </div>
+                        fontSize: 14, outline: "none", colorScheme: "dark" }}>
+                      <option value="">Selecciona un horario</option>
+                      {generarHorariosDisponibles(fechaCita, duracionCita).map(h => (
+                        <option key={h} value={h}>{formatearRangoHora(h, duracionCita)}</option>
+                      ))}
+                    </select>
+                  )}
+                  <p style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 6 }}>
+                    De lunes a viernes, de 8:30am a 6:30pm no hay horarios disponibles.
+                  </p>
                 </div>
+
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: "block", fontSize: 10, fontWeight: 700,
                     letterSpacing: "0.15em", textTransform: "uppercase",
