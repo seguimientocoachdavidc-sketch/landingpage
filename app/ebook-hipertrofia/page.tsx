@@ -70,20 +70,20 @@ export default function EbookHipertrofiaPage() {
           <h1 className="bc" style={{ fontSize: "clamp(32px,4.5vw,52px)", fontWeight: 900,
             textTransform: "uppercase", lineHeight: 0.98, letterSpacing: "-0.01em",
             marginBottom: 20 }}>
-            HIPERTROFIA<br/>BASADA EN <span style={{ color: R }}>CIENCIA.</span>
+            HIPERTROFIA FACIL<br/>BASADA EN <span style={{ color: R }}>CIENCIA.</span>
           </h1>
 
           <p className="b" style={{ fontSize: 16, color: "rgba(255,255,255,0.55)",
             lineHeight: 1.7, fontWeight: 300, marginBottom: 32, maxWidth: 440 }}>
-            La guía corta que resume lo que de verdad funciona para ganar músculo —
-            sin mitos, sin rutinas de revista. Directo al punto, en 15 páginas.
+            La guía definitiva que resume lo que de verdad funciona para ganar músculo —
+            sin humo, sin improvisar. Lo más importante resumido acá. 
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 8 }}>
             {[
-              "Los principios de entrenamiento con más evidencia real",
+              "Mitos desmentidos por la ciencia muy populares en la actualidad",
               "Cómo estructurar tu volumen e intensidad semana a semana",
-              "Los errores más comunes que frenan el progreso",
+              "Cuales son las variables más importantes según la evidencia",
             ].map((item, i) => (
               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                 <span style={{ color: R, fontSize: 13, marginTop: 2, flexShrink: 0 }}>✓</span>
@@ -159,7 +159,7 @@ export default function EbookHipertrofiaPage() {
               </button>
               <p className="b" style={{ fontSize: 11, color: "rgba(255,255,255,0.25)",
                 marginTop: 14, lineHeight: 1.5, textAlign: "center" }}>
-                Sin spam. Solo el ebook y, de vez en cuando, contenido útil de entrenamiento.
+               Descarga el ebook y, de vez en cuando, contenido útil de entrenamiento. Al diligenciar tus datos, autorizar que te enviemos contenido exclusivo de entrenamiento y ofertas.
               </p>
             </div>
           ) : (
