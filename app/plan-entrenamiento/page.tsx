@@ -81,12 +81,12 @@ const P = "#818cf8"
 /* ── Distribución semanal Rivs (solo cuando cycling=true) ── */
 const DISTRIBUCION_RIVS = [
   { dia: "NA",    label: "Descanso",                    icono: "😴", tags: [] },
-  { dia: "Día 1", label: "Full Body", icono: "🏋️", tags: ["MUSCULACIÓN","RUNNING"] },
+  { dia: "Día 1", label: "Recovery Run", icono: "🏋️", tags: ["MUSCULACIÓN","RUNNING"] },
   { dia: "Día 2", label: "Descanso",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
-  { dia: "Día 3", label: "Cycling Previo a Competencia",  icono: "🚴", tags: ["CYCLING","CORE"] },
-  { dia: "Día 4", label: "Running Previo a Competencia",  icono: "", tags: ["MUSCULACIÓN"] },
-  { dia: "Día 5", label: "Descanso",        icono: "", tags: ["RUNNING"] },
-  { dia: "Día 6", label: "IronMan: 6am ",     icono: "🔥",   tags: ["CYCLING"] },
+  { dia: "Día 3", label: "Trem Inferior",  icono: "🏋️", tags: ["MUSCULACION"] },
+  { dia: "Día 4", label: "Running Progresivo",  icono: "", tags: ["RUNNING"] },
+  { dia: "Día 5", label: "Tren Superior",        icono: "", tags: ["RUNNING"] },
+  { dia: "Día 6", label: "Fondo 11k - Progresivo",     icono: "🔥",   tags: ["CYCLING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
