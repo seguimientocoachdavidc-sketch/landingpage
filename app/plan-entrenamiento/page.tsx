@@ -47,6 +47,20 @@ interface Recordatorio {
   mensaje: string
   actualizado_en: string
 }
+interface RetoDisponible {
+  id: string
+  nombre: string
+  descripcion: string
+  puntos: number
+}
+interface EjercicioPliometria {
+  id: string
+  nombre: string
+  series: number
+  reps: string
+  nivel: string
+  video_url: string | null
+}
 interface Seguimiento {
   id?: string; cliente_token: string; fecha: string
   peso_kg: number | null; cintura_cm: number | null
@@ -81,12 +95,12 @@ const P = "#818cf8"
 /* ── Distribución semanal Rivs (solo cuando cycling=true) ── */
 const DISTRIBUCION_RIVS = [
   { dia: "NA",    label: "Descanso",                    icono: "😴", tags: [] },
-  { dia: "Día 1", label: "Recovery Run", icono: "🏋️", tags: ["MUSCULACIÓN","RUNNING"] },
-  { dia: "Día 2", label: "Descanso",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
-  { dia: "Día 3", label: "Trem Inferior",  icono: "🏋️", tags: ["MUSCULACION"] },
-  { dia: "Día 4", label: "Running Progresivo",  icono: "", tags: ["RUNNING"] },
-  { dia: "Día 5", label: "Tren Superior",        icono: "", tags: ["RUNNING"] },
-  { dia: "Día 6", label: "Fondo 11k - Progresivo",     icono: "🔥",   tags: ["CYCLING"] },
+  { dia: "Día 1", label: "Tren Superior + Recovery Run Z2", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
+  { dia: "Día 2", label: "Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
+  { dia: "Día 3", label: "Cycling Continuo Z2 + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
+  { dia: "Día 4", label: "Tren Superior + Pliometría",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
+  { dia: "Día 5", label: "Intervalos 5X3 minutos - Zona umbral",        icono: "🚴🏃", tags: ["RUNNING"] },
+  { dia: "Día 6", label: "Fondo Cycling ",     icono: "🔥",   tags: ["CYCLING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
@@ -256,6 +270,14 @@ export default function PlanEntrenamientoPage() {
   const [insightSesion, setInsightSesion] = useState<{tipo:string; mensaje:string} | null>(null)
   const [notaCoach, setNotaCoach] = useState<NotaCoach | null>(null)
   const [recordatorios, setRecordatorios] = useState<Recordatorio[]>([])
+  const [puntosDisponibles, setPuntosDisponibles] = useState<number | null>(null)
+  const [retosDisponibles, setRetosDisponibles] = useState<RetoDisponible[]>([])
+  const [pliometriaEjercicios, setPliometriaEjercicios] = useState<EjercicioPliometria[]>([])
+  const [cargandoPliometria, setCargandoPliometria] = useState(false)
+  const [historialPuntos, setHistorialPuntos] = useState<{concepto:string; puntos:number; fecha:string}[]>([])
+  const [cargandoRetos, setCargandoRetos] = useState(false)
+  const [puntosACanjear, setPuntosACanjear] = useState("")
+  const [canjeando, setCanjeando] = useState(false)
   const [tienePresencial, setTienePresencial] = useState(false)
   const [fechaCita, setFechaCita] = useState("")
   const [horaCita, setHoraCita] = useState("")
@@ -360,6 +382,72 @@ export default function PlanEntrenamientoPage() {
     } catch {
       // Si falla, simplemente no aparece la pestaña — sin riesgo.
     }
+  }
+
+  /* ── Cargar puntos, historial y catálogo de retos — aparte,
+     nunca bloquea el acceso ni tumba nada si falla ── */
+  const cargarRetos = useCallback(async (tok: string) => {
+    setCargandoRetos(true)
+    try {
+      const [{ data: ganados }, { data: canjes }, { data: catalogo }] = await Promise.all([
+        supabase.from("puntos_retos").select("concepto, puntos, fecha")
+          .eq("cliente_token", tok).order("fecha", { ascending: false }),
+        supabase.from("canjes_puntos").select("puntos_canjeados")
+          .eq("cliente_token", tok),
+        supabase.from("retos_disponibles").select("id, nombre, descripcion, puntos").order("orden"),
+      ])
+      const totalGanado = (ganados ?? []).reduce((acc, p) => acc + p.puntos, 0)
+      const totalCanjeado = (canjes ?? []).reduce((acc, c) => acc + c.puntos_canjeados, 0)
+      setPuntosDisponibles(totalGanado - totalCanjeado)
+      setHistorialPuntos((ganados ?? []).slice(0, 10))
+      setRetosDisponibles(catalogo ?? [])
+    } catch {
+      // Si falla, la pestaña simplemente muestra "sin datos" — sin riesgo.
+    }
+    setCargandoRetos(false)
+  }, [])
+
+  useEffect(() => {
+    if (vista === "retos" && token) cargarRetos(token)
+  }, [vista, token, cargarRetos])
+
+  /* ── Cargar biblioteca de pliometría (global, no depende del cliente) ── */
+  const cargarPliometria = useCallback(async () => {
+    setCargandoPliometria(true)
+    const { data } = await supabase
+      .from("biblioteca_pliometria")
+      .select("id, nombre, series, reps, nivel, video_url")
+      .order("nivel")
+      .order("orden")
+    setPliometriaEjercicios(data ?? [])
+    setCargandoPliometria(false)
+  }, [])
+
+  useEffect(() => {
+    if (vista === "pliometria" && pliometriaEjercicios.length === 0) cargarPliometria()
+  }, [vista, pliometriaEjercicios.length, cargarPliometria])
+
+  /* ── Solicitar canje de puntos ── */
+  const canjearPuntos = async () => {
+    const puntos = parseInt(puntosACanjear)
+    if (!token || !puntos || puntos < 100 || puntos % 100 !== 0) {
+      showToast("Ingresa un múltiplo de 100 puntos (mínimo 100).")
+      return
+    }
+    if (puntosDisponibles === null || puntos > puntosDisponibles) {
+      showToast("No tienes suficientes puntos disponibles.")
+      return
+    }
+    setCanjeando(true)
+    const valorPesos = (puntos / 100) * 1000
+    const { error } = await supabase.from("canjes_puntos").insert({
+      cliente_token: token, puntos_canjeados: puntos, valor_pesos: valorPesos,
+    })
+    setCanjeando(false)
+    if (error) { showToast("Error al canjear. Intenta de nuevo."); return }
+    showToast(`✓ Canjeaste ${puntos} pts por $${valorPesos.toLocaleString("es-CO")} — David lo aplica en tu próximo pago`)
+    setPuntosACanjear("")
+    cargarRetos(token)
   }
 
   /* ── Enviar solicitud de cita presencial ── */
@@ -827,6 +915,11 @@ export default function PlanEntrenamientoPage() {
     // Resumen completo + PRs, calculados ahora que la sesión ya quedó cerrada en la BD
     const resumen = await calcularResumenSesion(sesionId, diaActivo, ejercicios, token)
     setResumenSesion({ ...resumen, racha })
+    // Nota: los PRs se siguen detectando y celebrando en el resumen de
+    // sesión (arriba), pero deliberadamente NO otorgan puntos canjeables
+    // — el peso/reps es autoreportado sin verificación, a diferencia de
+    // los retos de resistencia que sí pasan por video. Solo lo verificable
+    // debe valer dinero real.
   }
 
   /* ── Cargar ejercicios disponibles para progreso ──
@@ -1023,6 +1116,8 @@ export default function PlanEntrenamientoPage() {
     ...(modulos.cycling ? [{ k: "cycling", l: "🚴 Cycling", c: B }] : []),
     { k: "core", l: "🎯 CORE", c: P },
     { k: "medidas", l: "📊 Medidas", c: B },
+    { k: "retos", l: "🏆 Retos", c: O },
+    { k: "pliometria", l: "🤸 Pliometría", c: G },
     ...(tienePresencial ? [{ k: "presencial", l: "📅 Presencial", c: R }] : []),
     ...(modulos.musculacion ? [{ k: "progreso", l: "📈 Progreso", c: "#a78bfa" }] : []),
     ...(modulos.musculacion ? [{ k: "biblioteca", l: "📚 Ejercicios", c: "#22c55e" }] : []),
@@ -2001,6 +2096,219 @@ export default function PlanEntrenamientoPage() {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        )}
+
+        {/* ══ RETOS ══ */}
+        {vista === "retos" && (
+          <div style={{ animation: "fadeUp 0.3s ease" }}>
+            <div style={{ fontSize: 11, color: O, letterSpacing: "0.12em",
+              textTransform: "uppercase", marginBottom: 14 }}>
+              🏆 Retos semanales · Gana puntos, canjéalos por descuento
+            </div>
+
+            {/* Saldo de puntos */}
+            <div style={{ padding: "24px", border: `1px solid ${O}35`, background: `${O}0a`,
+              textAlign: "center", marginBottom: 20 }}>
+              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 48,
+                fontWeight: 900, color: O, lineHeight: 1 }}>
+                {puntosDisponibles === null ? "—" : puntosDisponibles}
+              </div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)",
+                letterSpacing: "0.15em", textTransform: "uppercase", marginTop: 6,
+                fontFamily: "'Barlow Condensed',sans-serif" }}>
+                Puntos disponibles
+              </div>
+              {puntosDisponibles !== null && puntosDisponibles > 0 && (
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginTop: 8 }}>
+                  ≈ ${((Math.floor(puntosDisponibles / 100) * 100) / 100 * 1000).toLocaleString("es-CO")} disponibles para canjear
+                </div>
+              )}
+            </div>
+
+            {/* Canjear puntos */}
+            {puntosDisponibles !== null && puntosDisponibles >= 100 && (
+              <div style={{ marginBottom: 24, padding: 16,
+                border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.02)" }}>
+                <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13,
+                  fontWeight: 800, textTransform: "uppercase", color: "#fff", marginBottom: 12 }}>
+                  Canjear puntos
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input type="number" placeholder="Ej: 100" value={puntosACanjear}
+                    onChange={e => setPuntosACanjear(e.target.value)}
+                    step={100} min={100} max={puntosDisponibles}
+                    style={{ flex: 1, padding: "11px 12px", background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.12)", color: "#fff",
+                      fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 700,
+                      outline: "none" }} />
+                  <button onClick={canjearPuntos} disabled={canjeando}
+                    style={{ padding: "0 20px", background: O, border: "none", color: "#000",
+                      fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 900,
+                      letterSpacing: "0.1em", textTransform: "uppercase",
+                      cursor: canjeando ? "not-allowed" : "pointer" }}>
+                    {canjeando ? "..." : "Canjear"}
+                  </button>
+                </div>
+                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>
+                  Múltiplos de 100 puntos = $1.000 cada 100. David lo aplica en tu próximo pago.
+                </p>
+              </div>
+            )}
+
+            {/* Cómo ganar puntos */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em",
+                textTransform: "uppercase", marginBottom: 10,
+                fontFamily: "'Barlow Condensed',sans-serif" }}>
+                Cómo ganar puntos
+              </div>
+
+              {/* Retos de resistencia (video por WhatsApp) */}
+              {cargandoRetos ? (
+                <div style={{ textAlign: "center", padding: 20, color: "rgba(255,255,255,0.3)", fontSize: 13 }}>
+                  Cargando retos...
+                </div>
+              ) : retosDisponibles.map(reto => (
+                <div key={reto.id} style={{ marginBottom: 8, padding: "14px 16px",
+                  background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 15,
+                        fontWeight: 700, color: "#fff", textTransform: "uppercase" }}>
+                        {reto.nombre}
+                      </div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2,
+                        lineHeight: 1.5 }}>
+                        {reto.descripcion}
+                      </div>
+                    </div>
+                    <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16,
+                      fontWeight: 900, color: O, flexShrink: 0 }}>+{reto.puntos}</span>
+                  </div>
+                  <a href={`https://wa.me/573243747367?text=${encodeURIComponent(`Hola David! Ya logré el ${reto.nombre} — te mando el video de evidencia 💪`)}`}
+                    target="_blank" rel="noopener noreferrer"
+                    style={{ display: "inline-block", marginTop: 10, padding: "8px 16px",
+                      background: "rgba(37,211,102,0.15)", border: "1px solid rgba(37,211,102,0.4)",
+                      color: "#25D366", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11,
+                      fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase",
+                      textDecoration: "none" }}>
+                    ✓ Ya lo logré — enviar video →
+                  </a>
+                </div>
+              ))}
+            </div>
+
+            {/* Historial reciente */}
+            {historialPuntos.length > 0 && (
+              <div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em",
+                  textTransform: "uppercase", marginBottom: 10,
+                  fontFamily: "'Barlow Condensed',sans-serif" }}>
+                  Historial reciente
+                </div>
+                {historialPuntos.map((h, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between",
+                    padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)",
+                    fontSize: 13 }}>
+                    <span style={{ color: "rgba(255,255,255,0.6)" }}>{h.concepto}</span>
+                    <span style={{ color: O, fontWeight: 700,
+                      fontFamily: "'Barlow Condensed',sans-serif" }}>+{h.puntos}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══ PLIOMETRÍA ══ */}
+        {vista === "pliometria" && (
+          <div style={{ animation: "fadeUp 0.3s ease" }}>
+            <div style={{ fontSize: 11, color: G, letterSpacing: "0.12em",
+              textTransform: "uppercase", marginBottom: 16 }}>
+              🤸 Biblioteca de pliometría · Elige según tu nivel
+            </div>
+
+            {cargandoPliometria ? (
+              <div style={{ textAlign: "center", padding: 48, color: "rgba(255,255,255,0.3)", fontSize: 14 }}>
+                Cargando ejercicios...
+              </div>
+            ) : pliometriaEjercicios.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 48,
+                border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.3)" }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>🤸</div>
+                <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 14, fontWeight: 300 }}>
+                  Aún no hay ejercicios cargados.
+                </p>
+              </div>
+            ) : (
+              ["Fácil", "Intermedio", "Avanzado"].map(nivel => {
+                const ejercicios = pliometriaEjercicios.filter(e => e.nivel === nivel)
+                if (ejercicios.length === 0) return null
+                const colorNivel = nivel === "Fácil" ? G : nivel === "Intermedio" ? O : R
+                return (
+                  <div key={nivel} style={{ marginBottom: 24 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8,
+                      marginBottom: 10, paddingBottom: 6,
+                      borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: colorNivel }} />
+                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)",
+                        letterSpacing: "0.15em", textTransform: "uppercase",
+                        fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700 }}>
+                        {nivel}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {ejercicios.map(ej => {
+                        const ytMatch = ej.video_url?.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+                        const ytId = ytMatch?.[1]
+                        const thumbUrl = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null
+                        return (
+                          <a key={ej.id} href={ej.video_url ?? undefined}
+                            target="_blank" rel="noopener noreferrer"
+                            style={{ display: "flex", alignItems: "center", gap: 12,
+                              padding: "10px", background: "rgba(255,255,255,0.02)",
+                              border: "1px solid rgba(255,255,255,0.07)",
+                              textDecoration: "none", transition: "border-color 0.15s",
+                              cursor: ej.video_url ? "pointer" : "default" }}>
+                            {thumbUrl ? (
+                              <div style={{ width: 64, height: 48, flexShrink: 0, position: "relative",
+                                overflow: "hidden", background: "#111" }}>
+                                <img src={thumbUrl} alt={ej.nombre}
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                <div style={{ position: "absolute", inset: 0, display: "flex",
+                                  alignItems: "center", justifyContent: "center",
+                                  background: "rgba(0,0,0,0.25)" }}>
+                                  <span style={{ color: "#fff", fontSize: 12 }}>▶</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ width: 64, height: 48, flexShrink: 0,
+                                background: "rgba(255,255,255,0.04)", display: "flex",
+                                alignItems: "center", justifyContent: "center" }}>
+                                <span style={{ fontSize: 18, opacity: 0.3 }}>🎥</span>
+                              </div>
+                            )}
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 15,
+                                fontWeight: 700, color: "#fff", textTransform: "uppercase" }}>
+                                {ej.nombre}
+                              </div>
+                              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                                {ej.series} series × {ej.reps}
+                              </div>
+                            </div>
+                            {ej.video_url && (
+                              <span style={{ color: G, fontSize: 12, flexShrink: 0 }}>▶</span>
+                            )}
+                          </a>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })
             )}
           </div>
         )}
