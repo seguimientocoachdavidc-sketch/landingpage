@@ -37,6 +37,7 @@ interface MetaMacros {
   grasa_g: number; cho_g: number
   fibra_g: number; sodio_mg_max: number; azucares_g_max: number
   grasa_sat_g_max: number; calcio_mg: number; potasio_mg: number; hierro_mg: number
+  dias_por_semana: number | null
 }
 interface Recordatorio {
   mensaje: string
@@ -250,7 +251,7 @@ export default function MacrosPage() {
   const cargarMetas = useCallback(async (tok: string) => {
     const { data } = await supabase
       .from("metas_macros")
-      .select("distribucion,kcal,proteina_g,grasa_g,cho_g,fibra_g,sodio_mg_max,azucares_g_max,grasa_sat_g_max,calcio_mg,potasio_mg,hierro_mg")
+      .select("distribucion,kcal,proteina_g,grasa_g,cho_g,fibra_g,sodio_mg_max,azucares_g_max,grasa_sat_g_max,calcio_mg,potasio_mg,hierro_mg,dias_por_semana")
       .eq("cliente_token", tok)
     if (!data || !data.length) return
     setMetas(data)
@@ -524,6 +525,9 @@ export default function MacrosPage() {
                 altos_cho:  {label:"Altos CHO",    desc:`${m.kcal} kcal · ${m.cho_g}g carbs`,   icono:"🟢"},
               }
               const info = labels[m.distribucion] ?? {label:m.distribucion,desc:`${m.kcal} kcal`,icono:"⚪"}
+              const descConDias = m.dias_por_semana
+                ? `${info.desc} · ${m.dias_por_semana} ${m.dias_por_semana===1?"día":"días"}/semana`
+                : info.desc
               const activa = distribSeleccionada === m.distribucion
               return (
                 <button key={m.distribucion}
@@ -541,7 +545,7 @@ export default function MacrosPage() {
                     </div>
                     <div className="b" style={{fontSize:12,
                       color:"rgba(255,255,255,0.4)"}}>
-                      {info.desc} · P:{m.proteina_g}g · G:{m.grasa_g}g
+                      {descConDias} · P:{m.proteina_g}g · G:{m.grasa_g}g
                     </div>
                   </div>
                   {activa && (
