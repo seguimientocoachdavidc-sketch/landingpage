@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback, useRef, Fragment } from "react"
 import { supabase } from "@/lib/supabase"
 import ResumenSesionModal, { ResumenSesionData } from "@/components/ResumenSesionModal"
 
@@ -14,6 +14,7 @@ interface Ejercicio {
   series_trabajo: number; reps_objetivo: string | null
   rir_objetivo: string | null; descanso: string | null
   video_url: string | null
+  bloque?: string | null
 }
 interface RegAnterior { serie_num: number; kg: number | null; reps: number | null }
 interface SemanaRun {
@@ -96,11 +97,11 @@ const P = "#818cf8"
 const DISTRIBUCION_RIVS = [
   { dia: "NA",    label: "Descanso",                    icono: "😴", tags: [] },
   { dia: "Día 1", label: "Tren Superior + Easy Run Z2", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
-  { dia: "Día 2", label: "Pliometría + Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
+  { dia: "Día 2", label: "Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
   { dia: "Día 3", label: "Cycling Continuo Z2 + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
-  { dia: "Día 4", label: "Pliometría + Tren Superior",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
-  { dia: "Día 5", label: "Cycling Z2 Progresivo",        icono: "🚴🏃", tags: ["RUNNING"] },
-  { dia: "Día 6", label: "Carrera 21k - Sogamoso",     icono: "🔥",   tags: ["CYCLING"] },
+  { dia: "Día 4", label: "Full Body ",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
+  { dia: "Día 5", label: "Intervalos Running",        icono: "🚴🏃", tags: ["RUNNING"] },
+  { dia: "Día 6", label: "Fondo Cycling ",     icono: "🔥",   tags: ["CYCLING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
@@ -1542,8 +1543,27 @@ export default function PlanEntrenamientoPage() {
             {/* Ejercicios */}
             {diaActivo && ejercicios.map((ej, idx) => {
               const ant = ants[ej.id]
+              const esPlio = ej.bloque === "pliometria"
+              const BLOQUES: Record<string, { titulo: string; color: string }> = {
+                pliometria: { titulo: "⚡ Bloque 1 · Pliometría", color: G },
+                inferior:   { titulo: "🦵 Fuerza · Tren inferior", color: R },
+                superior:   { titulo: "💪 Fuerza · Tren superior", color: B },
+              }
+              const iniciaBloque = !!ej.bloque && (idx === 0 || ejercicios[idx - 1].bloque !== ej.bloque)
+              const infoBloque = ej.bloque ? BLOQUES[ej.bloque] : undefined
               return (
-                <div key={ej.id} style={{ marginBottom: 18, border: "1px solid rgba(255,255,255,0.08)", background: "#0a0a0a" }}>
+                <Fragment key={ej.id}>
+                {iniciaBloque && infoBloque && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "26px 0 12px" }}>
+                    <div style={{ width: 4, height: 18, background: infoBloque.color }} />
+                    <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 15, fontWeight: 900,
+                      letterSpacing: "0.12em", textTransform: "uppercase", color: infoBloque.color }}>
+                      {infoBloque.titulo}
+                    </span>
+                    <div style={{ flex: 1, height: 1, background: `${infoBloque.color}30` }} />
+                  </div>
+                )}
+                <div style={{ marginBottom: 18, border: "1px solid rgba(255,255,255,0.08)", background: "#0a0a0a" }}>
                   {ej.video_url && !imgErr[ej.id] && (() => {
                     // Extraer ID de YouTube si es un link de YouTube
                     const ytMatch = ej.video_url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
@@ -1596,6 +1616,15 @@ export default function PlanEntrenamientoPage() {
                         {ej.nota_tecnica}
                       </div>
                     )}
+                    {esPlio && (
+                      <button onClick={() => setVista("pliometria")}
+                        style={{ marginBottom: 10, padding: "7px 14px", background: `${G}15`,
+                          border: `1px solid ${G}50`, color: G, cursor: "pointer",
+                          fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 800,
+                          letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                        🤸 Ver ejercicios de Pliometría →
+                      </button>
+                    )}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       {ej.reps_objetivo && (
                         <div style={{ padding: "8px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -1643,11 +1672,11 @@ export default function PlanEntrenamientoPage() {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 1fr 1fr", gap: 6,
                       marginBottom: 8, fontSize: 9, color: "rgba(255,255,255,0.25)",
                       letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                      <span>Reps obj.</span><span>RIR</span><span>Peso kg</span><span>Reps</span>
+                      <span>Reps obj.</span><span>RIR</span><span>{esPlio ? "Sin peso" : "Peso kg"}</span><span>Reps</span>
                     </div>
                     {Array.from({ length: ej.series_trabajo }, (_, i) => i + 1).map(serie => {
                       const val = regs[ej.id]?.[serie] || { kg: "", reps: "" }
-                      const ok = !!val.kg && !!val.reps
+                      const ok = esPlio ? !!val.reps : (!!val.kg && !!val.reps)
                       const repsObj = parseSerie(ej.reps_objetivo, serie)
                       const rirObj = parseSerie(ej.rir_objetivo, serie)
                       const rc = colorRIR(rirObj)
@@ -1667,6 +1696,12 @@ export default function PlanEntrenamientoPage() {
                               display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                               <span style={{ fontSize: 11, color: rc, fontWeight: 700, fontFamily: "'Barlow Condensed',sans-serif" }}>{rirObj}</span>
                             </div>
+                            {esPlio ? (
+                              <div style={{ padding: "10px 8px", background: "rgba(255,255,255,0.02)",
+                                border: "1px dashed rgba(255,255,255,0.08)", display: "flex",
+                                alignItems: "center", justifyContent: "center",
+                                color: "rgba(255,255,255,0.25)", fontSize: 18 }}>—</div>
+                            ) : (
                             <input type="number" inputMode="decimal" placeholder="0"
                               value={val.kg} disabled={sesionCerrada}
                               onChange={e => setRegs(r => ({ ...r, [ej.id]: { ...r[ej.id], [serie]: { ...r[ej.id][serie], kg: e.target.value } } }))}
@@ -1676,6 +1711,7 @@ export default function PlanEntrenamientoPage() {
                                 color: "#fff", fontSize: 18, fontFamily: "'Barlow Condensed',sans-serif",
                                 fontWeight: 900, outline: "none", textAlign: "center", width: "100%" }}
                             />
+                            )}
                             <input type="number" inputMode="numeric" placeholder="0"
                               value={val.reps} disabled={sesionCerrada}
                               onChange={e => setRegs(r => ({ ...r, [ej.id]: { ...r[ej.id], [serie]: { ...r[ej.id][serie], reps: e.target.value } } }))}
@@ -1699,6 +1735,7 @@ export default function PlanEntrenamientoPage() {
                     })}
                   </div>
                 </div>
+                </Fragment>
               )
             })}
 
