@@ -98,7 +98,7 @@ const DISTRIBUCION_RIVS = [
   { dia: "NA",    label: "Descanso",                    icono: "😴", tags: [] },
   { dia: "Día 1", label: "Tren Superior + Easy Run Z2", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
   { dia: "Día 2", label: "Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
-  { dia: "Día 3", label: "Cycling Continuo Z2 + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
+  { dia: "Día 3", label: "Cycling Intervalos + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
   { dia: "Día 4", label: "Full Body ",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
   { dia: "Día 5", label: "Intervalos Running",        icono: "🚴🏃", tags: ["RUNNING"] },
   { dia: "Día 6", label: "Fondo Cycling ",     icono: "🔥",   tags: ["CYCLING"] },
