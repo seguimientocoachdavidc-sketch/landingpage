@@ -1,499 +1,390 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 
+/* ══════════════════════════════════════════════════════════
+   CONFIGURACIÓN Y CONTENIDO EDITABLE
+   ══════════════════════════════════════════════════════════ */
 const R = "#E8000D"
+const SUPERFICIE = "#0b0b0e"
+const TEXTO_2 = "rgba(255,255,255,0.72)"
+const TEXTO_3 = "rgba(255,255,255,0.5)"
+const LINEA = "rgba(255,255,255,0.09)"
 
-/* ── FadeIn al scroll ─────────────────────────────────────────── */
-function FadeIn({ children, delay = 0, from = "bottom", className = "" }: {
-  children: React.ReactNode; delay?: number
-  from?: "bottom" | "left" | "right"; className?: string
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [v, setV] = useState(false)
-  useEffect(() => {
-    const el = ref.current; if (!el) return
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setV(true); obs.disconnect() } },
-      { threshold: 0.1 }
-    )
-    obs.observe(el); return () => obs.disconnect()
-  }, [])
-  const tx = from === "left" ? "-50px" : from === "right" ? "50px" : "0"
-  const ty = from === "bottom" ? "40px" : "0"
-  return (
-    <div ref={ref} className={className} style={{
-      transition: `opacity 0.85s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 0.85s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
-      opacity: v ? 1 : 0,
-      transform: v ? "translate(0,0)" : `translate(${tx},${ty})`,
-    }}>{children}</div>
-  )
-}
+const WHATSAPP = "573243747367"
+const INSTAGRAM = "https://www.instagram.com/coachfitdavid"
+const wa = (m: string) => `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(m)}`
 
-/* ── Contador animado ─────────────────────────────────────────── */
-function Counter({ target, suffix = "" }: { target: number; suffix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const [val, setVal] = useState(0)
-  const done = useRef(false)
-  useEffect(() => {
-    const el = ref.current; if (!el) return
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !done.current) {
-        done.current = true
-        const dur = 1600; const start = Date.now()
-        const tick = () => {
-          const p = Math.min((Date.now() - start) / dur, 1)
-          const ease = 1 - Math.pow(1 - p, 3)
-          setVal(Math.round(ease * target))
-          if (p < 1) requestAnimationFrame(tick)
-        }
-        requestAnimationFrame(tick)
-      }
-    }, { threshold: 0.5 })
-    obs.observe(el); return () => obs.disconnect()
-  }, [target])
-  return <span ref={ref}>{val}{suffix}</span>
-}
+// Tu historia en primera persona. Es lo que más conecta en una página "Sobre mí":
+// reescribe el primer párrafo con cómo empezaste TÚ (qué te llevó a entrenar,
+// qué hacías mal al principio, qué te hizo cambiar).
+const HISTORIA = [
+  "Llevo más de ocho años entrenando. Como casi todos, al principio seguí rutinas que encontraba por ahí sin saber si de verdad estaban funcionando, y eso me hizo entender algo: sin estructura, el esfuerzo se desperdicia.",
+  "Por eso me formé como técnico en entrenamiento de gimnasio y en entrenamiento personalizado, me especialicé en hipertrofia, biomecánica y nutrición deportiva, y sigo estudiando hoy. Todo lo que aprendo lo aplico primero en mi propio entrenamiento y después con las personas que entreno.",
+  "Hoy acompaño a personas que quieren ganar músculo, perder grasa o rendir mejor en su deporte, con una app que construí yo mismo para poder hacerles seguimiento de verdad. Mi trabajo no es motivarte un día: es darte un sistema que funcione todos los días.",
+]
 
-/* ══ COMPONENTE PRINCIPAL ═════════════════════════════════════════ */
+type Titulo = { titulo: string; institucion: string }
+const FORMACION: { grupo: string; enCurso?: boolean; titulos: Titulo[] }[] = [
+  { grupo: "Formación técnica", titulos: [
+    { titulo: "Técnico en Entrenamiento de Gimnasio", institucion: "CCAPF" },
+    { titulo: "Técnico en Entrenamiento Personalizado", institucion: "CCAPF" },
+  ] },
+  { grupo: "Especializaciones", titulos: [
+    { titulo: "Hipertrofia muscular", institucion: "ECEP" },
+    { titulo: "Entrenamiento en mujeres", institucion: "ECEP" },
+    { titulo: "Biomecánica deportiva", institucion: "Fitness & Health Institute" },
+    { titulo: "Nutrición deportiva", institucion: "Fitness & Health Institute" },
+  ] },
+  { grupo: "Estudiando ahora", enCurso: true, titulos: [
+    { titulo: "Nutrición y suplementación", institucion: "INAF" },
+    { titulo: "Certificación profesional en musculación", institucion: "INAF" },
+  ] },
+]
+// Se calcula solo: formación técnica + especializaciones de entrenamiento
+const CERTIFICACIONES_FITNESS = FORMACION
+  .filter(g => g.grupo === "Formación técnica" || g.grupo === "Especializaciones")
+  .reduce((n, g) => n + g.titulos.length, 0)
+
+/* ══════════════════════════════════════════════════════════
+   PÁGINA
+   ══════════════════════════════════════════════════════════ */
 export default function SobreMi() {
-  const [scrollY, setScrollY] = useState(0)
-  const [heroIn, setHeroIn] = useState(false)
-
-  useEffect(() => {
-    setTimeout(() => setHeroIn(true), 80)
-    const onScroll = () => setScrollY(window.scrollY)
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
-
   return (
-    <main style={{ background: "#000", color: "#fff", fontFamily: "'Barlow', sans-serif", overflowX: "hidden" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;0,800;0,900;1,900&family=Barlow:wght@300;400;500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::selection { background: ${R}; color: #fff; }
-        @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-        @keyframes pulseR  { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        @keyframes fadeUp  { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
-        .bc { font-family: 'Barlow Condensed', Impact, sans-serif; }
-        .b  { font-family: 'Barlow', sans-serif; }
-      `}</style>
-
-      {/* ══ HERO ════════════════════════════════════════════════════ */}
-      <section style={{ position: "relative", height: "100vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
-
-        {/* Video con parallax */}
-        <div style={{ position: "absolute", inset: 0, transform: `translateY(${scrollY * 0.2}px)`, willChange: "transform" }}>
-          <video autoPlay loop muted playsInline
-            style={{ width: "100%", height: "110%", objectFit: "cover", filter: "grayscale(25%) contrast(1.1)" }}>
-            <source src="/0502.mp4" type="video/mp4" />
-          </video>
-        </div>
-
-        {/* Overlays en capas */}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, #000 40%, rgba(0,0,0,0.6) 70%, rgba(0,0,0,0.2) 100%)" }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, #000 0%, transparent 50%)" }} />
-        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 80% 50%, ${R}15 0%, transparent 50%)` }} />
-
-        {/* Línea roja vertical */}
-        <div style={{
-          position: "absolute", left: "max(32px, calc(50vw - 700px))",
-          top: 0, bottom: 0, width: 2,
-          background: `linear-gradient(to bottom, transparent, ${R} 25%, ${R} 75%, transparent)`,
-          opacity: heroIn ? 1 : 0, transition: "opacity 1.2s ease 0.4s",
-        }} />
-
-        {/* Contenido */}
-        <div style={{ position: "relative", zIndex: 10, maxWidth: 1400, margin: "0 auto", padding: "0 64px", width: "100%" }}>
-
-          {/* Eyebrow */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 14, marginBottom: 28,
-            opacity: heroIn ? 1 : 0, transform: heroIn ? "none" : "translateY(20px)",
-            transition: "all 0.7s ease 0.2s",
-          }}>
-            <div style={{ width: 40, height: 2, background: R }} />
-            <span className="bc" style={{ color: R, fontSize: 12, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>
-              Coach · Entrenador especializado
-            </span>
-          </div>
-
-          {/* Nombre */}
-          <div style={{ overflow: "hidden" }}>
-            <h1 className="bc" style={{
-              fontSize: "clamp(72px, 12vw, 180px)", fontWeight: 900,
-              textTransform: "uppercase", lineHeight: 0.85, letterSpacing: "-0.02em",
-            }}>
-              <span style={{
-                display: "block",
-                opacity: heroIn ? 1 : 0, transform: heroIn ? "translateY(0)" : "translateY(100%)",
-                transition: "all 0.9s cubic-bezier(0.16,1,0.3,1) 0.3s",
-              }}>COACH</span>
-              <span style={{
-                display: "block", color: R, textShadow: `0 0 80px ${R}50`,
-                opacity: heroIn ? 1 : 0, transform: heroIn ? "translateY(0)" : "translateY(100%)",
-                transition: "all 0.9s cubic-bezier(0.16,1,0.3,1) 0.45s",
-              }}>DAVID</span>
-            </h1>
-          </div>
-
-          {/* Tagline */}
-          <p className="b" style={{
-            marginTop: 32, fontSize: "clamp(15px, 1.4vw, 19px)",
-            color: "rgba(255,255,255,0.5)", maxWidth: 420, lineHeight: 1.65, fontWeight: 300,
-            opacity: heroIn ? 1 : 0, transform: heroIn ? "none" : "translateY(20px)",
-            transition: "all 0.7s ease 0.75s",
-          }}>
-            No es motivación. Es estructura, ciencia y ejecución.<br />
-            <span style={{ color: "rgba(255,255,255,0.8)", fontWeight: 400 }}>Hipertrofia y rendimiento físico basado en evidencia.</span>
-          </p>
-
-          {/* Scroll indicator */}
-          <div style={{
-            position: "absolute", bottom: 48, left: 64,
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-            opacity: heroIn ? 0.4 : 0, transition: "opacity 1s ease 1.5s",
-          }}>
-            <span className="bc" style={{ fontSize: 10, letterSpacing: "0.4em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", writingMode: "vertical-rl" }}>Scroll</span>
-            <div style={{ width: 1, height: 48, background: "linear-gradient(to bottom, rgba(255,255,255,0.3), transparent)" }} />
-          </div>
-        </div>
-
-        {/* Marquee inferior */}
-        <div style={{
-          position: "absolute", bottom: 0, left: 0, right: 0,
-          borderTop: "1px solid rgba(255,255,255,0.05)",
-          background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)",
-          padding: "13px 0", overflow: "hidden",
-          opacity: heroIn ? 1 : 0, transition: "opacity 1s ease 1.8s",
-        }}>
-          <div style={{ display: "flex", animation: "marquee 22s linear infinite", width: "max-content" }}>
-            {Array(6).fill(null).map((_, i) => (
-              <span key={i} className="bc" style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", color: "rgba(255,255,255,0.15)", paddingRight: 80, whiteSpace: "nowrap" }}>
-                Hipertrofia · Ciencia Aplicada · Entrenamiento Real · Resultados Medibles · Sin Atajos ·&nbsp;
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══ QUIÉN SOY — Split layout ════════════════════════════════ */}
-      <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: "90vh", position: "relative" }}>
-
-        {/* Columna imagen */}
-        <div style={{ position: "relative", overflow: "hidden" }}>
-          <img src="/Entrenando_2.jpeg" alt="Coach David"
-            style={{
-              width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top",
-              filter: "grayscale(15%) contrast(1.05)",
-              transform: `scale(1.04) translateY(${(scrollY - 700) * 0.06}px)`,
-              transition: "transform 0.1s linear",
-            }} />
-          {/* Overlay lateral */}
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, transparent 50%, #000)" }} />
-          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, ${R}20 0%, transparent 40%)` }} />
-
-          {/* Marco decorativo rojo */}
-          <div style={{
-            position: "absolute", top: 32, left: 32, right: 64, bottom: 32,
-            border: `1px solid ${R}30`, pointerEvents: "none",
-          }} />
-          <div style={{
-            position: "absolute", top: 20, left: 20, width: 32, height: 32,
-            borderTop: `2px solid ${R}`, borderLeft: `2px solid ${R}`,
-          }} />
-          <div style={{
-            position: "absolute", bottom: 20, right: 52, width: 32, height: 32,
-            borderBottom: `2px solid ${R}`, borderRight: `2px solid ${R}`,
-          }} />
-        </div>
-
-        {/* Columna texto */}
-        <div style={{ background: "#050505", padding: "80px 72px 80px 64px", display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", overflow: "hidden" }}>
-
-          {/* Brillo de fondo */}
-          <div style={{ position: "absolute", top: "30%", right: -60, width: 300, height: 300, background: `${R}06`, borderRadius: "50%", filter: "blur(80px)", pointerEvents: "none" }} />
-
-          <FadeIn from="right">
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-              <div style={{ width: 36, height: 2, background: R }} />
-              <span className="bc" style={{ color: R, fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>Quién soy</span>
-            </div>
-
-            <h2 className="bc" style={{ fontSize: "clamp(44px, 4vw, 68px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.9, letterSpacing: "-0.02em", marginBottom: 32 }}>
-              CONOCE<br />AL <span style={{ color: R }}>COACH</span>
-            </h2>
-
-            <p className="b" style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.75, fontWeight: 300, marginBottom: 24, maxWidth: 440 }}>
-              Soy David, Coach especializado en hipertrofia y rendimiento físico. Mi enfoque combina formación estructurada con aplicación práctica real — cada decisión tiene un fundamento científico.
-            </p>
-
-            <p className="b" style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.75, fontWeight: 300, marginBottom: 40, maxWidth: 440 }}>
-              Trabajo con una estructura clara que funciona. Y si no funciona, la ajustamos. Si entrenas conmigo, no entrenas más duro —{" "}
-              <span style={{ color: "#fff", fontWeight: 500 }}>entrenas mejor.</span>
-            </p>
-
-            {/* Quote */}
-            <div style={{ borderLeft: `3px solid ${R}`, paddingLeft: 20, marginBottom: 0 }}>
-              <p className="bc" style={{ fontSize: "clamp(18px, 1.8vw, 24px)", fontWeight: 800, textTransform: "uppercase", lineHeight: 1.2, color: "rgba(255,255,255,0.75)" }}>
-                "Si no puedes medir<br />tu progreso, no puedes<br />
-                <span style={{ color: R }}>mejorarlo."</span>
-              </p>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ══ ESTADÍSTICAS ════════════════════════════════════════════ */}
-      <section style={{ background: R, padding: "80px 64px" }}>
-        <div style={{ maxWidth: 1400, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 2 }}>
-          {[
-            { target: 8, suffix: "+", label: "Años entrenando", sub: "Experiencia práctica acumulada" },
-            { target: 6, suffix: "+", label: "Certificaciones", sub: "Formación técnica y especializada" },
-            { target: 100, suffix: "%", label: "Personalizado", sub: "Cada programa diseñado desde cero" },
-          ].map((s, i) => (
-            <FadeIn key={s.label} delay={i * 120}>
-              <div style={{
-                padding: "48px 40px",
-                borderRight: i < 2 ? "1px solid rgba(0,0,0,0.15)" : "none",
-                background: i === 1 ? "rgba(0,0,0,0.12)" : "transparent",
-              }}>
-                <div className="bc" style={{ fontSize: "clamp(64px, 7vw, 96px)", fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: "-0.03em" }}>
-                  <Counter target={s.target} suffix={s.suffix} />
-                </div>
-                <div className="bc" style={{ fontSize: 20, fontWeight: 800, textTransform: "uppercase", color: "#fff", letterSpacing: "0.05em", marginTop: 8 }}>{s.label}</div>
-                <div className="b" style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 6, fontWeight: 300 }}>{s.sub}</div>
-              </div>
-            </FadeIn>
-          ))}
-        </div>
-      </section>
-
-      {/* ══ FORMACIÓN ═══════════════════════════════════════════════ */}
-      <section style={{ background: "#080808", padding: "120px 64px", borderTop: "1px solid rgba(255,255,255,0.04)", position: "relative", overflow: "hidden" }}>
-
-        {/* Grilla de fondo */}
-        <div style={{
-          position: "absolute", inset: 0, opacity: 0.3,
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px)`,
-          backgroundSize: "60px 60px",
-        }} />
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(to right, transparent, ${R}60, transparent)` }} />
-
-        <div style={{ position: "relative", maxWidth: 1400, margin: "0 auto" }}>
-
-          <FadeIn>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-              <div style={{ width: 36, height: 2, background: R }} />
-              <span className="bc" style={{ color: R, fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>Formación</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 24, marginBottom: 72 }}>
-              <h2 className="bc" style={{ fontSize: "clamp(44px, 5vw, 76px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.9, letterSpacing: "-0.02em" }}>
-                PREPARADO<br />PARA <span style={{ color: R }}>RESULTADOS.</span>
-              </h2>
-              <p className="b" style={{ color: "rgba(255,255,255,0.35)", maxWidth: 300, fontSize: 15, lineHeight: 1.65, fontWeight: 300 }}>
-                Cada certificación respalda decisiones de programación reales, no solo títulos en un papel.
-              </p>
-            </div>
-          </FadeIn>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 2 }}>
-
-            {/* Formación técnica */}
-            <FadeIn delay={0}>
-              <FormacionCard
-                tag="Formación técnica"
-                tagColor="rgba(255,255,255,0.3)"
-                items={[
-                  { icon: "◈", text: "Técnico en Entrenamiento de Gimnasio", inst: "CCAPF" },
-                  { icon: "◈", text: "Técnico en Entrenamiento Personalizado", inst: "CCAPF" },
-                ]}
-              />
-            </FadeIn>
-
-            {/* Especializaciones */}
-            <FadeIn delay={120}>
-              <FormacionCard
-                tag="Especializaciones"
-                tagColor="rgba(255,255,255,0.3)"
-                items={[
-                  { icon: "◈", text: "Hipertrofia muscular", inst: "ECEP" },
-                  { icon: "◈", text: "Entrenamiento en mujeres", inst: "ECEP" },
-                  { icon: "◈", text: "Biomecánica deportiva", inst: "Fitness & Health Institute" },
-                  { icon: "◈", text: "Nutrición deportiva", inst: "Fitness & Health Institute" },
-                ]}
-              />
-            </FadeIn>
-
-            {/* En curso */}
-            <FadeIn delay={240}>
-              <FormacionCard
-                tag="Formación actual"
-                tagColor={R}
-                accent={R}
-                items={[
-                  { icon: "→", text: "Nutrición y suplementación", inst: "INAF" },
-                  { icon: "→", text: "Certificación profesional en musculación", inst: "INAF" },
-                ]}
-                badge="En curso"
-              />
-            </FadeIn>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ══ FILOSOFÍA — full bleed ══════════════════════════════════ */}
-      <section style={{ position: "relative", minHeight: "70vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
-
-        {/* Imagen con parallax */}
-        <div style={{
-          position: "absolute", inset: 0,
-          transform: `translateY(${(scrollY - 2200) * 0.15}px)`,
-        }}>
-          <img src="/Entrenando_1.jpeg" alt=""
-            style={{ width: "100%", height: "110%", objectFit: "cover", filter: "grayscale(40%) contrast(1.1)", opacity: 0.25 }} />
-        </div>
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, #000, rgba(0,0,0,0.85) 50%, #000)" }} />
-        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at center, ${R}0d 0%, transparent 60%)` }} />
-
-        <div style={{ position: "relative", zIndex: 10, maxWidth: 1400, margin: "0 auto", padding: "100px 64px", width: "100%" }}>
-          <FadeIn>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
-              <div style={{ width: 36, height: 2, background: "rgba(255,255,255,0.2)" }} />
-              <span className="bc" style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>Filosofía</span>
-            </div>
-
-            <h2 className="bc" style={{ fontSize: "clamp(52px, 7vw, 110px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.88, letterSpacing: "-0.02em", maxWidth: 900 }}>
-              APRENDE A<br />ENTRENAR.<br />
-              <span style={{ color: R, textShadow: `0 0 60px ${R}50` }}>ENAMÓRATE</span><br />
-              DEL PROCESO.
-            </h2>
-
-            <div style={{ marginTop: 48, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 2, maxWidth: 900 }}>
-              {[
-                { n: "01", t: "Medir", b: "Si no puedes medir tu progreso, no puedes mejorarlo. Todo se registra." },
-                { n: "02", t: "Ajustar", b: "Un programa que no se ajusta no funciona. La programación es un proceso vivo." },
-                { n: "03", t: "Progresar", b: "El objetivo no es sudar más. Es mover más peso, más veces, con mejor técnica." },
-              ].map((p, i) => (
-                <FadeIn key={p.n} delay={i * 120}>
-                  <div style={{ padding: "32px 28px", borderTop: `2px solid ${i === 0 ? R : "rgba(255,255,255,0.08)"}`, background: "rgba(255,255,255,0.02)" }}>
-                    <div className="bc" style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", letterSpacing: "0.4em", textTransform: "uppercase", marginBottom: 12 }}>{p.n}</div>
-                    <div className="bc" style={{ fontSize: 28, fontWeight: 900, textTransform: "uppercase", color: "#fff", marginBottom: 12 }}>{p.t}</div>
-                    <p className="b" style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", lineHeight: 1.65, fontWeight: 300 }}>{p.b}</p>
-                  </div>
-                </FadeIn>
-              ))}
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ══ CTA FINAL ═══════════════════════════════════════════════ */}
-      <section style={{ position: "relative", padding: "140px 64px", background: "#000", overflow: "hidden", textAlign: "center" }}>
-        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at center, ${R}0f 0%, transparent 60%)` }} />
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(to right, transparent, ${R}70, transparent)` }} />
-
-        <div style={{ position: "relative", maxWidth: 900, margin: "0 auto" }}>
-          <FadeIn>
-            <span className="bc" style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, letterSpacing: "0.4em", textTransform: "uppercase", fontWeight: 700 }}>
-              El siguiente paso
-            </span>
-
-            <h2 className="bc" style={{ fontSize: "clamp(48px, 7vw, 100px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 0.88, letterSpacing: "-0.02em", marginTop: 20 }}>
-              APRENDE A<br />ENTRENAR<br />
-              <span style={{ color: R, textShadow: `0 0 60px ${R}60` }}>DE VERDAD.</span>
-            </h2>
-
-            <p className="b" style={{ marginTop: 28, fontSize: 17, color: "rgba(255,255,255,0.4)", fontWeight: 300 }}>
-              Con un sistema real. Sin improvisación.
-            </p>
-
-            <div style={{ marginTop: 52 }}>
-              <a href="/asesoria" className="bc" style={{
-                display: "inline-flex", alignItems: "center", gap: 16,
-                background: R, color: "#fff", padding: "20px 60px",
-                fontSize: 16, fontWeight: 900, letterSpacing: "0.22em",
-                textTransform: "uppercase", textDecoration: "none",
-                boxShadow: `0 20px 60px ${R}45`,
-                clipPath: "polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))",
-                transition: "all 0.25s ease",
-              }}
-                onMouseEnter={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.background = "#fff"; a.style.color = "#000"; a.style.boxShadow = "none" }}
-                onMouseLeave={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.background = R; a.style.color = "#fff"; a.style.boxShadow = `0 20px 60px ${R}45` }}
-              >
-                Ver detalle de programas <span style={{ fontSize: 22 }}>→</span>
-              </a>
-            </div>
-
-            <p className="b" style={{ marginTop: 24, fontSize: 12, color: "rgba(255,255,255,0.18)", letterSpacing: "0.05em" }}>
-              Sin compromisos. Una conversación para ver si hay fit.
-            </p>
-          </FadeIn>
-        </div>
-      </section>
-
+    <main className="pagina" style={{ background: "#000", color: "#fff",
+      fontFamily: "'Barlow', sans-serif", overflowX: "hidden" }}>
+      <Estilos />
+      <Nav />
+      <Hero />
+      <MiHistoria />
+      <Datos />
+      <Formacion />
+      <Filosofia />
+      <Cierre />
+      <Footer />
     </main>
   )
 }
 
-/* ── Card de formación ────────────────────────────────────────── */
-function FormacionCard({ tag, tagColor, items, badge, accent }: {
-  tag: string; tagColor: string; accent?: string
-  items: { icon: string; text: string; inst: string }[]
-  badge?: string
-}) {
-  const [hover, setHover] = useState(false)
-  const a = accent || "rgba(255,255,255,0.15)"
+function Seccion({ id, fondo = "#000", children }: { id?: string; fondo?: string; children: React.ReactNode }) {
   return (
-    <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        background: hover ? "#0f0f0f" : "#0a0a0a",
-        border: `1px solid ${hover ? (accent || "rgba(255,255,255,0.12)") : "rgba(255,255,255,0.05)"}`,
-        padding: "44px 36px", position: "relative", overflow: "hidden",
-        transition: "all 0.3s ease",
-      }}
-    >
-      {/* Línea superior de color */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: hover ? a : "transparent", transition: "background 0.3s ease" }} />
+    <section id={id} className="seccion" style={{ background: fondo, borderTop: `1px solid ${LINEA}` }}>
+      <div className="contenedor">{children}</div>
+    </section>
+  )
+}
 
-      {badge && (
-        <div style={{
-          position: "absolute", top: 20, right: 20,
-          background: R, color: "#fff", padding: "4px 10px",
-          fontFamily: "'Barlow Condensed', Impact, sans-serif",
-          fontSize: 10, fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase",
-          animation: "pulseR 2s ease infinite",
-        }}>{badge}</div>
-      )}
-
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32 }}>
-        <div style={{ width: 4, height: 4, background: accent || "rgba(255,255,255,0.3)", transform: "rotate(45deg)" }} />
-        <span style={{
-          fontFamily: "'Barlow Condensed', Impact, sans-serif",
-          fontSize: 11, fontWeight: 700, letterSpacing: "0.35em",
-          textTransform: "uppercase", color: tagColor,
-        }}>{tag}</span>
+/* ── Nav ── */
+function Nav() {
+  const [solido, setSolido] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setSolido(window.scrollY > 40)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+  return (
+    <nav aria-label="Principal" style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+      background: solido ? "rgba(0,0,0,0.92)" : "transparent", backdropFilter: solido ? "blur(12px)" : "none",
+      borderBottom: `1px solid ${solido ? LINEA : "transparent"}`, transition: "background 0.3s ease" }}>
+      <div style={{ padding: "0 24px" }}>
+        <div className="contenedor" style={{ height: 66, display: "flex", alignItems: "center",
+          justifyContent: "space-between", gap: 20 }}>
+          <a href="/" className="bc" style={{ fontSize: 20, fontWeight: 900, color: "#fff", textDecoration: "none" }}>
+            COACH<span style={{ color: R }}>.</span>DAVID
+          </a>
+          <div className="nav-links" style={{ display: "flex", gap: 26 }}>
+            <a href="/" className="b nav-link">Inicio</a>
+            <a href="/programas" className="b nav-link">Planes</a>
+            <a href="/#encuentra-tu-plan" className="b nav-link">Encuentra tu plan</a>
+          </div>
+          <a href={wa("Hola David, vi tu página y quiero hablar contigo")} target="_blank" rel="noopener noreferrer"
+            className="bc boton boton-rojo" style={{ padding: "10px 18px", fontSize: 15 }}>
+            Escríbeme
+          </a>
+        </div>
       </div>
+    </nav>
+  )
+}
 
-      <ul style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        {items.map((item, i) => (
-          <li key={i} style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-            <span style={{ color: accent || R, fontWeight: 900, fontSize: 14, lineHeight: 1, marginTop: 3, flexShrink: 0 }}>{item.icon}</span>
-            <div>
-              <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: "rgba(255,255,255,0.75)", lineHeight: 1.4, fontWeight: 400 }}>
-                {item.text}
-              </div>
-              <div style={{ fontFamily: "'Barlow Condensed', Impact, sans-serif", fontSize: 11, color: "rgba(255,255,255,0.25)", letterSpacing: "0.2em", textTransform: "uppercase", marginTop: 4 }}>
-                {item.inst}
-              </div>
-            </div>
-          </li>
+/* ── Hero: la persona primero ── */
+function Hero() {
+  const [entro, setEntro] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setEntro(true), 80); return () => clearTimeout(t) }, [])
+  const aparece = (d: number): React.CSSProperties => ({
+    opacity: entro ? 1 : 0, transform: entro ? "none" : "translateY(22px)",
+    transition: `opacity 0.8s ease ${d}s, transform 0.8s cubic-bezier(0.16,1,0.3,1) ${d}s`,
+  })
+  return (
+    <header className="hero" style={{ display: "grid", minHeight: "100svh" }}>
+      <div className="hero-texto" style={{ display: "flex", flexDirection: "column", justifyContent: "center",
+        padding: "120px 56px 72px max(24px, calc((100vw - 1200px) / 2))" }}>
+        <p className="b" style={{ fontSize: 17, color: TEXTO_3, marginBottom: 14, ...aparece(0.15) }}>
+          Hola, soy
+        </p>
+        <h1 className="bc" style={{ fontSize: "clamp(92px, 15vw, 210px)", fontWeight: 900, textTransform: "uppercase",
+          lineHeight: 0.8, letterSpacing: "-0.03em", marginBottom: 30, ...aparece(0.25) }}>
+          David
+        </h1>
+        <p className="bc" style={{ fontSize: "clamp(24px, 2.6vw, 34px)", fontWeight: 800, textTransform: "uppercase",
+          lineHeight: 1.1, maxWidth: 560, marginBottom: 20, ...aparece(0.45) }}>
+          Entrenador especializado en hipertrofia y rendimiento físico
+        </p>
+        <p className="b" style={{ fontSize: 18, color: TEXTO_2, lineHeight: 1.65, fontWeight: 300, maxWidth: 500,
+          marginBottom: 34, ...aparece(0.6) }}>
+          Trabajo con un principio simple: si no puedes medir tu progreso, no puedes mejorarlo.
+        </p>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", ...aparece(0.75) }}>
+          <a href="#historia" className="bc boton boton-rojo" style={{ padding: "16px 28px", fontSize: 17 }}>
+            Conoce mi historia
+          </a>
+          <a href="/#encuentra-tu-plan" className="bc boton boton-borde" style={{ padding: "16px 26px", fontSize: 17 }}>
+            Encuentra tu plan
+          </a>
+        </div>
+      </div>
+      <div className="hero-foto" style={{ position: "relative", overflow: "hidden", background: SUPERFICIE }}>
+        <img src="/Entrenando_2.jpeg" alt="David, entrenador de Coach David, en el gimnasio"
+          style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top",
+            filter: "grayscale(15%) contrast(1.05)", display: "block" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, #000 0%, transparent 30%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, #000 0%, transparent 30%)" }} />
+        <div aria-hidden style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 6, background: R }} />
+      </div>
+    </header>
+  )
+}
+
+/* ── Mi historia ── */
+function MiHistoria() {
+  return (
+    <Seccion id="historia">
+      <div className="historia-grid" style={{ display: "grid", gap: 56, alignItems: "start" }}>
+        <h2 className="bc h2" style={{ position: "sticky", top: 100 }}>Mi historia</h2>
+        <div style={{ maxWidth: 680 }}>
+          {HISTORIA.map((p, i) => (
+            <p key={i} className="b" style={{ fontSize: i === 0 ? 22 : 18, color: i === 0 ? "#fff" : TEXTO_2,
+              lineHeight: 1.7, fontWeight: i === 0 ? 400 : 300, marginBottom: 24 }}>
+              {p}
+            </p>
+          ))}
+          <blockquote className="bc" style={{ marginTop: 12, borderLeft: `4px solid ${R}`, paddingLeft: 24,
+            fontSize: "clamp(26px, 3vw, 38px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 1.05 }}>
+            Si entrenas conmigo no entrenas más duro: entrenas mejor.
+          </blockquote>
+        </div>
+      </div>
+    </Seccion>
+  )
+}
+
+/* ── Todo se mide: cómo trabajo con cada persona ── */
+function Datos() {
+  const puntos = [
+    { t: "Registro cada serie", d: "Peso y repeticiones de cada ejercicio quedan en tu historial, aunque cambie tu rutina." },
+    { t: "Detecto tus récords", d: "Cuando superas tu marca, la app lo marca el mismo día. Tu progreso deja de ser una sensación." },
+    { t: "Mido lo que comes", d: "Tu déficit o superávit real de la semana, calculado con lo que de verdad comiste." },
+    { t: "Ajusto con datos", d: "Cada semana reviso tus números y te dejo una nota con el foco. Si algo no avanza, se cambia." },
+  ]
+  return (
+    <Seccion id="datos" fondo={SUPERFICIE}>
+      <div className="datos-grid" style={{ display: "grid", gap: 56, alignItems: "center" }}>
+        <div>
+          <h2 className="bc h2" style={{ marginBottom: 20 }}>Todo se mide</h2>
+          <p className="b" style={{ fontSize: 18, color: TEXTO_2, lineHeight: 1.7, fontWeight: 300, marginBottom: 20, maxWidth: 520 }}>
+            Las decisiones de tu programa no salen de la intuición: salen de lo que registras. Por eso
+            construí mi propia app, para hacerle seguimiento real a cada persona que entreno.
+          </p>
+          <a href="/programas" className="b enlace">Mira cómo funciona en los planes</a>
+        </div>
+        <ul className="datos-lista" style={{ listStyle: "none", display: "grid", gap: 2 }}>
+          {puntos.map(p => (
+            <li key={p.t} style={{ background: "#000", padding: "22px 24px", borderLeft: `3px solid ${R}` }}>
+              <h3 className="bc" style={{ fontSize: 23, fontWeight: 800, textTransform: "uppercase", marginBottom: 4 }}>{p.t}</h3>
+              <p className="b" style={{ fontSize: 16, color: TEXTO_2, lineHeight: 1.55, fontWeight: 300 }}>{p.d}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Seccion>
+  )
+}
+
+/* ── Formación ── */
+function Formacion() {
+  return (
+    <Seccion id="formacion">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 24,
+        flexWrap: "wrap", marginBottom: 44 }}>
+        <div style={{ maxWidth: 640 }}>
+          <h2 className="bc h2" style={{ marginBottom: 16 }}>Formación</h2>
+          <p className="b" style={{ fontSize: 18, color: TEXTO_2, lineHeight: 1.65, fontWeight: 300 }}>
+            Cada título respalda decisiones concretas de tu programa, y sigo estudiando.
+          </p>
+        </div>
+        <p style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <span className="bc" style={{ fontSize: 76, fontWeight: 900, lineHeight: 1, color: R }}>{CERTIFICACIONES_FITNESS}</span>
+          <span className="b" style={{ fontSize: 16, color: TEXTO_2, maxWidth: 160, lineHeight: 1.3 }}>
+            títulos en entrenamiento y nutrición
+          </span>
+        </p>
+      </div>
+      <div className="formacion-grid" style={{ display: "grid", gap: 2 }}>
+        {FORMACION.map(g => (
+          <section key={g.grupo} aria-label={g.grupo} style={{ background: SUPERFICIE, padding: "30px 28px",
+            borderTop: `3px solid ${g.enCurso ? R : "rgba(255,255,255,0.18)"}` }}>
+            <h3 className="bc" style={{ fontSize: 20, fontWeight: 800, textTransform: "uppercase", marginBottom: 20,
+              color: g.enCurso ? R : "#fff" }}>
+              {g.grupo}
+            </h3>
+            <ul style={{ listStyle: "none", display: "grid", gap: 18 }}>
+              {g.titulos.map(t => (
+                <li key={t.titulo}>
+                  <p className="b" style={{ fontSize: 16, lineHeight: 1.4, marginBottom: 3 }}>{t.titulo}</p>
+                  <p className="b" style={{ fontSize: 14, color: TEXTO_3 }}>{t.institucion}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
-      </ul>
-    </div>
+      </div>
+    </Seccion>
+  )
+}
+
+/* ── Filosofía: un ciclo real, por eso va numerado ── */
+function Filosofia() {
+  const pasos = [
+    { t: "Medir", d: "Todo se registra: cargas, repeticiones, comidas y medidas. Sin datos no hay punto de partida." },
+    { t: "Ajustar", d: "Un programa que no se ajusta deja de funcionar. Tu plan cambia según lo que muestran tus números." },
+    { t: "Progresar", d: "El objetivo no es sudar más. Es mover más peso, más veces, con mejor técnica." },
+  ]
+  return (
+    <section className="filosofia" style={{ position: "relative", overflow: "hidden", borderTop: `1px solid ${LINEA}` }}>
+      <img src="/Entrenando_1.jpeg" alt="" aria-hidden style={{ position: "absolute", inset: 0, width: "100%", height: "100%",
+        objectFit: "cover", opacity: 0.18, filter: "grayscale(50%)" }} />
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, #000, rgba(0,0,0,0.8) 50%, #000)" }} />
+      <div className="seccion" style={{ position: "relative" }}>
+        <div className="contenedor">
+          <h2 className="bc" style={{ fontSize: "clamp(48px, 7vw, 104px)", fontWeight: 900, textTransform: "uppercase",
+            lineHeight: 0.88, letterSpacing: "-0.02em", maxWidth: 880, marginBottom: 48 }}>
+            Aprende a entrenar. Enamórate del proceso.
+          </h2>
+          <ol className="pasos-grid" style={{ listStyle: "none", display: "grid", gap: 2, maxWidth: 1000 }}>
+            {pasos.map((p, i) => (
+              <li key={p.t} style={{ background: "rgba(0,0,0,0.6)", padding: "28px 26px",
+                borderTop: `2px solid ${i === 0 ? R : "rgba(255,255,255,0.15)"}` }}>
+                <p className="bc" style={{ fontSize: 40, fontWeight: 900, lineHeight: 1, marginBottom: 10,
+                  color: i === 0 ? R : "rgba(255,255,255,0.3)" }}>{i + 1}</p>
+                <h3 className="bc" style={{ fontSize: 30, fontWeight: 900, textTransform: "uppercase", marginBottom: 8 }}>{p.t}</h3>
+                <p className="b" style={{ fontSize: 16, color: TEXTO_2, lineHeight: 1.6, fontWeight: 300 }}>{p.d}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ── Cierre ── */
+function Cierre() {
+  return (
+    <section style={{ background: R, padding: "80px 24px" }}>
+      <div className="contenedor" style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+        gap: 32, flexWrap: "wrap" }}>
+        <div style={{ maxWidth: 620 }}>
+          <h2 className="bc" style={{ fontSize: "clamp(40px, 6vw, 76px)", fontWeight: 900, textTransform: "uppercase",
+            lineHeight: 0.9, marginBottom: 14 }}>
+            Entrenemos juntos
+          </h2>
+          <p className="b" style={{ fontSize: 18, lineHeight: 1.55, color: "rgba(255,255,255,0.9)" }}>
+            Cuéntame tu objetivo y vemos si mi forma de trabajar encaja contigo. Sin compromiso.
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <a href="/#encuentra-tu-plan" className="bc boton" style={{ padding: "17px 28px", fontSize: 17,
+            background: "#000", color: "#fff", border: "1px solid #000" }}>
+            Encuentra tu plan
+          </a>
+          <a href={wa("Hola David, leí tu historia y quiero entrenar contigo")} target="_blank" rel="noopener noreferrer"
+            className="bc boton" style={{ padding: "17px 28px", fontSize: 17, background: "transparent",
+              color: "#fff", border: "1px solid rgba(255,255,255,0.85)" }}>
+            Escríbeme por WhatsApp
+          </a>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Footer() {
+  return (
+    <footer style={{ padding: "36px 24px" }}>
+      <div className="contenedor" style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+        flexWrap: "wrap", gap: 16 }}>
+        <span className="bc" style={{ fontSize: 18, fontWeight: 900 }}>COACH<span style={{ color: R }}>.</span>DAVID</span>
+        <div style={{ display: "flex", gap: 22, flexWrap: "wrap" }}>
+          <a href="/" className="b nav-link">Inicio</a>
+          <a href="/programas" className="b nav-link">Planes</a>
+          <a href={INSTAGRAM} target="_blank" rel="noopener noreferrer" className="b nav-link">Instagram</a>
+          <span className="b" style={{ fontSize: 14, color: TEXTO_3 }}>Bogotá, Colombia</span>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
+/* ── Estilos ── */
+function Estilos() {
+  return (
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800;900&family=Barlow:wght@300;400;500&display=swap');
+      *{box-sizing:border-box;margin:0;padding:0}
+      html{scroll-behavior:smooth;scroll-padding-top:74px}
+      ::selection{background:${R};color:#fff}
+      .bc{font-family:'Barlow Condensed',Impact,sans-serif}
+      .b{font-family:'Barlow',sans-serif}
+      .contenedor{max-width:1200px;margin:0 auto}
+      .seccion{padding:100px 24px}
+      .h2{font-size:clamp(40px,5vw,66px);font-weight:900;text-transform:uppercase;line-height:0.92;letter-spacing:-0.01em}
+
+      .boton{display:inline-block;text-decoration:none;font-weight:800;letter-spacing:0.02em;
+        transition:background 0.2s ease,border-color 0.2s ease}
+      .boton-rojo{background:${R};color:#fff;border:1px solid ${R}}
+      .boton-rojo:hover{background:#ff1a26}
+      .boton-borde{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.45)}
+      .boton-borde:hover{border-color:#fff}
+      .nav-link{font-size:15px;color:${TEXTO_2};text-decoration:none}
+      .nav-link:hover{color:#fff}
+      .enlace{color:#fff;font-size:16px;text-decoration:underline;text-decoration-color:${R};
+        text-underline-offset:5px;text-decoration-thickness:2px}
+      a:focus-visible{outline:2px solid #fff;outline-offset:3px}
+
+      .hero{grid-template-columns:1.05fr 1fr}
+      .historia-grid{grid-template-columns:0.8fr 1.4fr}
+      .datos-grid{grid-template-columns:1fr 1.1fr}
+      .formacion-grid{grid-template-columns:repeat(4,1fr)}
+      .pasos-grid{grid-template-columns:repeat(3,1fr)}
+
+      @media (max-width:1000px){
+        .nav-links{display:none !important}
+        .hero{grid-template-columns:1fr}
+        .hero-foto{height:62vh;order:-1}
+        .hero-texto{padding:48px 24px 64px !important}
+        .historia-grid,.datos-grid{grid-template-columns:1fr}
+        .historia-grid h2{position:static !important}
+        .formacion-grid{grid-template-columns:repeat(2,1fr)}
+      }
+      @media (max-width:720px){
+        .seccion{padding:68px 24px}
+        .formacion-grid,.pasos-grid{grid-template-columns:1fr}
+      }
+      @media (prefers-reduced-motion:reduce){
+        html{scroll-behavior:auto}
+        *{transition-duration:0.01ms !important}
+      }
+    `}</style>
   )
 }
