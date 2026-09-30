@@ -723,7 +723,7 @@ function QuienSoy() {
       <div className="quien-texto" style={{ padding: "88px 64px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <h2 className="bc h2" style={{ marginBottom: 20 }}>Quién te entrena</h2>
         <p className="b" style={{ fontSize: 18, color: TEXTO_2, lineHeight: 1.7, fontWeight: 300, marginBottom: 16, maxWidth: 560 }}>
-          Soy David. Me formé como entrenador y también en análisis de datos, y esa mezcla define cómo trabajo:
+          Soy David. Me formé como entrenador especializado en Hipertrofia construyendo un sistema preciso:
           cada serie, cada comida y cada medida queda registrada, y los ajustes a tu plan salen de esos datos.
         </p>
         <p className="b" style={{ fontSize: 18, color: TEXTO_2, lineHeight: 1.7, fontWeight: 300, marginBottom: 30, maxWidth: 560 }}>
