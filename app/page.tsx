@@ -707,8 +707,7 @@ function QuienSoy() {
   const formacion = [
     "Técnico en entrenamiento en gimnasio",
     "Técnico en entrenamiento personalizado",
-    "Certificaciones nacionales e internacionales",
-    "Especialización en Econometría",
+    "Certificaciones nacionales e internacionales"
   ]
   return (
     <section id="quien-soy" className="quien" style={{ display: "grid", borderTop: `1px solid ${LINEA}` }}>
