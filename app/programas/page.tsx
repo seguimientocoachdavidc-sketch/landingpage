@@ -375,10 +375,10 @@ function DemoAlimentacion() {
    ══════════════════════════════════════════════════════════ */
 function QuienTeEntrena() {
   const formacion = [
-    "Técnico en entrenamiento en gimnasio",
+    "Técnico en entrenamiento de gimnasio",
     "Técnico en entrenamiento personalizado",
-    "Certificaciones nacionales e internacionales",
-    "Especialización en Econometría",
+    "Especialización en hipertrofia muscular",
+    "Biomecánica y nutrición deportiva",
   ]
   return (
     <Seccion>
@@ -387,9 +387,9 @@ function QuienTeEntrena() {
           <h2 className="bc h2" style={{ marginBottom: 18 }}>Quién te entrena</h2>
           <p className="b" style={{ fontSize: 17, color: TEXTO_2, lineHeight: 1.7, fontWeight: 300,
             marginBottom: 16 }}>
-            Soy David. Me formé como entrenador y también en análisis de datos, y esa mezcla es la
-            base de cómo trabajo: cada serie, cada comida y cada medida queda registrada, y los
-            ajustes a tu plan salen de esos datos, no de la intuición.
+            Soy David, entrenador especializado en hipertrofia y rendimiento. Trabajo con un principio
+            simple: si no puedes medir tu progreso, no puedes mejorarlo. Por eso cada serie, cada comida
+            y cada medida queda registrada, y los ajustes a tu plan salen de ahí, no de la intuición.
           </p>
           <p className="b" style={{ fontSize: 17, color: TEXTO_2, lineHeight: 1.7, fontWeight: 300 }}>
             Construí la app que vas a usar para poder hacerle seguimiento real a cada persona que entreno.
