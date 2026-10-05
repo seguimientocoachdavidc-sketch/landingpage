@@ -29,6 +29,13 @@ interface SemanaCyc {
   sesion_2_descripcion: string | null; sesion_2_objetivo: string | null
   sesion_3_descripcion: string | null; sesion_3_objetivo: string | null
 }
+interface SesionResistencia {
+  id: string
+  orden: number
+  titulo: string
+  descripcion: string | null
+  objetivo: string | null
+}
 interface Modulos {
   musculacion: boolean
   running: boolean
@@ -293,6 +300,11 @@ export default function PlanEntrenamientoPage() {
   const [sesRun, setSesRun]           = useState<any[]>([])
   const [abiertaRun, setAbiertaRun]   = useState<number | null>(null)
 
+  // Resistencia fija (sesiones que se repiten cada semana)
+  const [resistenciaFija, setResistenciaFija] = useState<SesionResistencia[]>([])
+  const [regsResistencia, setRegsResistencia] = useState<any[]>([])
+  const [abiertaRes, setAbiertaRes]           = useState<string | null>(null)
+
   // Cycling
   const [semanasCyc, setSemanasCyc]   = useState<SemanaCyc[]>([])
   const [semanaCyc, setSemanaCyc]     = useState<SemanaCyc | null>(null)
@@ -350,6 +362,7 @@ export default function PlanEntrenamientoPage() {
         cargarRecordatorio(t)
         cargarProximoPago(t)
         cargarTienePresencial(t)
+        cargarResistencia(t)
       })
   }, [])
 
@@ -372,6 +385,55 @@ export default function PlanEntrenamientoPage() {
 
   /* ── Cargar si el cliente tiene el beneficio de presenciales —
      aparte, nunca bloquea el acceso ni tumba nada si falla ── */
+  /* ── Lunes de la semana actual (hora Colombia), para agrupar registros por semana ── */
+  const lunesDeEstaSemana = () => {
+    const hoy = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Bogota" }))
+    const dia = hoy.getDay() // 0 = domingo
+    hoy.setDate(hoy.getDate() - (dia === 0 ? 6 : dia - 1))
+    return hoy.toLocaleDateString("en-CA")
+  }
+
+  /* ── Resistencia fija — aparte, nunca bloquea el acceso ── */
+  const cargarResistencia = async (tok: string) => {
+    try {
+      const { data: sesiones, error } = await supabase
+        .from("resistencia_fija")
+        .select("id, orden, titulo, descripcion, objetivo")
+        .eq("cliente_token", tok)
+        .eq("activo", true)
+        .order("orden")
+      if (error || !sesiones?.length) return
+      setResistenciaFija(sesiones)
+      const { data: regs } = await supabase
+        .from("registros_resistencia")
+        .select("*")
+        .eq("cliente_token", tok)
+        .eq("semana_inicio", lunesDeEstaSemana())
+      setRegsResistencia(regs ?? [])
+    } catch {
+      // Si falla, simplemente no aparece la pestaña — sin riesgo.
+    }
+  }
+
+  const guardarResistencia = async (sesionId: string, form: any, completar: boolean) => {
+    if (!token) return
+    const { error } = await supabase.from("registros_resistencia").upsert({
+      cliente_token: token,
+      sesion_fija_id: sesionId,
+      semana_inicio: lunesDeEstaSemana(),
+      fecha: new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" }),
+      tiempo_min: parseFloat(form.tiempo_min) || null,
+      distancia_km: parseFloat(form.distancia_km) || null,
+      pulsaciones_prom: parseInt(form.pulsaciones_prom) || null,
+      zona: form.zona || null,
+      nota: form.nota || null,
+      completada: completar,
+    }, { onConflict: "sesion_fija_id,semana_inicio" })
+    if (error) { showToast("Error al guardar. Intenta de nuevo."); return }
+    showToast(completar ? "✓ Sesión completada" : "✓ Guardado")
+    cargarResistencia(token)
+  }
+
   const cargarTienePresencial = async (tok: string) => {
     try {
       const { data, error } = await supabase
@@ -1111,9 +1173,10 @@ export default function PlanEntrenamientoPage() {
   /* ── Tabs disponibles según módulos ── */
   const tabs = [
     ...(modulos.cycling ? [{ k: "semana", l: "📅 Semana", c: "rgba(255,255,255,0.8)" }] : []),
-    ...(modulos.musculacion && !modulos.running && !modulos.cycling ? [{ k: "distribucion", l: "📅 Distribución", c: "rgba(255,255,255,0.8)" }] : []),
+    ...(token === "LinaBeltran" ? [{ k: "distribucion", l: "📅 Distribución", c: "rgba(255,255,255,0.8)" }] : []),
     ...(modulos.musculacion ? [{ k: "muscu", l: "🏋️ Muscu", c: R }] : []),
     ...(modulos.running ? [{ k: "running", l: "🏃 Running", c: G }] : []),
+    ...(resistenciaFija.length > 0 ? [{ k: "resistencia", l: "🫀 Resistencia", c: G }] : []),
     ...(modulos.cycling ? [{ k: "cycling", l: "🚴 Cycling", c: B }] : []),
     { k: "core", l: "🎯 CORE", c: P },
     { k: "medidas", l: "📊 Medidas", c: B },
@@ -1380,7 +1443,7 @@ export default function PlanEntrenamientoPage() {
         )}
 
         {/* ══ DISTRIBUCIÓN LINA ══ */}
-        {vista === "distribucion" && modulos.musculacion && !modulos.running && !modulos.cycling && (
+        {vista === "distribucion" && token === "LinaBeltran" && (
           <div style={{ animation: "fadeUp 0.3s ease" }}>
             {/* Aviso fase acondicionamiento */}
             <div style={{ marginBottom: 20, padding: "14px 18px",
@@ -1805,6 +1868,45 @@ export default function PlanEntrenamientoPage() {
           </div>
         )}
 
+        {/* ══ RESISTENCIA FIJA ══ */}
+        {vista === "resistencia" && resistenciaFija.length > 0 && (
+          <div style={{ animation: "fadeUp 0.3s ease" }}>
+            <div style={{ fontSize: 11, color: G, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>
+              🫀 Resistencia · {resistenciaFija.length} sesiones cada semana
+            </div>
+            <div style={{ marginBottom: 16, padding: "14px 16px", background: `${G}0d`, border: `1px solid ${G}30` }}>
+              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 800,
+                textTransform: "uppercase", color: G, marginBottom: 4 }}>¿Cómo sé que estoy en Zona 2?</div>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.6 }}>
+                Es un ritmo en el que puedes mantener una conversación con frases completas, sin ahogarte.
+                Si solo puedes decir palabras sueltas, baja la intensidad.
+              </p>
+            </div>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 14 }}>
+              Las sesiones se reinician cada lunes. Registra cada una cuando la completes.
+            </p>
+            {resistenciaFija.map(s => (
+              <SesionCard key={s.id}
+                color={G}
+                titulo={s.titulo}
+                subtitulo="Zona 2"
+                icono="🫀"
+                descripcion={s.descripcion}
+                objetivo={s.objetivo}
+                existing={regsResistencia.find(r => r.sesion_fija_id === s.id) ?? null}
+                abierta={abiertaRes === s.id}
+                onToggle={() => setAbiertaRes(abiertaRes === s.id ? null : s.id)}
+                onGuardar={(form, c) => guardarResistencia(s.id, form, c)}
+                campos={[
+                  { k: "tiempo_min", l: "Tiempo (min)", p: "30", tipo: "number" },
+                  { k: "distancia_km", l: "Distancia (km)", p: "4", tipo: "number" },
+                  { k: "pulsaciones_prom", l: "Puls. prom", p: "135", tipo: "number" },
+                ]}
+              />
+            ))}
+          </div>
+        )}
+
         {/* ══ CYCLING ══ */}
         {vista === "cycling" && modulos.cycling && (
           <div style={{ animation: "fadeUp 0.3s ease" }}>
@@ -1829,6 +1931,9 @@ export default function PlanEntrenamientoPage() {
                 desc: semanaCyc.sesion_1_descripcion, obj: semanaCyc.sesion_1_objetivo },
               { num: 2, titulo: "Sesión 2 · Día 5", subtitulo: "Cycling Z2 + Carrera", icono: "🚴🏃", color: B,
                 desc: semanaCyc.sesion_2_descripcion, obj: semanaCyc.sesion_2_objetivo },
+              { num: 3, titulo: "Sesión 3 · Día 6 — Bricks", subtitulo: "Parte bici antes de correr", icono: "🔥🚴", color: O,
+                desc: semanaCyc.sesion_3_descripcion, obj: semanaCyc.sesion_3_objetivo,
+                notaBricks: "Parte de ciclismo del Día 6. La carrera se registra en Running." },
             ].map(cfg => (
               <SesionCard key={cfg.num}
                 color={cfg.color}
