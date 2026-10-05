@@ -100,8 +100,8 @@ const DISTRIBUCION_RIVS = [
   { dia: "Día 2", label: "Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
   { dia: "Día 3", label: "Cycling Intervalos + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
   { dia: "Día 4", label: "Full Body ",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
-  { dia: "Día 5", label: "Intervalos Running",        icono: "🚴🏃", tags: ["RUNNING"] },
-  { dia: "Día 6", label: "Fondo Cycling ",     icono: "🔥",   tags: ["CYCLING"] },
+  { dia: "Día 5", label: "Continuo Cycling ",        icono: "🚴🏃", tags: ["RUNNING"] },
+  { dia: "Día 6", label: "Fondo Running ",     icono: "🔥",   tags: ["CYCLING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
