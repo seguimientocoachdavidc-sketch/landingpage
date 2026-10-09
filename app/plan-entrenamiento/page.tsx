@@ -103,12 +103,12 @@ const P = "#818cf8"
 /* ── Distribución semanal Rivs (solo cuando cycling=true) ── */
 const DISTRIBUCION_RIVS = [
   { dia: "NA",    label: "Descanso",                    icono: "😴", tags: [] },
-  { dia: "Día 1", label: "Tren Superior + Easy Run Z2", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
+  { dia: "Día 1", label: "Tren Superior + Recovery Run Z2", icono: "🏋️🏃", tags: ["MUSCULACIÓN","RUNNING"] },
   { dia: "Día 2", label: "Tren Inferior",               icono: "🏋️",   tags: ["MUSCULACIÓN"] },
-  { dia: "Día 3", label: "Cycling Intervalos + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
-  { dia: "Día 4", label: "Full Body ",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
-  { dia: "Día 5", label: "Continuo Cycling ",        icono: "🚴🏃", tags: ["RUNNING"] },
-  { dia: "Día 6", label: "Fondo Running ",     icono: "🔥",   tags: ["CYCLING"] },
+  { dia: "Día 3", label: "Cycling Continuo Z2 + CORE",  icono: "🚴🎯", tags: ["CYCLING","CORE"] },
+  { dia: "Día 4", label: "Full Body + Pliometría",  icono: "🏋️⚡", tags: ["MUSCULACIÓN"] },
+  { dia: "Día 5", label: "Intervalos 5X3 minutos - Zona umbral",        icono: "🚴🏃", tags: ["RUNNING"] },
+  { dia: "Día 6", label: "Fondo Cycling ",     icono: "🔥",   tags: ["CYCLING"] },
 ]
 const TAG_COLORS: Record<string, string> = {
   "MUSCULACIÓN": R, "RUNNING": G, "CYCLING": B, "CORE": P,
@@ -203,6 +203,348 @@ function fmtCron(s: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`
 }
 
+/* ══ SOBRECARGA PROGRESIVA ═══════════════════════════════
+   Cálculo en vivo del volumen (kg × reps) frente a la última
+   sesión, reps mínimas para igualarla y tendencia reciente.
+   Si el ejercicio es sin peso (kg vacío), compara reps totales. */
+interface SerieHist { serie_num: number; kg: number | null; reps: number }
+interface SesionHist { sesion_id: string; fecha: string; series: SerieHist[] }
+
+interface Sobrecarga {
+  modo: "kg" | "reps"
+  refFecha: string
+  refMismoDia: boolean
+  volRef: number
+  volHoy: number
+  seriesHechas: number
+  seriesTotales: number
+  restantes: number
+  siguiente: number | null
+  kgSiguiente: number | null
+  kgSugerido: boolean
+  kgFuente: "hoy" | "ref" | null
+  faltante: number
+  repsIgualar: number | null
+  repsSuperar: number | null
+  repsTodoEnUna: number | null
+  proyeccion: number | null
+  ultimaHoy: { kg: number | null; reps: number } | null
+}
+
+function normNombre(s: string) {
+  return s.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ")
+}
+function volDe(series: { kg: number | null; reps: number }[], modo: "kg" | "reps") {
+  return Math.round(series.reduce((a, s) => a + (modo === "kg" ? (s.kg ?? 0) * s.reps : s.reps), 0))
+}
+function fmtNum(n: number) {
+  return Math.round(n).toLocaleString("es-CO")
+}
+
+function analizarSobrecarga(
+  ej: Ejercicio,
+  vals: Record<number, { kg: string; reps: string }> | undefined,
+  ant: { fecha: string; data: RegAnterior[] } | undefined,
+  hist: SesionHist[] | undefined,
+): Sobrecarga | null {
+  // 1. Referencia: última sesión del mismo día; si no existe,
+  //    la última vez que hiciste este ejercicio (cualquier día/programa).
+  let refSeries: SerieHist[] = []
+  let refFecha = ""
+  let refMismoDia = true
+  const antValidas = (ant?.data ?? [])
+    .filter(r => (r.reps ?? 0) > 0)
+    .map(r => ({ serie_num: r.serie_num, kg: r.kg, reps: r.reps as number }))
+  if (ant && antValidas.length) {
+    refSeries = antValidas; refFecha = ant.fecha
+  } else if (hist && hist.length) {
+    const ult = hist[hist.length - 1]
+    refSeries = ult.series.filter(s => s.reps > 0); refFecha = ult.fecha; refMismoDia = false
+  }
+  if (!refSeries.length) return null
+
+  const modo: "kg" | "reps" = refSeries.every(s => !s.kg) ? "reps" : "kg"
+  const volRef = volDe(refSeries, modo)
+  if (volRef <= 0) return null
+
+  // 2. Lo que llevas hoy (en vivo, mientras escribes)
+  const total = ej.series_trabajo
+  const hechas: { serie_num: number; kg: number | null; reps: number }[] = []
+  let siguiente: number | null = null
+  for (let s = 1; s <= total; s++) {
+    const v = vals?.[s]
+    const kg = parseFloat(v?.kg ?? "") || null
+    const reps = parseInt(v?.reps ?? "") || 0
+    const completa = modo === "kg" ? (!!kg && reps > 0) : reps > 0
+    if (completa) hechas.push({ serie_num: s, kg, reps })
+    else if (siguiente === null) siguiente = s
+  }
+  const volHoy = volDe(hechas, modo)
+  const restantes = total - hechas.length
+  const faltante = volRef - volHoy
+  const ultimaHoy = hechas.length ? hechas[hechas.length - 1] : null
+
+  // 3. Peso con el que harás la siguiente serie
+  let kgSiguiente: number | null = null
+  let kgSugerido = false
+  let kgFuente: "hoy" | "ref" | null = null
+  if (modo === "kg" && siguiente !== null) {
+    const tecleado = parseFloat(vals?.[siguiente]?.kg ?? "")
+    if (tecleado > 0) kgSiguiente = tecleado
+    else {
+      kgSugerido = true
+      kgFuente = ultimaHoy?.kg ? "hoy" : "ref"
+      kgSiguiente = ultimaHoy?.kg
+        ?? refSeries.find(s => s.serie_num === siguiente)?.kg
+        ?? Math.max(...refSeries.map(s => s.kg ?? 0))
+      if (!kgSiguiente) kgSiguiente = null
+    }
+  }
+
+  // 4. Reps mínimas por serie restante para igualar / superar
+  let repsIgualar: number | null = null
+  let repsSuperar: number | null = null
+  let repsTodoEnUna: number | null = null
+  let proyeccion: number | null = null
+  if (faltante > 0 && restantes > 0) {
+    const porRep = modo === "kg" ? (kgSiguiente ?? 0) : 1
+    if (porRep > 0) {
+      const porSerie = faltante / (porRep * restantes)
+      repsIgualar = Math.max(1, Math.ceil(porSerie - 1e-9))
+      repsSuperar = Math.floor(porSerie + 1e-9) + 1
+      if (restantes > 1) repsTodoEnUna = Math.ceil(faltante / porRep - 1e-9)
+    }
+  }
+  if (restantes > 0 && ultimaHoy) {
+    proyeccion = volHoy + restantes * (modo === "kg" ? (ultimaHoy.kg ?? 0) * ultimaHoy.reps : ultimaHoy.reps)
+  }
+
+  return {
+    modo, refFecha, refMismoDia, volRef, volHoy,
+    seriesHechas: hechas.length, seriesTotales: total, restantes, siguiente,
+    kgSiguiente, kgSugerido, kgFuente, faltante, repsIgualar, repsSuperar, repsTodoEnUna,
+    proyeccion, ultimaHoy,
+  }
+}
+
+type EstadoTendencia = { label: string; color: string; icono: string; consejo: string }
+function evaluarTendencia(vols: number[]): EstadoTendencia | null {
+  const n = vols.length
+  if (n < 2) return null
+  const ult = vols[n - 1]
+  const previos = vols.slice(Math.max(0, n - 3), n - 1)
+  const media = previos.reduce((a, b) => a + b, 0) / previos.length
+  const d = media > 0 ? (ult - media) / media : 0
+  if (n >= 3) {
+    const tres = vols.slice(-3)
+    const m3 = tres.reduce((a, b) => a + b, 0) / 3
+    const rango = (Math.max(...tres) - Math.min(...tres)) / Math.max(m3, 1)
+    if (rango <= 0.04) return { label: "Estancado", color: O, icono: "→",
+      consejo: "3 sesiones casi iguales: hoy sube 1 rep por serie o un poco de peso." }
+  }
+  if (d > 0.03) return { label: "Subiendo", color: G, icono: "↗",
+    consejo: "Vas progresando. Mantén la técnica y supera tu última sesión." }
+  if (d < -0.03) return { label: "Bajando", color: R, icono: "↘",
+    consejo: "Últimamente bajó. Revisa descanso, sueño y comida; hoy apunta a igualar." }
+  return { label: "Estable", color: O, icono: "→",
+    consejo: "Casi igual a la vez anterior: hoy busca al menos +1 rep." }
+}
+
+function PanelSobrecarga({ sc, hist, cerrada }: { sc: Sobrecarga | null; hist: SesionHist[] | undefined; cerrada: boolean }) {
+  const unidad = sc?.modo === "reps" ? "reps" : "kg"
+  // Tendencia: últimas 6 sesiones completadas del ejercicio (+ hoy en vivo)
+  const modoT: "kg" | "reps" = sc?.modo ?? ((hist ?? []).some(h => h.series.some(s => s.kg)) ? "kg" : "reps")
+  const ultimas = (hist ?? []).slice(-6)
+  const volsHist = ultimas.map(h => volDe(h.series.filter(s => s.reps > 0), modoT))
+  const tendencia = evaluarTendencia(volsHist)
+
+  if (!sc && !ultimas.length) {
+    return (
+      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)",
+        background: `${B}0a`, fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
+        📍 <b style={{ color: "#fff" }}>Primera vez con este ejercicio.</b> Lo que registres hoy será tu base para comparar la próxima sesión.
+      </div>
+    )
+  }
+
+  const pct = sc ? Math.round((sc.volHoy / sc.volRef) * 100) : 0
+  const superado = !!sc && sc.faltante < 0
+  const igualado = !!sc && sc.faltante === 0
+  const colorBarra = superado || igualado ? G : pct >= 70 ? O : R
+
+  // Sparkline
+  const puntos = [...volsHist]
+  const hayHoy = !!sc && sc.volHoy > 0
+  if (hayHoy) puntos.push(sc!.volHoy)
+  const W = 300, H = 64, PADX = 20, PADY = 12
+  const conMeta = sc ? [...puntos, sc.volRef] : puntos
+  const maxV = Math.max(...conMeta, 1)
+  let minV = Math.min(...conMeta, maxV)
+  let rangoV = maxV - minV
+  if (rangoV < maxV * 0.1) {            // valores casi iguales: centrar la línea
+    const centro = (maxV + minV) / 2
+    rangoV = Math.max(maxV * 0.2, 1)
+    minV = centro - rangoV / 2
+  }
+  const xs = (i: number) => puntos.length <= 1 ? W / 2 : PADX + (i * (W - 2 * PADX)) / (puntos.length - 1)
+  const ys = (v: number) => H - PADY - ((v - minV) / rangoV) * (H - 2 * PADY)
+  const nHist = volsHist.length
+
+  return (
+    <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)",
+      background: "linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.005))" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 8 }}>
+        <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 900,
+          letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.75)", whiteSpace: "nowrap" }}>
+          📈 Sobrecarga progresiva
+        </span>
+        {tendencia && (
+          <span style={{ fontSize: 10, fontWeight: 800, color: tendencia.color, padding: "3px 8px",
+            border: `1px solid ${tendencia.color}50`, background: `${tendencia.color}12`,
+            letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+            {tendencia.icono} {tendencia.label}
+          </span>
+        )}
+      </div>
+
+      {sc && (
+        <>
+          {/* Hoy vs. meta */}
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+            <div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                Volumen hoy
+              </div>
+              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 26, fontWeight: 900, lineHeight: 1,
+                color: sc.volHoy > 0 ? colorBarra : "rgba(255,255,255,0.3)" }}>
+                {fmtNum(sc.volHoy)} <span style={{ fontSize: 13, fontWeight: 700 }}>{unidad}</span>
+              </div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                Meta · {sc.refMismoDia ? "última sesión" : "última vez"} {fmtFecha(sc.refFecha)}
+              </div>
+              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 26, fontWeight: 900, lineHeight: 1, color: "#fff" }}>
+                {fmtNum(sc.volRef)} <span style={{ fontSize: 13, fontWeight: 700 }}>{unidad}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Barra de progreso hacia la meta */}
+          <div style={{ position: "relative", height: 8, background: "rgba(255,255,255,0.07)", marginBottom: 4 }}>
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.min(pct, 100)}%`,
+              background: colorBarra, transition: "width 0.35s ease" }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>
+            <span>{Math.min(sc.seriesHechas, sc.seriesTotales)} de {sc.seriesTotales} series hechas</span>
+            <span style={{ color: colorBarra, fontWeight: 700 }}>{pct}%</span>
+          </div>
+
+          {/* Mensaje principal */}
+          {superado || igualado ? (
+            <div style={{ padding: "10px 12px", background: `${G}12`, border: `1px solid ${G}40`, fontSize: 13, color: "#fff", lineHeight: 1.5 }}>
+              ✅ <b style={{ color: G }}>{igualado ? "Igualaste" : "Superaste"} tu última sesión</b>
+              {superado && <> por <b style={{ color: G }}>+{fmtNum(-sc.faltante)} {unidad}</b> ({"+"}{pct - 100}%)</>}.
+              {sc.restantes > 0 && !cerrada && <span style={{ color: "rgba(255,255,255,0.6)" }}> Lo que sumes en {sc.restantes === 1 ? "la serie que falta" : `las ${sc.restantes} series que faltan`} es ganancia.</span>}
+            </div>
+          ) : sc.restantes === 0 || cerrada ? (
+            <div style={{ padding: "10px 12px", background: `${R}10`, border: `1px solid ${R}35`, fontSize: 13, color: "#fff", lineHeight: 1.5 }}>
+              Quedaste a <b style={{ color: R }}>{fmtNum(sc.faltante)} {unidad}</b> de la última sesión ({pct - 100}%).
+              <span style={{ color: "rgba(255,255,255,0.6)" }}> La próxima vez: mismo peso y busca +1 rep por serie.</span>
+            </div>
+          ) : sc.repsIgualar !== null && sc.siguiente !== null ? (
+            <div style={{ padding: "10px 12px", background: `${O}10`, border: `1px solid ${O}40`, fontSize: 13, color: "#fff", lineHeight: 1.55 }}>
+              👉 {sc.volHoy > 0 ? <>Te faltan <b style={{ color: O }}>{fmtNum(sc.faltante)} {unidad}</b>.</> : <>Para igualar la última sesión:</>}{" "}
+              {sc.modo === "kg" ? (
+                <>Con <b>{sc.kgSiguiente} kg</b>{sc.kgSugerido && <span style={{ color: "rgba(255,255,255,0.45)" }}> ({sc.kgFuente === "hoy" ? "tu último peso de hoy" : "peso de la última sesión"})</span>}{" "}
+                  {sc.restantes === 1 ? "en la serie que falta" : `en cada una de las ${sc.restantes} series que faltan`}:</>
+              ) : (
+                <>{sc.restantes === 1 ? "En la serie que falta" : `En cada una de las ${sc.restantes} series que faltan`}:</>
+              )}
+              <div style={{ display: "grid", gridTemplateColumns: sc.repsIgualar === sc.repsSuperar ? "1fr" : "1fr 1fr", gap: 6, marginTop: 8 }}>
+                {sc.repsIgualar !== sc.repsSuperar && (
+                <div style={{ padding: "8px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
+                  <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 24, fontWeight: 900, color: O, lineHeight: 1 }}>{sc.repsIgualar}</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 3 }}>reps para igualar</div>
+                </div>
+                )}
+                <div style={{ padding: "8px", background: "rgba(0,0,0,0.3)", border: `1px solid ${G}35`, textAlign: "center" }}>
+                  <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 24, fontWeight: 900, color: G, lineHeight: 1 }}>{sc.repsSuperar}</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 3 }}>{sc.repsIgualar === sc.repsSuperar ? "reps mínimas · con eso la superas" : "reps para superar"}</div>
+                </div>
+              </div>
+              {sc.repsIgualar > 20 && (
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 8 }}>
+                  ⚠️ Con este peso es difícil igualar. Sube un poco el peso en la siguiente serie y el cálculo se ajusta solo.
+                </div>
+              )}
+              {sc.repsTodoEnUna !== null && sc.repsTodoEnUna <= 30 && (
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 8 }}>
+                  (Si lo quieres todo en la próxima serie: {sc.repsTodoEnUna} reps.)
+                </div>
+              )}
+              {sc.proyeccion !== null && sc.ultimaHoy && (
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
+                  Si repites {sc.modo === "kg" ? `${sc.ultimaHoy.kg} kg × ${sc.ultimaHoy.reps}` : `${sc.ultimaHoy.reps} reps`}:{" "}
+                  <b style={{ color: sc.proyeccion >= sc.volRef ? G : R }}>{fmtNum(sc.proyeccion)} {unidad}</b>
+                  {" "}({sc.proyeccion >= sc.volRef ? "+" : ""}{Math.round((sc.proyeccion / sc.volRef - 1) * 100)}%)
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+              Escribe el peso de tu primera serie para ver cuántas reps necesitas.
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Tendencia de las últimas sesiones */}
+      {puntos.length >= 2 && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>
+            Volumen últimas {nHist} sesiones{hayHoy ? " + hoy" : ""}
+          </div>
+          <svg viewBox={`0 0 ${W} ${H + 14}`} style={{ width: "100%", display: "block" }}>
+            {sc && (
+              <>
+                <line x1={0} x2={W} y1={ys(sc.volRef)} y2={ys(sc.volRef)} stroke="rgba(255,255,255,0.25)" strokeDasharray="4 4" strokeWidth={1} />
+                <text x={W - 2} y={ys(sc.volRef) - 3} textAnchor="end" fontSize={8} fill="rgba(255,255,255,0.4)">meta</text>
+              </>
+            )}
+            {nHist >= 2 && (
+              <polyline fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth={2}
+                points={volsHist.map((v, i) => `${xs(i)},${ys(v)}`).join(" ")} />
+            )}
+            {hayHoy && nHist >= 1 && (
+              <line x1={xs(nHist - 1)} y1={ys(volsHist[nHist - 1])} x2={xs(nHist)} y2={ys(sc!.volHoy)}
+                stroke={colorBarra} strokeWidth={2} strokeDasharray="3 3" />
+            )}
+            {puntos.map((v, i) => {
+              const esHoy = hayHoy && i === puntos.length - 1
+              return (
+                <g key={i}>
+                  <circle cx={xs(i)} cy={ys(v)} r={esHoy ? 4.5 : 3.5} fill={esHoy ? colorBarra : "#0a0a0a"}
+                    stroke={esHoy ? colorBarra : "rgba(255,255,255,0.75)"} strokeWidth={1.5} />
+                  <text x={xs(i)} y={H + 10} textAnchor="middle" fontSize={8.5}
+                    fill={esHoy ? colorBarra : "rgba(255,255,255,0.4)"} fontWeight={esHoy ? 700 : 400}>
+                    {esHoy ? "HOY" : fmtFecha(ultimas[i].fecha)}
+                  </text>
+                </g>
+              )
+            })}
+          </svg>
+          {tendencia && (
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4, lineHeight: 1.5 }}>
+              <span style={{ color: tendencia.color, fontWeight: 700 }}>{tendencia.icono} {tendencia.label}:</span> {tendencia.consejo}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ── Estado de pago: null (sin seguimiento) | "ok" | "gracia" | "bloqueado" ── */
 function calcularEstadoPago(proximoPago: string | null): { estado: "ok"|"gracia"|"bloqueado"|null; diasVencido: number } {
   if (!proximoPago) return { estado: null, diasVencido: 0 }
@@ -274,6 +616,7 @@ export default function PlanEntrenamientoPage() {
   const [regs, setRegs]             = useState<Record<string, Record<number, { kg: string; reps: string }>>>({})
   const [ants, setAnts]             = useState<Record<string, { fecha: string; data: RegAnterior[] }>>({})
   const [imgErr, setImgErr]         = useState<Record<string, boolean>>({})
+  const [histVol, setHistVol]       = useState<Record<string, SesionHist[]>>({})
   const [resumenSesion, setResumenSesion] = useState<ResumenSesionData | null>(null)
   const [insightSesion, setInsightSesion] = useState<{tipo:string; mensaje:string} | null>(null)
   const [notaCoach, setNotaCoach] = useState<NotaCoach | null>(null)
@@ -692,7 +1035,7 @@ export default function PlanEntrenamientoPage() {
   /* ── Seleccionar día musculación ── */
   const selDia = useCallback(async (dia: Dia) => {
     if (!token) return
-    setDiaActivo(dia); setEjers([]); setRegs({}); setAnts({})
+    setDiaActivo(dia); setEjers([]); setRegs({}); setAnts({}); setHistVol({})
     setSesionId(null); setSesionCerrada(false); setImgErr({})
     setInsightSesion(null)
 
@@ -746,10 +1089,74 @@ export default function PlanEntrenamientoPage() {
       }
     }
 
+    // Historial de volumen por ejercicio (tendencia) — no bloquea la carga del día
+    void cargarHistorialVolumen(token, ejs, ses?.id ?? null)
+
     // Generar el mensaje pre-sesión con la fecha de la última sesión (o null)
     const insight = await generarInsightPreSesion(token, dia, ant?.length ? ant[0].fecha : null)
     setInsightSesion(insight)
   }, [token])
+
+  /* ── Historial de volumen para la sobrecarga progresiva ──
+     Busca por NOMBRE del ejercicio en todos los programas del cliente
+     (activos e inactivos), así los cambios de programa no borran la
+     tendencia. Solo sesiones completadas, sin contar la de hoy.
+     Defensivo: si algo falla, el entrenamiento funciona igual. */
+  const cargarHistorialVolumen = async (tok: string, ejs: Ejercicio[], sesHoyId: string | null) => {
+    try {
+      const objetivo = new Set(ejs.filter(e => e.bloque !== "pliometria").map(e => normNombre(e.nombre)))
+      if (!objetivo.size) return
+
+      const { data: progs } = await supabase.from("programas").select("id").eq("cliente_token", tok)
+      const progIds = (progs ?? []).map(p => p.id)
+      if (!progIds.length) return
+      const { data: dias } = await supabase.from("dias").select("id").in("programa_id", progIds)
+      const diaIds = (dias ?? []).map(d => d.id)
+      if (!diaIds.length) return
+      const { data: ejsTodos } = await supabase.from("ejercicios").select("id,nombre").in("dia_id", diaIds)
+      const nombrePorEj: Record<string, string> = {}
+      ;(ejsTodos ?? []).forEach(e => {
+        const n = normNombre(e.nombre ?? "")
+        if (objetivo.has(n)) nombrePorEj[e.id] = n
+      })
+      const ejIds = Object.keys(nombrePorEj)
+      if (!ejIds.length) return
+
+      // Últimas 60 sesiones completadas del cliente (acota el volumen de datos)
+      const { data: sess } = await supabase.from("sesiones").select("id,fecha")
+        .eq("cliente_token", tok).eq("completada", true)
+        .order("fecha", { ascending: false }).limit(60)
+      const fechaPorSes: Record<string, string> = {}
+      ;(sess ?? []).forEach(x => { if (x.id !== sesHoyId) fechaPorSes[x.id] = x.fecha })
+      const sesIds = Object.keys(fechaPorSes)
+      if (!sesIds.length) return
+
+      const { data: rs } = await supabase.from("registros")
+        .select("ejercicio_id,serie_num,kg,reps,sesion_id")
+        .in("sesion_id", sesIds).in("ejercicio_id", ejIds)
+
+      // nombre → sesión → series
+      const mapa: Record<string, Record<string, SesionHist>> = {}
+      ;(rs ?? []).forEach(r => {
+        const n = nombrePorEj[r.ejercicio_id]
+        const reps = r.reps ?? 0
+        if (!n || reps <= 0) return
+        if (!mapa[n]) mapa[n] = {}
+        if (!mapa[n][r.sesion_id]) mapa[n][r.sesion_id] = { sesion_id: r.sesion_id, fecha: fechaPorSes[r.sesion_id], series: [] }
+        mapa[n][r.sesion_id].series.push({ serie_num: r.serie_num, kg: r.kg, reps })
+      })
+
+      const res: Record<string, SesionHist[]> = {}
+      Object.entries(mapa).forEach(([n, porSes]) => {
+        res[n] = Object.values(porSes)
+          .sort((a, b) => a.fecha.localeCompare(b.fecha))
+          .slice(-8)
+      })
+      setHistVol(h => ({ ...h, ...res }))
+    } catch (e) {
+      console.warn("No se pudo cargar el historial de volumen", e)
+    }
+  }
 
   /* ── Generar mensaje pre-sesión ──
      Prioridad: primera vez en este día -> reenganche tras pausa larga
@@ -1607,6 +2014,8 @@ export default function PlanEntrenamientoPage() {
             {diaActivo && ejercicios.map((ej, idx) => {
               const ant = ants[ej.id]
               const esPlio = ej.bloque === "pliometria"
+              const hist = histVol[normNombre(ej.nombre)]
+              const sc = esPlio ? null : analizarSobrecarga(ej, regs[ej.id], ant, hist)
               const BLOQUES: Record<string, { titulo: string; color: string }> = {
                 pliometria: { titulo: "⚡ Bloque 1 · Pliometría", color: G },
                 inferior:   { titulo: "🦵 Fuerza · Tren inferior", color: R },
@@ -1730,6 +2139,8 @@ export default function PlanEntrenamientoPage() {
                       </div>
                     </div>
                   )}
+                  {/* Sobrecarga progresiva en vivo */}
+                  {!esPlio && <PanelSobrecarga sc={sc} hist={hist} cerrada={sesionCerrada} />}
                   {/* Series 4 columnas */}
                   <div style={{ padding: "12px 16px" }}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 1fr 1fr", gap: 6,
@@ -1785,6 +2196,23 @@ export default function PlanEntrenamientoPage() {
                                 fontWeight: 900, outline: "none", textAlign: "center", width: "100%" }}
                             />
                           </div>
+                          {sc && !sesionCerrada && sc.siguiente === serie && sc.faltante > 0 && sc.repsIgualar !== null && (
+                            <div style={{ marginTop: 5, padding: "6px 10px", background: `${O}10`,
+                              border: `1px dashed ${O}55`, fontSize: 12, color: "rgba(255,255,255,0.8)", lineHeight: 1.4 }}>
+                              🎯 {sc.modo === "kg"
+                                ? <>Con <b>{sc.kgSiguiente} kg</b>: </> : null}
+                              {sc.repsIgualar === sc.repsSuperar
+                                ? <>mínimo <b style={{ color: G }}>{sc.repsIgualar} reps</b> y superas la última sesión</>
+                                : <>mínimo <b style={{ color: O }}>{sc.repsIgualar} reps</b> para igualar · <b style={{ color: G }}>{sc.repsSuperar}</b> para superar</>}
+                              {sc.restantes > 1 && <span style={{ color: "rgba(255,255,255,0.45)" }}> (en cada serie que falta)</span>}
+                            </div>
+                          )}
+                          {sc && !sesionCerrada && sc.siguiente === serie && sc.faltante <= 0 && (
+                            <div style={{ marginTop: 5, padding: "6px 10px", background: `${G}10`,
+                              border: `1px dashed ${G}55`, fontSize: 12, color: G, lineHeight: 1.4 }}>
+                              ✅ Meta cumplida — esta serie ya es volumen extra
+                            </div>
+                          )}
                           <button onClick={() => { setCronSeg(parseSeg(ej.descanso)); setCronOn(true) }}
                             disabled={sesionCerrada}
                             style={{ width: "100%", marginTop: 5, padding: "6px",
