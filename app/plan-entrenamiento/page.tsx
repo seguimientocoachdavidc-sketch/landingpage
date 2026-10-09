@@ -205,17 +205,26 @@ function fmtCron(s: number) {
 
 /* ══ SOBRECARGA PROGRESIVA ═══════════════════════════════
    Cálculo en vivo del volumen (kg × reps) frente a la última
-   sesión, reps mínimas para igualarla y tendencia reciente.
-   Si el ejercicio es sin peso (kg vacío), compara reps totales. */
+   sesión. Tres niveles: EMPATAR (mínimo), SUPERAR (meta del día)
+   y RÉCORD (tu mejor sesión histórica en el ejercicio).
+   Si el ejercicio es sin peso (kg vacío), compara reps totales.
+   Todo se recalcula con cada número que escribes: si bajas o
+   subes el peso, las reps de las series que faltan se ajustan. */
 interface SerieHist { serie_num: number; kg: number | null; reps: number }
 interface SesionHist { sesion_id: string; fecha: string; series: SerieHist[] }
+
+type NivelSobrecarga = "debajo" | "empate" | "encima" | "superado" | "record"
 
 interface Sobrecarga {
   modo: "kg" | "reps"
   refFecha: string
   refMismoDia: boolean
-  volRef: number
+  volRef: number          // última sesión → empatar
+  volMeta: number         // meta del día → superar (+2,5% o +1 rep, lo que sea mayor)
+  volRecord: number | null // mejor sesión histórica (null si hay poco historial)
+  metaEsRecord: boolean   // superar la meta ya implica récord
   volHoy: number
+  nivel: NivelSobrecarga
   seriesHechas: number
   seriesTotales: number
   restantes: number
@@ -223,12 +232,13 @@ interface Sobrecarga {
   kgSiguiente: number | null
   kgSugerido: boolean
   kgFuente: "hoy" | "ref" | null
-  faltante: number
-  repsIgualar: number | null
+  repsEmpatar: number | null
   repsSuperar: number | null
+  repsRecord: number | null
   repsTodoEnUna: number | null
   proyeccion: number | null
   ultimaHoy: { kg: number | null; reps: number } | null
+  racha: number           // sesiones seguidas superándose (antes de hoy)
 }
 
 function normNombre(s: string) {
@@ -267,7 +277,23 @@ function analizarSobrecarga(
   const volRef = volDe(refSeries, modo)
   if (volRef <= 0) return null
 
-  // 2. Lo que llevas hoy (en vivo, mientras escribes)
+  // 2. Meta del día: al menos +2,5% o una rep más con tu peso más alto
+  const kgRefMax = Math.max(...refSeries.map(s => s.kg ?? 0))
+  const unaRep = modo === "kg" ? Math.max(kgRefMax, 1) : 1
+  const volMeta = Math.max(volRef + unaRep, Math.ceil(volRef * 1.025))
+
+  // 3. Historial: récord y racha de superación
+  const volsHist = (hist ?? []).map(h => volDe(h.series.filter(s => s.reps > 0), modo)).filter(v => v > 0)
+  let volRecord: number | null = null
+  if (volsHist.length >= 2) volRecord = Math.max(volRef, ...volsHist)
+  let racha = 0
+  for (let i = volsHist.length - 1; i > 0; i--) {
+    if (volsHist[i] > volsHist[i - 1]) racha++
+    else break
+  }
+  const metaEsRecord = volRecord !== null && volMeta > volRecord
+
+  // 4. Lo que llevas hoy (en vivo, mientras escribes)
   const total = ej.series_trabajo
   const hechas: { serie_num: number; kg: number | null; reps: number }[] = []
   let siguiente: number | null = null
@@ -281,10 +307,17 @@ function analizarSobrecarga(
   }
   const volHoy = volDe(hechas, modo)
   const restantes = total - hechas.length
-  const faltante = volRef - volHoy
   const ultimaHoy = hechas.length ? hechas[hechas.length - 1] : null
 
-  // 3. Peso con el que harás la siguiente serie
+  const nivel: NivelSobrecarga =
+    volRecord !== null && volHoy > volRecord ? "record"
+    : volHoy >= volMeta ? (metaEsRecord ? "record" : "superado")
+    : volHoy > volRef ? "encima"
+    : volHoy === volRef ? "empate"
+    : "debajo"
+
+  // 5. Peso con el que harás la siguiente serie:
+  //    el que escribas en esa serie → si no, tu último peso de hoy → si no, el de la sesión anterior
   let kgSiguiente: number | null = null
   let kgSugerido = false
   let kgFuente: "hoy" | "ref" | null = null
@@ -296,34 +329,36 @@ function analizarSobrecarga(
       kgFuente = ultimaHoy?.kg ? "hoy" : "ref"
       kgSiguiente = ultimaHoy?.kg
         ?? refSeries.find(s => s.serie_num === siguiente)?.kg
-        ?? Math.max(...refSeries.map(s => s.kg ?? 0))
+        ?? kgRefMax
       if (!kgSiguiente) kgSiguiente = null
     }
   }
 
-  // 4. Reps mínimas por serie restante para igualar / superar
-  let repsIgualar: number | null = null
-  let repsSuperar: number | null = null
-  let repsTodoEnUna: number | null = null
-  let proyeccion: number | null = null
-  if (faltante > 0 && restantes > 0) {
-    const porRep = modo === "kg" ? (kgSiguiente ?? 0) : 1
-    if (porRep > 0) {
-      const porSerie = faltante / (porRep * restantes)
-      repsIgualar = Math.max(1, Math.ceil(porSerie - 1e-9))
-      repsSuperar = Math.floor(porSerie + 1e-9) + 1
-      if (restantes > 1) repsTodoEnUna = Math.ceil(faltante / porRep - 1e-9)
-    }
+  // 6. Reps por cada serie restante para cada nivel
+  const porRep = modo === "kg" ? (kgSiguiente ?? 0) : 1
+  const repsPara = (objetivo: number, estricto: boolean): number | null => {
+    const falta = objetivo - volHoy
+    if (falta < 0 || (falta === 0 && !estricto)) return 0
+    if (restantes <= 0 || porRep <= 0) return null
+    const x = falta / (porRep * restantes)
+    return estricto ? Math.floor(x + 1e-9) + 1 : Math.max(1, Math.ceil(x - 1e-9))
   }
+  const repsEmpatar = repsPara(volRef, false)
+  const repsSuperar = repsPara(volMeta, false)
+  const repsRecord = volRecord !== null && !metaEsRecord ? repsPara(volRecord, true) : null
+  let repsTodoEnUna: number | null = null
+  if (restantes > 1 && porRep > 0 && volMeta - volHoy > 0) repsTodoEnUna = Math.ceil((volMeta - volHoy) / porRep - 1e-9)
+
+  let proyeccion: number | null = null
   if (restantes > 0 && ultimaHoy) {
     proyeccion = volHoy + restantes * (modo === "kg" ? (ultimaHoy.kg ?? 0) * ultimaHoy.reps : ultimaHoy.reps)
   }
 
   return {
-    modo, refFecha, refMismoDia, volRef, volHoy,
+    modo, refFecha, refMismoDia, volRef, volMeta, volRecord, metaEsRecord, volHoy, nivel,
     seriesHechas: hechas.length, seriesTotales: total, restantes, siguiente,
-    kgSiguiente, kgSugerido, kgFuente, faltante, repsIgualar, repsSuperar, repsTodoEnUna,
-    proyeccion, ultimaHoy,
+    kgSiguiente, kgSugerido, kgFuente, repsEmpatar, repsSuperar, repsRecord, repsTodoEnUna,
+    proyeccion, ultimaHoy, racha,
   }
 }
 
@@ -340,19 +375,23 @@ function evaluarTendencia(vols: number[]): EstadoTendencia | null {
     const m3 = tres.reduce((a, b) => a + b, 0) / 3
     const rango = (Math.max(...tres) - Math.min(...tres)) / Math.max(m3, 1)
     if (rango <= 0.04) return { label: "Estancado", color: O, icono: "→",
-      consejo: "3 sesiones casi iguales: hoy sube 1 rep por serie o un poco de peso." }
+      consejo: "3 sesiones casi iguales. Hoy es el día de romperlo: +1 rep por serie o un poco más de peso." }
   }
   if (d > 0.03) return { label: "Subiendo", color: G, icono: "↗",
-    consejo: "Vas progresando. Mantén la técnica y supera tu última sesión." }
+    consejo: "Vienes en subida. Que hoy sea un punto más arriba." }
   if (d < -0.03) return { label: "Bajando", color: R, icono: "↘",
-    consejo: "Últimamente bajó. Revisa descanso, sueño y comida; hoy apunta a igualar." }
+    consejo: "Últimamente bajó. Revisa descanso, sueño y comida — y hoy recupera terreno." }
   return { label: "Estable", color: O, icono: "→",
     consejo: "Casi igual a la vez anterior: hoy busca al menos +1 rep." }
 }
 
+const ORO = "#facc15"
+const COLOR_NIVEL: Record<NivelSobrecarga, string> = {
+  debajo: R, empate: O, encima: O, superado: G, record: ORO,
+}
+
 function PanelSobrecarga({ sc, hist, cerrada }: { sc: Sobrecarga | null; hist: SesionHist[] | undefined; cerrada: boolean }) {
   const unidad = sc?.modo === "reps" ? "reps" : "kg"
-  // Tendencia: últimas 6 sesiones completadas del ejercicio (+ hoy en vivo)
   const modoT: "kg" | "reps" = sc?.modo ?? ((hist ?? []).some(h => h.series.some(s => s.kg)) ? "kg" : "reps")
   const ultimas = (hist ?? []).slice(-6)
   const volsHist = ultimas.map(h => volDe(h.series.filter(s => s.reps > 0), modoT))
@@ -362,22 +401,26 @@ function PanelSobrecarga({ sc, hist, cerrada }: { sc: Sobrecarga | null; hist: S
     return (
       <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)",
         background: `${B}0a`, fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
-        📍 <b style={{ color: "#fff" }}>Primera vez con este ejercicio.</b> Lo que registres hoy será tu base para comparar la próxima sesión.
+        📍 <b style={{ color: "#fff" }}>Primera vez con este ejercicio.</b> Lo que hagas hoy es la marca que tendrás que superar la próxima vez.
       </div>
     )
   }
 
-  const pct = sc ? Math.round((sc.volHoy / sc.volRef) * 100) : 0
-  const superado = !!sc && sc.faltante < 0
-  const igualado = !!sc && sc.faltante === 0
-  const colorBarra = superado || igualado ? G : pct >= 70 ? O : R
+  const enCurso = !!sc && sc.restantes > 0 && !cerrada
+  const colorNivel = sc ? (sc.volHoy > 0 ? COLOR_NIVEL[sc.nivel] : "rgba(255,255,255,0.3)") : "#fff"
+  const deltaPct = sc ? Math.round((sc.volHoy / sc.volRef - 1) * 100) : 0
+
+  // Barra: escala hasta un poco más allá de la meta (o del récord si está cerca)
+  const tope = sc ? Math.max(sc.volMeta * 1.12,
+    sc.volRecord && sc.volRecord <= sc.volMeta * 1.25 ? sc.volRecord * 1.05 : 0, sc.volHoy * 1.02) : 1
+  const posPct = (v: number) => Math.min(100, (v / tope) * 100)
 
   // Sparkline
   const puntos = [...volsHist]
   const hayHoy = !!sc && sc.volHoy > 0
   if (hayHoy) puntos.push(sc!.volHoy)
   const W = 300, H = 64, PADX = 20, PADY = 12
-  const conMeta = sc ? [...puntos, sc.volRef] : puntos
+  const conMeta = sc ? [...puntos, sc.volMeta] : puntos
   const maxV = Math.max(...conMeta, 1)
   let minV = Math.min(...conMeta, maxV)
   let rangoV = maxV - minV
@@ -390,13 +433,26 @@ function PanelSobrecarga({ sc, hist, cerrada }: { sc: Sobrecarga | null; hist: S
   const ys = (v: number) => H - PADY - ((v - minV) / rangoV) * (H - 2 * PADY)
   const nHist = volsHist.length
 
+  const fechaRef = sc ? fmtFecha(sc.refFecha) : ""
+  const caja = (valor: number, etiqueta: string, color: string, destacada: boolean) => (
+    <div style={{ padding: destacada ? "10px 6px" : "8px 6px", textAlign: "center",
+      background: destacada ? `${color}18` : "rgba(0,0,0,0.3)",
+      border: `1px solid ${destacada ? color : "rgba(255,255,255,0.08)"}`,
+      boxShadow: destacada ? `0 0 18px ${color}25` : "none" }}>
+      <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: destacada ? 30 : 22,
+        fontWeight: 900, color, lineHeight: 1 }}>{valor}</div>
+      <div style={{ fontSize: 9, color: destacada ? "#fff" : "rgba(255,255,255,0.45)", textTransform: "uppercase",
+        letterSpacing: "0.08em", marginTop: 4, fontWeight: destacada ? 700 : 400, lineHeight: 1.3 }}>{etiqueta}</div>
+    </div>
+  )
+
   return (
     <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)",
       background: "linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.005))" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: sc ? 2 : 8, gap: 8 }}>
         <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 900,
           letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.75)", whiteSpace: "nowrap" }}>
-          📈 Sobrecarga progresiva
+          ⚔️ Tú vs. tu última sesión
         </span>
         {tendencia && (
           <span style={{ fontSize: 10, fontWeight: 800, color: tendencia.color, padding: "3px 8px",
@@ -409,91 +465,142 @@ function PanelSobrecarga({ sc, hist, cerrada }: { sc: Sobrecarga | null; hist: S
 
       {sc && (
         <>
-          {/* Hoy vs. meta */}
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>
+            Hoy compites contra tu versión del {fechaRef}{!sc.refMismoDia && " (última vez que hiciste este ejercicio)"}
+          </div>
+
+          {/* Racha de superación */}
+          {sc.racha >= 1 && (
+            <div style={{ marginBottom: 10, padding: "7px 10px", background: `${O}10`, border: `1px solid ${O}35`,
+              fontSize: 12, color: "#fff", lineHeight: 1.4 }}>
+              {sc.nivel === "superado" || sc.nivel === "record"
+                ? <>🔥 <b style={{ color: O }}>¡Racha de {sc.racha + 1} sesiones seguidas superándote!</b></>
+                : sc.racha === 1
+                  ? <>🔥 La vez pasada te superaste. <b style={{ color: O }}>Hazlo dos veces seguidas.</b></>
+                  : <>🔥 Llevas <b style={{ color: O }}>{sc.racha} sesiones seguidas superándote</b>. No rompas la racha hoy.</>}
+            </div>
+          )}
+
+          {/* Marcador */}
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
             <div>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                Volumen hoy
-              </div>
-              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 26, fontWeight: 900, lineHeight: 1,
-                color: sc.volHoy > 0 ? colorBarra : "rgba(255,255,255,0.3)" }}>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Hoy</div>
+              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 28, fontWeight: 900, lineHeight: 1, color: colorNivel }}>
                 {fmtNum(sc.volHoy)} <span style={{ fontSize: 13, fontWeight: 700 }}>{unidad}</span>
               </div>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                Meta · {sc.refMismoDia ? "última sesión" : "última vez"} {fmtFecha(sc.refFecha)}
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{fechaRef}</div>
+              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 800, lineHeight: 1, color: "rgba(255,255,255,0.7)" }}>
+                {fmtNum(sc.volRef)}
               </div>
-              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 26, fontWeight: 900, lineHeight: 1, color: "#fff" }}>
-                {fmtNum(sc.volRef)} <span style={{ fontSize: 13, fontWeight: 700 }}>{unidad}</span>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 9, color: O, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>
+                Meta de hoy{sc.metaEsRecord ? " 🏆" : ""}
+              </div>
+              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 28, fontWeight: 900, lineHeight: 1, color: O }}>
+                {fmtNum(sc.volMeta)} <span style={{ fontSize: 13, fontWeight: 700 }}>{unidad}</span>
               </div>
             </div>
           </div>
 
-          {/* Barra de progreso hacia la meta */}
-          <div style={{ position: "relative", height: 8, background: "rgba(255,255,255,0.07)", marginBottom: 4 }}>
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.min(pct, 100)}%`,
-              background: colorBarra, transition: "width 0.35s ease" }} />
+          {/* Barra con marcas: última sesión | meta | récord */}
+          <div style={{ position: "relative", height: 10, background: "rgba(255,255,255,0.07)", marginBottom: 4 }}>
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${posPct(sc.volHoy)}%`,
+              background: colorNivel, transition: "width 0.35s ease, background 0.35s ease" }} />
+            <div title="Última sesión" style={{ position: "absolute", top: -3, bottom: -3, width: 2,
+              left: `calc(${posPct(sc.volRef)}% - 1px)`, background: "rgba(255,255,255,0.75)" }} />
+            <div title="Meta de hoy" style={{ position: "absolute", top: -4, bottom: -4, width: 3,
+              left: `calc(${posPct(sc.volMeta)}% - 1px)`, background: O }} />
+            {sc.volRecord !== null && !sc.metaEsRecord && sc.volRecord <= tope && (
+              <div title="Récord" style={{ position: "absolute", top: -4, bottom: -4, width: 3,
+                left: `calc(${posPct(sc.volRecord)}% - 1px)`, background: ORO }} />
+            )}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>
-            <span>{Math.min(sc.seriesHechas, sc.seriesTotales)} de {sc.seriesTotales} series hechas</span>
-            <span style={{ color: colorBarra, fontWeight: 700 }}>{pct}%</span>
+            <span>{Math.min(sc.seriesHechas, sc.seriesTotales)} de {sc.seriesTotales} series</span>
+            <span>
+              <span style={{ color: "rgba(255,255,255,0.75)" }}>▮</span> {fechaRef}
+              <span style={{ color: O, marginLeft: 8 }}>▮</span> meta
+              {sc.volRecord !== null && !sc.metaEsRecord && <><span style={{ color: ORO, marginLeft: 8 }}>▮</span> récord</>}
+            </span>
           </div>
 
-          {/* Mensaje principal */}
-          {superado || igualado ? (
-            <div style={{ padding: "10px 12px", background: `${G}12`, border: `1px solid ${G}40`, fontSize: 13, color: "#fff", lineHeight: 1.5 }}>
-              ✅ <b style={{ color: G }}>{igualado ? "Igualaste" : "Superaste"} tu última sesión</b>
-              {superado && <> por <b style={{ color: G }}>+{fmtNum(-sc.faltante)} {unidad}</b> ({"+"}{pct - 100}%)</>}.
-              {sc.restantes > 0 && !cerrada && <span style={{ color: "rgba(255,255,255,0.6)" }}> Lo que sumes en {sc.restantes === 1 ? "la serie que falta" : `las ${sc.restantes} series que faltan`} es ganancia.</span>}
+          {/* Mensaje principal según el nivel */}
+          {sc.nivel === "record" ? (
+            <div style={{ padding: "12px", background: `${ORO}14`, border: `1px solid ${ORO}60`, fontSize: 13, color: "#fff", lineHeight: 1.5 }}>
+              🏆 <b style={{ color: ORO, fontSize: 15 }}>¡NUEVO RÉCORD!</b> Es tu mejor sesión en este ejercicio: <b style={{ color: ORO }}>+{deltaPct}%</b> sobre el {fechaRef}.
+              {enCurso && <span style={{ color: "rgba(255,255,255,0.6)" }}> Cada rep que sumes sube la vara para la próxima.</span>}
             </div>
-          ) : sc.restantes === 0 || cerrada ? (
-            <div style={{ padding: "10px 12px", background: `${R}10`, border: `1px solid ${R}35`, fontSize: 13, color: "#fff", lineHeight: 1.5 }}>
-              Quedaste a <b style={{ color: R }}>{fmtNum(sc.faltante)} {unidad}</b> de la última sesión ({pct - 100}%).
-              <span style={{ color: "rgba(255,255,255,0.6)" }}> La próxima vez: mismo peso y busca +1 rep por serie.</span>
+          ) : sc.nivel === "superado" ? (
+            <div style={{ padding: "12px", background: `${G}12`, border: `1px solid ${G}45`, fontSize: 13, color: "#fff", lineHeight: 1.5 }}>
+              💪 <b style={{ color: G }}>Le ganaste a tu versión del {fechaRef}</b> por <b style={{ color: G }}>+{fmtNum(sc.volHoy - sc.volRef)} {unidad} (+{deltaPct}%)</b>.
+              {enCurso && sc.repsRecord !== null && sc.repsRecord > 0 && (
+                <div style={{ marginTop: 6, color: ORO, fontSize: 12 }}>
+                  🏆 ¿Vas por el récord? {sc.repsRecord} reps{sc.restantes > 1 ? " en cada serie que falta" : ""}{sc.modo === "kg" ? ` con ${sc.kgSiguiente} kg` : ""}.
+                </div>
+              )}
+              {enCurso && (sc.repsRecord === null || sc.repsRecord === 0) && (
+                <span style={{ color: "rgba(255,255,255,0.6)" }}> Lo que sumes ahora es ganancia pura.</span>
+              )}
             </div>
-          ) : sc.repsIgualar !== null && sc.siguiente !== null ? (
-            <div style={{ padding: "10px 12px", background: `${O}10`, border: `1px solid ${O}40`, fontSize: 13, color: "#fff", lineHeight: 1.55 }}>
-              👉 {sc.volHoy > 0 ? <>Te faltan <b style={{ color: O }}>{fmtNum(sc.faltante)} {unidad}</b>.</> : <>Para igualar la última sesión:</>}{" "}
+          ) : !enCurso ? (
+            <div style={{ padding: "12px", background: `${R}10`, border: `1px solid ${R}35`, fontSize: 13, color: "#fff", lineHeight: 1.5 }}>
+              {sc.nivel === "encima"
+                ? <>Le ganaste por poco a tu versión del {fechaRef} (+{fmtNum(sc.volHoy - sc.volRef)} {unidad}), pero te quedaste a {fmtNum(sc.volMeta - sc.volHoy)} {unidad} de la meta.</>
+                : sc.nivel === "empate"
+                  ? <>Empate exacto con tu versión del {fechaRef}.</>
+                  : <>Hoy ganó tu versión del {fechaRef}, por {fmtNum(sc.volRef - sc.volHoy)} {unidad} ({deltaPct}%).</>}
+              <span style={{ color: "rgba(255,255,255,0.65)" }}> La revancha es la próxima: mismo peso, +1 rep por serie.</span>
+            </div>
+          ) : sc.repsSuperar !== null && sc.siguiente !== null ? (
+            <div style={{ padding: "12px", background: "rgba(255,255,255,0.03)", border: `1px solid ${O}45`, fontSize: 13, color: "#fff", lineHeight: 1.55 }}>
+              {sc.nivel === "encima"
+                ? <>🔥 Ya vas por encima de tu versión del {fechaRef}. <b style={{ color: O }}>Remata la meta:</b>{" "}</>
+                : sc.nivel === "empate"
+                  ? <>⚖️ Vas empatado. <b style={{ color: O }}>Una rep más y ganas:</b>{" "}</>
+                  : <>🎯 <b style={{ color: O }}>Para superarte hoy</b>{" "}</>}
               {sc.modo === "kg" ? (
-                <>Con <b>{sc.kgSiguiente} kg</b>{sc.kgSugerido && <span style={{ color: "rgba(255,255,255,0.45)" }}> ({sc.kgFuente === "hoy" ? "tu último peso de hoy" : "peso de la última sesión"})</span>}{" "}
+                <>con <b>{sc.kgSiguiente} kg</b>{sc.kgSugerido && <span style={{ color: "rgba(255,255,255,0.45)" }}> ({sc.kgFuente === "hoy" ? "tu último peso de hoy" : "peso de la última sesión"})</span>}{" "}
                   {sc.restantes === 1 ? "en la serie que falta" : `en cada una de las ${sc.restantes} series que faltan`}:</>
               ) : (
-                <>{sc.restantes === 1 ? "En la serie que falta" : `En cada una de las ${sc.restantes} series que faltan`}:</>
+                <>{sc.restantes === 1 ? "en la serie que falta" : `en cada una de las ${sc.restantes} series que faltan`}:</>
               )}
-              <div style={{ display: "grid", gridTemplateColumns: sc.repsIgualar === sc.repsSuperar ? "1fr" : "1fr 1fr", gap: 6, marginTop: 8 }}>
-                {sc.repsIgualar !== sc.repsSuperar && (
-                <div style={{ padding: "8px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
-                  <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 24, fontWeight: 900, color: O, lineHeight: 1 }}>{sc.repsIgualar}</div>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 3 }}>reps para igualar</div>
-                </div>
-                )}
-                <div style={{ padding: "8px", background: "rgba(0,0,0,0.3)", border: `1px solid ${G}35`, textAlign: "center" }}>
-                  <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 24, fontWeight: 900, color: G, lineHeight: 1 }}>{sc.repsSuperar}</div>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 3 }}>{sc.repsIgualar === sc.repsSuperar ? "reps mínimas · con eso la superas" : "reps para superar"}</div>
-                </div>
-              </div>
-              {sc.repsIgualar > 20 && (
+              {(() => {
+                const cajas: ReturnType<typeof caja>[] = []
+                const mostrarEmpate = sc.repsEmpatar !== null && sc.repsEmpatar > 0 && sc.repsEmpatar !== sc.repsSuperar && sc.nivel === "debajo"
+                const mostrarRecord = sc.repsRecord !== null && sc.repsRecord > 0 && sc.repsRecord !== sc.repsSuperar
+                if (mostrarEmpate) cajas.push(<Fragment key="e">{caja(sc.repsEmpatar!, "empatas", "rgba(255,255,255,0.7)", false)}</Fragment>)
+                cajas.push(<Fragment key="s">{caja(sc.repsSuperar!, sc.metaEsRecord ? "te superas · récord 🏆" : "reps · te superas", O, true)}</Fragment>)
+                if (mostrarRecord) cajas.push(<Fragment key="r">{caja(sc.repsRecord!, "récord 🏆", ORO, false)}</Fragment>)
+                return (
+                  <div style={{ display: "grid", gridTemplateColumns: cajas.length === 3 ? "1fr 1.3fr 1fr" : cajas.length === 2 ? "1fr 1.3fr" : "1fr", gap: 6, marginTop: 10 }}>
+                    {cajas}
+                  </div>
+                )
+              })()}
+              {sc.repsSuperar > 20 && (
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 8 }}>
-                  ⚠️ Con este peso es difícil igualar. Sube un poco el peso en la siguiente serie y el cálculo se ajusta solo.
+                  ⚠️ Con este peso necesitas muchas reps. Sube un poco el peso en la siguiente serie y el cálculo se ajusta solo.
                 </div>
               )}
               {sc.repsTodoEnUna !== null && sc.repsTodoEnUna <= 30 && (
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 8 }}>
-                  (Si lo quieres todo en la próxima serie: {sc.repsTodoEnUna} reps.)
+                  (Si quieres asegurarlo en la próxima serie: {sc.repsTodoEnUna} reps.)
                 </div>
               )}
               {sc.proyeccion !== null && sc.ultimaHoy && (
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
                   Si repites {sc.modo === "kg" ? `${sc.ultimaHoy.kg} kg × ${sc.ultimaHoy.reps}` : `${sc.ultimaHoy.reps} reps`}:{" "}
-                  <b style={{ color: sc.proyeccion >= sc.volRef ? G : R }}>{fmtNum(sc.proyeccion)} {unidad}</b>
-                  {" "}({sc.proyeccion >= sc.volRef ? "+" : ""}{Math.round((sc.proyeccion / sc.volRef - 1) * 100)}%)
+                  <b style={{ color: sc.proyeccion >= sc.volMeta ? G : sc.proyeccion > sc.volRef ? O : R }}>{fmtNum(sc.proyeccion)} {unidad}</b>
+                  {" "}— {sc.proyeccion >= sc.volMeta ? "te superas ✓" : sc.proyeccion > sc.volRef ? "ganas por poco" : "no alcanza"}
                 </div>
               )}
             </div>
           ) : (
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-              Escribe el peso de tu primera serie para ver cuántas reps necesitas.
+              Escribe el peso de tu primera serie para ver cuántas reps necesitas para superarte.
             </div>
           )}
         </>
@@ -508,8 +615,8 @@ function PanelSobrecarga({ sc, hist, cerrada }: { sc: Sobrecarga | null; hist: S
           <svg viewBox={`0 0 ${W} ${H + 14}`} style={{ width: "100%", display: "block" }}>
             {sc && (
               <>
-                <line x1={0} x2={W} y1={ys(sc.volRef)} y2={ys(sc.volRef)} stroke="rgba(255,255,255,0.25)" strokeDasharray="4 4" strokeWidth={1} />
-                <text x={W - 2} y={ys(sc.volRef) - 3} textAnchor="end" fontSize={8} fill="rgba(255,255,255,0.4)">meta</text>
+                <line x1={0} x2={W} y1={ys(sc.volMeta)} y2={ys(sc.volMeta)} stroke={O} strokeOpacity={0.6} strokeDasharray="4 4" strokeWidth={1} />
+                <text x={W - 2} y={ys(sc.volMeta) - 3} textAnchor="end" fontSize={8} fill={O}>meta</text>
               </>
             )}
             {nHist >= 2 && (
@@ -518,16 +625,16 @@ function PanelSobrecarga({ sc, hist, cerrada }: { sc: Sobrecarga | null; hist: S
             )}
             {hayHoy && nHist >= 1 && (
               <line x1={xs(nHist - 1)} y1={ys(volsHist[nHist - 1])} x2={xs(nHist)} y2={ys(sc!.volHoy)}
-                stroke={colorBarra} strokeWidth={2} strokeDasharray="3 3" />
+                stroke={colorNivel} strokeWidth={2} strokeDasharray="3 3" />
             )}
             {puntos.map((v, i) => {
               const esHoy = hayHoy && i === puntos.length - 1
               return (
                 <g key={i}>
-                  <circle cx={xs(i)} cy={ys(v)} r={esHoy ? 4.5 : 3.5} fill={esHoy ? colorBarra : "#0a0a0a"}
-                    stroke={esHoy ? colorBarra : "rgba(255,255,255,0.75)"} strokeWidth={1.5} />
+                  <circle cx={xs(i)} cy={ys(v)} r={esHoy ? 4.5 : 3.5} fill={esHoy ? colorNivel : "#0a0a0a"}
+                    stroke={esHoy ? colorNivel : "rgba(255,255,255,0.75)"} strokeWidth={1.5} />
                   <text x={xs(i)} y={H + 10} textAnchor="middle" fontSize={8.5}
-                    fill={esHoy ? colorBarra : "rgba(255,255,255,0.4)"} fontWeight={esHoy ? 700 : 400}>
+                    fill={esHoy ? colorNivel : "rgba(255,255,255,0.4)"} fontWeight={esHoy ? 700 : 400}>
                     {esHoy ? "HOY" : fmtFecha(ultimas[i].fecha)}
                   </text>
                 </g>
@@ -617,6 +724,7 @@ export default function PlanEntrenamientoPage() {
   const [ants, setAnts]             = useState<Record<string, { fecha: string; data: RegAnterior[] }>>({})
   const [imgErr, setImgErr]         = useState<Record<string, boolean>>({})
   const [histVol, setHistVol]       = useState<Record<string, SesionHist[]>>({})
+  const celebradosRef = useRef<Set<string>>(new Set())
   const [resumenSesion, setResumenSesion] = useState<ResumenSesionData | null>(null)
   const [insightSesion, setInsightSesion] = useState<{tipo:string; mensaje:string} | null>(null)
   const [notaCoach, setNotaCoach] = useState<NotaCoach | null>(null)
@@ -1036,6 +1144,7 @@ export default function PlanEntrenamientoPage() {
   const selDia = useCallback(async (dia: Dia) => {
     if (!token) return
     setDiaActivo(dia); setEjers([]); setRegs({}); setAnts({}); setHistVol({})
+    celebradosRef.current = new Set()
     setSesionId(null); setSesionCerrada(false); setImgErr({})
     setInsightSesion(null)
 
@@ -1239,6 +1348,26 @@ export default function PlanEntrenamientoPage() {
         kg: kgNum, reps: parseInt(val.reps) || null },
       { onConflict: "sesion_id,ejercicio_id,serie_num" }
     )
+
+    // Celebrar en el momento en que te superas (una sola vez por ejercicio)
+    const ejObj = ejercicios.find(e => e.id === ejId)
+    if (ejObj && ejObj.bloque !== "pliometria") {
+      const scAhora = analizarSobrecarga(ejObj, regs[ejId], ants[ejId], histVol[normNombre(ejObj.nombre)])
+      const c = celebradosRef.current
+      if (scAhora && scAhora.volHoy > 0) {
+        if (scAhora.nivel === "record" && !c.has(ejId + ":record")) {
+          c.add(ejId + ":record"); c.add(ejId + ":superado")
+          showToast(`🏆 ¡NUEVO RÉCORD en ${ejObj.nombre}! Tu mejor sesión hasta hoy`)
+          return
+        }
+        if (scAhora.nivel === "superado" && !c.has(ejId + ":superado")) {
+          c.add(ejId + ":superado")
+          const pct = Math.round((scAhora.volHoy / scAhora.volRef - 1) * 100)
+          showToast(`💪 ¡Te superaste en ${ejObj.nombre}! +${pct}% vs. la última sesión`)
+          return
+        }
+      }
+    }
 
     // Comparar con la sesión anterior — detectar mejora de carga
     const ant = ants[ejId]
@@ -2196,21 +2325,29 @@ export default function PlanEntrenamientoPage() {
                                 fontWeight: 900, outline: "none", textAlign: "center", width: "100%" }}
                             />
                           </div>
-                          {sc && !sesionCerrada && sc.siguiente === serie && sc.faltante > 0 && sc.repsIgualar !== null && (
-                            <div style={{ marginTop: 5, padding: "6px 10px", background: `${O}10`,
-                              border: `1px dashed ${O}55`, fontSize: 12, color: "rgba(255,255,255,0.8)", lineHeight: 1.4 }}>
-                              🎯 {sc.modo === "kg"
-                                ? <>Con <b>{sc.kgSiguiente} kg</b>: </> : null}
-                              {sc.repsIgualar === sc.repsSuperar
-                                ? <>mínimo <b style={{ color: G }}>{sc.repsIgualar} reps</b> y superas la última sesión</>
-                                : <>mínimo <b style={{ color: O }}>{sc.repsIgualar} reps</b> para igualar · <b style={{ color: G }}>{sc.repsSuperar}</b> para superar</>}
-                              {sc.restantes > 1 && <span style={{ color: "rgba(255,255,255,0.45)" }}> (en cada serie que falta)</span>}
+                          {sc && !sesionCerrada && sc.siguiente === serie && sc.repsSuperar !== null && sc.repsSuperar > 0 && (
+                            <div style={{ marginTop: 5, padding: "7px 10px", background: `${O}12`,
+                              border: `1px dashed ${O}70`, fontSize: 12, color: "rgba(255,255,255,0.85)", lineHeight: 1.45 }}>
+                              🎯 {sc.modo === "kg" && <>Con <b>{sc.kgSiguiente} kg</b>: </>}
+                              <b style={{ color: O, fontSize: 14 }}>{sc.repsSuperar} reps</b> y te superas
+                              {sc.repsEmpatar !== null && sc.repsEmpatar > 0 && sc.repsEmpatar !== sc.repsSuperar && sc.nivel === "debajo" && (
+                                <span style={{ color: "rgba(255,255,255,0.45)" }}> · {sc.repsEmpatar} empatan</span>
+                              )}
+                              {sc.repsRecord !== null && sc.repsRecord > 0 && sc.repsRecord !== sc.repsSuperar && (
+                                <span style={{ color: ORO }}> · {sc.repsRecord} = récord 🏆</span>
+                              )}
+                              {sc.metaEsRecord && <span style={{ color: ORO }}> · y es récord 🏆</span>}
+                              {sc.restantes > 1 && <span style={{ color: "rgba(255,255,255,0.4)" }}> (en cada serie que falta)</span>}
                             </div>
                           )}
-                          {sc && !sesionCerrada && sc.siguiente === serie && sc.faltante <= 0 && (
-                            <div style={{ marginTop: 5, padding: "6px 10px", background: `${G}10`,
-                              border: `1px dashed ${G}55`, fontSize: 12, color: G, lineHeight: 1.4 }}>
-                              ✅ Meta cumplida — esta serie ya es volumen extra
+                          {sc && !sesionCerrada && sc.siguiente === serie && sc.repsSuperar === 0 && (
+                            <div style={{ marginTop: 5, padding: "7px 10px", background: `${sc.nivel === "record" ? ORO : G}12`,
+                              border: `1px dashed ${sc.nivel === "record" ? ORO : G}70`, fontSize: 12,
+                              color: sc.nivel === "record" ? ORO : G, lineHeight: 1.45 }}>
+                              {sc.nivel === "record" ? "🏆 Récord asegurado — esta serie sube la vara" : "💪 Ya te superaste"}
+                              {sc.nivel !== "record" && sc.repsRecord !== null && sc.repsRecord > 0
+                                ? <span style={{ color: ORO }}> · {sc.repsRecord} reps{sc.modo === "kg" ? ` con ${sc.kgSiguiente} kg` : ""} = récord 🏆</span>
+                                : sc.nivel !== "record" ? " — esta serie es ganancia pura" : ""}
                             </div>
                           )}
                           <button onClick={() => { setCronSeg(parseSeg(ej.descanso)); setCronOn(true) }}
