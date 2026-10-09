@@ -15,6 +15,7 @@ interface Ejercicio {
   rir_objetivo: string | null; descanso: string | null
   video_url: string | null
   bloque?: string | null
+  metodo_avanzado?: string | null
 }
 interface RegAnterior { serie_num: number; kg: number | null; reps: number | null }
 interface SemanaRun {
@@ -652,6 +653,265 @@ function PanelSobrecarga({ sc, hist, cerrada }: { sc: Sobrecarga | null; hist: S
   )
 }
 
+/* ══ MÉTODOS AVANZADOS (Drop set / Rest-pause) ═══════════
+   Miniseries dentro de una misma serie. Se guardan en la tabla
+   registros_miniseries (aparte de registros), así el volumen
+   principal y la sobrecarga progresiva se comparan siempre
+   serie contra serie, y lo del método se muestra como extra. */
+type MetodoAvanzado = "drop_set" | "rest_pause"
+interface MiniSerie { kg: string; reps: string }
+interface MetodoSerie { metodo: MetodoAvanzado; caidas: number; reduccion: number; minis: MiniSerie[]; prescrito?: boolean }
+interface MetodoAnterior { metodo: MetodoAvanzado; minis: { kg: number | null; reps: number | null }[] }
+
+const INFO_METODOS: Record<MetodoAvanzado, {
+  nombre: string; icono: string; color: string; resumen: string
+  pasos: string[]; consejo: string; pausaSeg: number; pausaTxt: string
+}> = {
+  drop_set: {
+    nombre: "Drop set", icono: "⬇️", color: "#a78bfa",
+    resumen: "Llegas al fallo, bajas el peso y sigues sin descansar.",
+    pasos: [
+      "Haz tu serie normal hasta el fallo técnico (cuando ya no sale otra rep bien hecha).",
+      "Sin descansar, baja el peso (la app te sugiere cuánto) y sigue otra vez hasta el fallo.",
+      "Repite según las caídas que elijas. Entre caída y caída solo el tiempo de cambiar el peso: máximo 10 segundos.",
+      "Es normal que cada caída salga con menos reps. Lo importante es llegar al fallo en todas.",
+    ],
+    consejo: "Úsalo en la última serie y, mejor, en máquinas, poleas o mancuernas, donde cambiar el peso es rápido y seguro. En sentadilla o peso muerto con barra libre, mejor no.",
+    pausaSeg: 10, pausaTxt: "10 s · cambio de peso",
+  },
+  rest_pause: {
+    nombre: "Rest-pause", icono: "⏸️", color: "#38bdf8",
+    resumen: "Mismo peso: llegas al fallo, pausa corta y sacas más reps.",
+    pasos: [
+      "Haz tu serie normal hasta el fallo técnico.",
+      "Suelta el peso y descansa 15–20 segundos respirando profundo.",
+      "Con el MISMO peso, saca todas las reps que puedas hasta el fallo.",
+      "Repite según las mini-series que elijas. Algo como 10 + 4 + 2 reps es completamente normal.",
+    ],
+    consejo: "Funciona muy bien en máquinas y ejercicios de aislamiento. Si la técnica se rompe, esa mini-serie termina ahí.",
+    pausaSeg: 20, pausaTxt: "15–20 s de pausa",
+  },
+}
+
+function redondearPeso(x: number) {
+  const paso = x >= 20 ? 2.5 : x >= 5 ? 1 : 0.5
+  return Math.max(paso, Math.round(x / paso) * paso)
+}
+function kgSugeridoMini(kgBase: number, cfg: MetodoSerie, i: number): number | null {
+  if (!kgBase || kgBase <= 0) return null
+  if (cfg.metodo === "rest_pause") return kgBase
+  // Cada caída reduce el % elegido sobre el peso anterior
+  return redondearPeso(kgBase * Math.pow(1 - cfg.reduccion / 100, i + 1))
+}
+function nuevoMetodo(metodo: MetodoAvanzado, ant?: MetodoAnterior, prescrito = false): MetodoSerie {
+  const caidas = ant && ant.metodo === metodo && ant.minis.length ? Math.min(3, ant.minis.length) : 2
+  return { metodo, caidas, reduccion: metodo === "drop_set" ? 20 : 0,
+    minis: Array.from({ length: caidas }, () => ({ kg: "", reps: "" })), prescrito }
+}
+
+function PanelMetodo({
+  cfg, serie, kgBase, repsBase, ant, cerrada,
+  onConfig, onMini, onGuardarMini, onQuitar, onPausa,
+}: {
+  cfg: MetodoSerie; serie: number; kgBase: number; repsBase: number
+  ant?: MetodoAnterior; cerrada: boolean
+  onConfig: (c: { caidas?: number; reduccion?: number }) => void
+  onMini: (i: number, campo: "kg" | "reps", v: string) => void
+  onGuardarMini: (i: number) => void
+  onQuitar: () => void
+  onPausa: (seg: number) => void
+}) {
+  const info = INFO_METODOS[cfg.metodo]
+  const C = info.color
+  const algunaHecha = cfg.minis.some(m => !!m.reps)
+  const [verComo, setVerComo] = useState(!algunaHecha)
+  const esDrop = cfg.metodo === "drop_set"
+  const etiqueta = esDrop ? "Caída" : "Mini-serie"
+
+  // Pesos efectivos (lo escrito o lo sugerido) para la escalera y el volumen
+  const pesos = cfg.minis.map((m, i) => parseFloat(m.kg) || kgSugeridoMini(kgBase, cfg, i) || 0)
+  const repsMinis = cfg.minis.map(m => parseInt(m.reps) || 0)
+  const volExtra = Math.round(pesos.reduce((a, kg, i) => a + kg * repsMinis[i], 0))
+  const repsTotales = repsBase + repsMinis.reduce((a, b) => a + b, 0)
+  const completo = cfg.minis.every(m => !!m.reps)
+  const maxPeso = Math.max(kgBase, ...pesos, 1)
+
+  const chip = (activo: boolean, txt: string, onClick: () => void, key: string) => (
+    <button key={key} onClick={onClick} disabled={cerrada}
+      style={{ padding: "6px 10px", minWidth: 40, cursor: cerrada ? "default" : "pointer",
+        background: activo ? `${C}25` : "rgba(255,255,255,0.03)",
+        border: `1px solid ${activo ? C : "rgba(255,255,255,0.1)"}`,
+        color: activo ? "#fff" : "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 700,
+        fontFamily: "'Barlow Condensed',sans-serif" }}>{txt}</button>
+  )
+
+  return (
+    <div style={{ marginTop: 6, border: `1px solid ${C}55`, background: `${C}0a` }}>
+      {/* Cabecera */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px",
+        borderBottom: `1px solid ${C}25` }}>
+        <div>
+          <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 15, fontWeight: 900,
+            textTransform: "uppercase", letterSpacing: "0.08em", color: C }}>
+            {info.icono} {info.nombre} · Serie {serie}
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
+            {cfg.prescrito ? "Tu coach lo programó para esta serie. " : ""}{info.resumen}
+          </div>
+        </div>
+        {!cerrada && !cfg.prescrito && (
+          <button onClick={onQuitar} style={{ background: "none", border: "1px solid rgba(255,255,255,0.12)",
+            color: "rgba(255,255,255,0.45)", cursor: "pointer", fontSize: 11, padding: "5px 8px" }}>Quitar ✕</button>
+        )}
+      </div>
+
+      {/* ¿Cómo se hace? */}
+      <div style={{ padding: "8px 12px", borderBottom: `1px solid ${C}20` }}>
+        <button onClick={() => setVerComo(v => !v)} style={{ background: "none", border: "none", padding: 0,
+          color: "rgba(255,255,255,0.75)", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+          📖 ¿Cómo se hace? {verComo ? "▴" : "▾"}
+        </button>
+        {verComo && (
+          <div style={{ marginTop: 8 }}>
+            {info.pasos.map((p, i) => (
+              <div key={i} style={{ display: "flex", gap: 8, fontSize: 12, color: "rgba(255,255,255,0.7)", lineHeight: 1.5, marginBottom: 4 }}>
+                <span style={{ color: C, fontWeight: 900, fontFamily: "'Barlow Condensed',sans-serif" }}>{i + 1}</span>
+                <span>{p}</span>
+              </div>
+            ))}
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 6, lineHeight: 1.5 }}>💡 {info.consejo}</div>
+          </div>
+        )}
+      </div>
+
+      {/* Configuración */}
+      {!cerrada && (
+        <div style={{ padding: "10px 12px", borderBottom: `1px solid ${C}20`, display: "grid", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", flexBasis: "100%" }}>
+              {esDrop ? "Caídas" : "Mini-series"}
+            </span>
+            {[1, 2, 3].map(n => chip(cfg.caidas === n, `${n}`, () => onConfig({ caidas: n }), `c${n}`))}
+          </div>
+          {esDrop && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", flexBasis: "100%" }}>
+                Bajar por caída
+              </span>
+              {[10, 20, 25, 30].map(p => chip(cfg.reduccion === p, `−${p}%`, () => onConfig({ reduccion: p }), `r${p}`))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Escalera visual */}
+      <div style={{ padding: "10px 12px 4px" }}>
+        {kgBase > 0 ? (
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 54 }}>
+            {[kgBase, ...pesos].map((kg, i) => (
+              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: i === 0 ? "#fff" : C, fontFamily: "'Barlow Condensed',sans-serif" }}>
+                  {kg ? `${kg}` : "—"}
+                </div>
+                <div style={{ width: "100%", height: `${Math.max(8, (kg / maxPeso) * 38)}px`,
+                  background: i === 0 ? "rgba(255,255,255,0.35)" : `${C}${repsMinis[i - 1] ? "cc" : "55"}`,
+                  transition: "height 0.3s ease" }} />
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{i === 0 ? "Serie" : `${esDrop ? "C" : "M"}${i}`}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", padding: "4px 0 8px" }}>
+            ✏️ Escribe el peso de la serie {serie} y te calculo {esDrop ? "el peso de cada caída" : "las mini-series"}.
+          </div>
+        )}
+      </div>
+
+      {/* La vez pasada */}
+      {ant && ant.metodo === cfg.metodo && ant.minis.length > 0 && (
+        <div style={{ margin: "4px 12px 0", padding: "6px 8px", background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.07)", fontSize: 11, color: "rgba(255,255,255,0.55)" }}>
+          La vez pasada: {ant.minis.map((m, i) => (
+            <span key={i}>{i > 0 ? " → " : ""}<b style={{ color: "#fff" }}>{m.kg ?? "—"}×{m.reps ?? "—"}</b></span>
+          ))}
+          <span style={{ color: C }}> · supérala: +1 rep en cada {esDrop ? "caída" : "mini-serie"}</span>
+        </div>
+      )}
+
+      {/* Miniseries */}
+      <div style={{ padding: "8px 12px 10px" }}>
+        {cfg.minis.map((m, i) => {
+          const sug = kgSugeridoMini(kgBase, cfg, i)
+          const antMini = ant && ant.metodo === cfg.metodo ? ant.minis[i] : undefined
+          const hecha = !!m.reps
+          return (
+            <div key={i} style={{ marginBottom: 8 }}>
+              <button onClick={() => onPausa(info.pausaSeg)} disabled={cerrada}
+                style={{ width: "100%", marginBottom: 5, padding: "4px", background: "transparent",
+                  border: `1px dashed ${C}40`, color: `${C}`, cursor: "pointer", fontSize: 10,
+                  fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                ⏱ {info.pausaTxt}
+              </button>
+              <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr 1fr", gap: 6, alignItems: "stretch" }}>
+                <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "4px 6px",
+                  background: hecha ? `${C}20` : "rgba(255,255,255,0.03)", border: `1px solid ${hecha ? C : "rgba(255,255,255,0.07)"}` }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: hecha ? "#fff" : "rgba(255,255,255,0.75)",
+                    fontFamily: "'Barlow Condensed',sans-serif", textTransform: "uppercase" }}>
+                    {etiqueta} {i + 1} {hecha && <span style={{ color: G }}>✓</span>}
+                  </span>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>
+                    {esDrop ? `−${cfg.reduccion}% · al fallo` : "mismo peso · al fallo"}
+                    {antMini?.reps ? ` · antes ${antMini.reps}r` : ""}
+                  </span>
+                </div>
+                <input type="number" inputMode="decimal" disabled={cerrada}
+                  placeholder={sug ? `${sug}` : "kg"} value={m.kg}
+                  onChange={e => onMini(i, "kg", e.target.value)} onBlur={() => onGuardarMini(i)}
+                  style={{ padding: "8px 6px", background: "rgba(255,255,255,0.04)",
+                    border: `1px solid ${m.kg ? C : "rgba(255,255,255,0.12)"}`, color: "#fff", fontSize: 17,
+                    fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, outline: "none", textAlign: "center", width: "100%" }} />
+                <input type="number" inputMode="numeric" disabled={cerrada} placeholder="reps" value={m.reps}
+                  onChange={e => onMini(i, "reps", e.target.value)} onBlur={() => onGuardarMini(i)}
+                  style={{ padding: "8px 6px", background: "rgba(255,255,255,0.04)",
+                    border: `1px solid ${m.reps ? C : "rgba(255,255,255,0.12)"}`, color: "#fff", fontSize: 17,
+                    fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, outline: "none", textAlign: "center", width: "100%" }} />
+              </div>
+              {!m.kg && sug && !cerrada && (
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 3, textAlign: "center" }}>
+                  Peso sugerido {sug} kg — si tu máquina no tiene ese peso, escribe el más cercano
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {/* Resumen del método */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 4 }}>
+          <div style={{ padding: "8px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" }}>
+            <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{repsTotales}</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 3 }}>
+              reps totales de la serie
+            </div>
+          </div>
+          <div style={{ padding: "8px", background: "rgba(0,0,0,0.3)", border: `1px solid ${C}40`, textAlign: "center" }}>
+            <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 900, color: C, lineHeight: 1 }}>
+              +{volExtra.toLocaleString("es-CO")} kg
+            </div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 3 }}>
+              volumen extra
+            </div>
+          </div>
+        </div>
+        {completo && (
+          <div style={{ marginTop: 8, fontSize: 12, color: G, textAlign: "center", fontWeight: 700 }}>
+            🔥 {info.nombre} completo. Así se termina un ejercicio.
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 /* ── Estado de pago: null (sin seguimiento) | "ok" | "gracia" | "bloqueado" ── */
 function calcularEstadoPago(proximoPago: string | null): { estado: "ok"|"gracia"|"bloqueado"|null; diasVencido: number } {
   if (!proximoPago) return { estado: null, diasVencido: 0 }
@@ -725,6 +985,9 @@ export default function PlanEntrenamientoPage() {
   const [imgErr, setImgErr]         = useState<Record<string, boolean>>({})
   const [histVol, setHistVol]       = useState<Record<string, SesionHist[]>>({})
   const celebradosRef = useRef<Set<string>>(new Set())
+  const [metodos, setMetodos]       = useState<Record<string, Record<number, MetodoSerie>>>({})
+  const [metodosAnt, setMetodosAnt] = useState<Record<string, Record<number, MetodoAnterior>>>({})
+  const [selectorMetodo, setSelectorMetodo] = useState<string | null>(null)
   const [resumenSesion, setResumenSesion] = useState<ResumenSesionData | null>(null)
   const [insightSesion, setInsightSesion] = useState<{tipo:string; mensaje:string} | null>(null)
   const [notaCoach, setNotaCoach] = useState<NotaCoach | null>(null)
@@ -1145,6 +1408,7 @@ export default function PlanEntrenamientoPage() {
     if (!token) return
     setDiaActivo(dia); setEjers([]); setRegs({}); setAnts({}); setHistVol({})
     celebradosRef.current = new Set()
+    setMetodos({}); setMetodosAnt({}); setSelectorMetodo(null)
     setSesionId(null); setSesionCerrada(false); setImgErr({})
     setInsightSesion(null)
 
@@ -1200,6 +1464,8 @@ export default function PlanEntrenamientoPage() {
 
     // Historial de volumen por ejercicio (tendencia) — no bloquea la carga del día
     void cargarHistorialVolumen(token, ejs, ses?.id ?? null)
+    // Métodos avanzados (drop set / rest-pause) de hoy y de la sesión anterior
+    void cargarMiniseries(ejs, ses?.id ?? null, ant?.length ? ant[0].id : null)
 
     // Generar el mensaje pre-sesión con la fecha de la última sesión (o null)
     const insight = await generarInsightPreSesion(token, dia, ant?.length ? ant[0].fecha : null)
@@ -1265,6 +1531,128 @@ export default function PlanEntrenamientoPage() {
     } catch (e) {
       console.warn("No se pudo cargar el historial de volumen", e)
     }
+  }
+
+  /* ── Métodos avanzados: carga, edición y guardado ──
+     Defensivo: si la tabla registros_miniseries no existe todavía,
+     el resto del entrenamiento funciona igual. */
+  const cargarMiniseries = async (ejs: Ejercicio[], sesHoyId: string | null, sesAntId: string | null) => {
+    const ant: Record<string, Record<number, MetodoAnterior>> = {}
+    const hoy: Record<string, Record<number, MetodoSerie>> = {}
+    try {
+      const ids = [sesHoyId, sesAntId].filter(Boolean) as string[]
+      if (ids.length) {
+        const { data, error } = await supabase.from("registros_miniseries")
+          .select("sesion_id,ejercicio_id,serie_num,metodo,mini_num,kg,reps").in("sesion_id", ids)
+        if (error) throw error
+        const filas = (data ?? []).slice().sort((a, b) => a.mini_num - b.mini_num)
+        filas.forEach(r => {
+          const met = r.metodo as MetodoAvanzado
+          if (r.sesion_id === sesAntId) {
+            if (!ant[r.ejercicio_id]) ant[r.ejercicio_id] = {}
+            if (!ant[r.ejercicio_id][r.serie_num]) ant[r.ejercicio_id][r.serie_num] = { metodo: met, minis: [] }
+            ant[r.ejercicio_id][r.serie_num].minis.push({ kg: r.kg, reps: r.reps })
+          } else if (r.sesion_id === sesHoyId) {
+            if (!hoy[r.ejercicio_id]) hoy[r.ejercicio_id] = {}
+            if (!hoy[r.ejercicio_id][r.serie_num]) {
+              hoy[r.ejercicio_id][r.serie_num] = { metodo: met, caidas: 0, reduccion: met === "drop_set" ? 20 : 0, minis: [] }
+            }
+            const cfg = hoy[r.ejercicio_id][r.serie_num]
+            cfg.minis[r.mini_num - 1] = { kg: r.kg != null ? String(r.kg) : "", reps: r.reps != null ? String(r.reps) : "" }
+            cfg.caidas = Math.max(cfg.caidas, r.mini_num)
+          }
+        })
+        Object.values(hoy).forEach(porSerie => Object.values(porSerie).forEach(cfg => {
+          cfg.minis = Array.from({ length: cfg.caidas }, (_, i) => cfg.minis[i] ?? { kg: "", reps: "" })
+        }))
+      }
+    } catch (e) {
+      console.warn("Métodos avanzados no disponibles todavía", e)
+    }
+    // Métodos que el coach programó (ejercicios.metodo_avanzado → última serie)
+    ejs.forEach(e => {
+      const m = e.metodo_avanzado
+      if (m !== "drop_set" && m !== "rest_pause") return
+      const ultima = e.series_trabajo
+      if (!hoy[e.id]) hoy[e.id] = {}
+      if (hoy[e.id][ultima]) hoy[e.id][ultima].prescrito = true
+      else hoy[e.id][ultima] = nuevoMetodo(m, ant[e.id]?.[ultima], true)
+    })
+    setMetodosAnt(ant)
+    // Lo que el usuario activó mientras cargaba tiene prioridad
+    setMetodos(prev => {
+      const out: Record<string, Record<number, MetodoSerie>> = { ...hoy }
+      Object.entries(prev).forEach(([ejId, porSerie]) => { out[ejId] = { ...(out[ejId] ?? {}), ...porSerie } })
+      return out
+    })
+  }
+
+  const activarMetodo = (ejId: string, serie: number, metodo: MetodoAvanzado) => {
+    setMetodos(m => ({ ...m, [ejId]: { ...(m[ejId] ?? {}), [serie]: nuevoMetodo(metodo, metodosAnt[ejId]?.[serie]) } }))
+    setSelectorMetodo(null)
+  }
+
+  const editarMini = (ejId: string, serie: number, i: number, campo: "kg" | "reps", v: string) => {
+    setMetodos(m => {
+      const cfg = m[ejId]?.[serie]
+      if (!cfg) return m
+      const minis = cfg.minis.map((x, j) => j === i ? { ...x, [campo]: v } : x)
+      return { ...m, [ejId]: { ...m[ejId], [serie]: { ...cfg, minis } } }
+    })
+  }
+
+  const configMetodo = async (ejId: string, serie: number, c: { caidas?: number; reduccion?: number }) => {
+    const actual = metodos[ejId]?.[serie]
+    if (!actual) return
+    const caidas = c.caidas ?? actual.caidas
+    const minis = Array.from({ length: caidas }, (_, i) => actual.minis[i] ?? { kg: "", reps: "" })
+    setMetodos(m => ({ ...m, [ejId]: { ...(m[ejId] ?? {}), [serie]: { ...actual, caidas, reduccion: c.reduccion ?? actual.reduccion, minis } } }))
+    if (c.caidas !== undefined && c.caidas < actual.caidas && sesionId) {
+      try {
+        await supabase.from("registros_miniseries").delete()
+          .eq("sesion_id", sesionId).eq("ejercicio_id", ejId).eq("serie_num", serie).gt("mini_num", caidas)
+      } catch (e) { console.warn(e) }
+    }
+  }
+
+  const guardarMini = async (ejId: string, serie: number, i: number) => {
+    if (!sesionId || sesionCerrada) return
+    const cfg = metodos[ejId]?.[serie]
+    const m = cfg?.minis[i]
+    if (!cfg || !m || !m.reps) return
+    const kgBase = parseFloat(regs[ejId]?.[serie]?.kg ?? "") || 0
+    const kg = parseFloat(m.kg) || kgSugeridoMini(kgBase, cfg, i)
+    try {
+      const { error } = await supabase.from("registros_miniseries").upsert(
+        { sesion_id: sesionId, ejercicio_id: ejId, serie_num: serie, metodo: cfg.metodo,
+          mini_num: i + 1, kg, reps: parseInt(m.reps) || null },
+        { onConflict: "sesion_id,ejercicio_id,serie_num,mini_num" }
+      )
+      if (error) throw error
+      // Fija el peso usado para que no cambie si después editas el peso de la serie
+      if (!m.kg && kg) editarMini(ejId, serie, i, "kg", String(kg))
+      const todas = cfg.minis.every((x, j) => j === i || !!x.reps)
+      const info = INFO_METODOS[cfg.metodo]
+      showToast(todas
+        ? `🔥 ${info.nombre} completo · ¡serie exprimida al máximo!`
+        : `✓ ${cfg.metodo === "drop_set" ? "Caída" : "Mini-serie"} ${i + 1} guardada — ¡vamos por la siguiente!`)
+    } catch (e) {
+      console.warn(e)
+      showToast("⚠️ No se pudo guardar el método avanzado")
+    }
+  }
+
+  const quitarMetodo = async (ejId: string, serie: number) => {
+    setMetodos(m => {
+      const porSerie = { ...(m[ejId] ?? {}) }
+      delete porSerie[serie]
+      return { ...m, [ejId]: porSerie }
+    })
+    if (!sesionId) return
+    try {
+      await supabase.from("registros_miniseries").delete()
+        .eq("sesion_id", sesionId).eq("ejercicio_id", ejId).eq("serie_num", serie)
+    } catch (e) { console.warn(e) }
   }
 
   /* ── Generar mensaje pre-sesión ──
@@ -2288,6 +2676,11 @@ export default function PlanEntrenamientoPage() {
                           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 5,
                             fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700 }}>
                             SERIE {serie} {ok && <span style={{ color: G }}>✓</span>}
+                            {metodos[ej.id]?.[serie] && (
+                              <span style={{ color: INFO_METODOS[metodos[ej.id][serie].metodo].color, marginLeft: 6 }}>
+                                · {INFO_METODOS[metodos[ej.id][serie].metodo].icono} {INFO_METODOS[metodos[ej.id][serie].metodo].nombre.toUpperCase()}
+                              </span>
+                            )}
                           </div>
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 1fr 1fr", gap: 6, alignItems: "stretch" }}>
                             <div style={{ padding: "10px 8px", background: "rgba(255,255,255,0.03)",
@@ -2350,14 +2743,69 @@ export default function PlanEntrenamientoPage() {
                                 : sc.nivel !== "record" ? " — esta serie es ganancia pura" : ""}
                             </div>
                           )}
-                          <button onClick={() => { setCronSeg(parseSeg(ej.descanso)); setCronOn(true) }}
-                            disabled={sesionCerrada}
-                            style={{ width: "100%", marginTop: 5, padding: "6px",
-                              background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-                              color: "rgba(255,255,255,0.35)", cursor: "pointer", fontSize: 11,
-                              fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                            ⏱ Iniciar descanso
-                          </button>
+                          {(() => {
+                            const cfgM = metodos[ej.id]?.[serie]
+                            const claveSel = `${ej.id}:${serie}`
+                            const abierto = selectorMetodo === claveSel
+                            const estiloBtn = { width: "100%", padding: "6px", cursor: "pointer", fontSize: 11,
+                              fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: "0.1em",
+                              textTransform: "uppercase" as const }
+                            return (
+                              <>
+                                <div style={{ display: "grid", gridTemplateColumns: esPlio ? "1fr" : "1fr 1fr", gap: 6, marginTop: 5 }}>
+                                  <button onClick={() => { setCronSeg(parseSeg(ej.descanso)); setCronOn(true) }}
+                                    disabled={sesionCerrada}
+                                    style={{ ...estiloBtn, background: "rgba(255,255,255,0.03)",
+                                      border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.35)" }}>
+                                    ⏱ Iniciar descanso
+                                  </button>
+                                  {!esPlio && (
+                                    <button onClick={() => { if (!cfgM) setSelectorMetodo(abierto ? null : claveSel) }}
+                                      disabled={sesionCerrada && !cfgM}
+                                      style={{ ...estiloBtn,
+                                        cursor: cfgM ? "default" : "pointer",
+                                        background: cfgM ? `${INFO_METODOS[cfgM.metodo].color}18` : abierto ? "rgba(167,139,250,0.12)" : "rgba(255,255,255,0.03)",
+                                        border: `1px solid ${cfgM ? INFO_METODOS[cfgM.metodo].color : abierto ? "#a78bfa" : "rgba(255,255,255,0.07)"}`,
+                                        color: cfgM ? INFO_METODOS[cfgM.metodo].color : abierto ? "#fff" : "rgba(255,255,255,0.5)" }}>
+                                      {cfgM ? `${INFO_METODOS[cfgM.metodo].icono} ${INFO_METODOS[cfgM.metodo].nombre} activo` : "⚡ Método avanzado"}
+                                    </button>
+                                  )}
+                                </div>
+                                {abierto && !cfgM && !sesionCerrada && (
+                                  <div style={{ marginTop: 6, padding: 10, border: "1px solid rgba(167,139,250,0.35)", background: "rgba(167,139,250,0.05)" }}>
+                                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 8, lineHeight: 1.5 }}>
+                                      Elige cómo quieres exprimir la serie {serie}.
+                                      {serie !== ej.series_trabajo && <span style={{ color: O }}> 💡 Normalmente se usa en la última serie.</span>}
+                                    </div>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                                      {(Object.keys(INFO_METODOS) as MetodoAvanzado[]).map(k => {
+                                        const inf = INFO_METODOS[k]
+                                        return (
+                                          <button key={k} onClick={() => activarMetodo(ej.id, serie, k)}
+                                            style={{ textAlign: "left", padding: "10px", cursor: "pointer",
+                                              background: `${inf.color}10`, border: `1px solid ${inf.color}55`, color: "#fff" }}>
+                                            <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 15, fontWeight: 900,
+                                              textTransform: "uppercase", color: inf.color }}>{inf.icono} {inf.nombre}</div>
+                                            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 3, lineHeight: 1.4 }}>{inf.resumen}</div>
+                                          </button>
+                                        )
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                                {cfgM && (
+                                  <PanelMetodo cfg={cfgM} serie={serie}
+                                    kgBase={parseFloat(val.kg) || 0} repsBase={parseInt(val.reps) || 0}
+                                    ant={metodosAnt[ej.id]?.[serie]} cerrada={sesionCerrada}
+                                    onConfig={c => configMetodo(ej.id, serie, c)}
+                                    onMini={(i, campo, v) => editarMini(ej.id, serie, i, campo, v)}
+                                    onGuardarMini={i => guardarMini(ej.id, serie, i)}
+                                    onQuitar={() => quitarMetodo(ej.id, serie)}
+                                    onPausa={seg => { setCronSeg(seg); setCronOn(true) }} />
+                                )}
+                              </>
+                            )
+                          })()}
                         </div>
                       )
                     })}
